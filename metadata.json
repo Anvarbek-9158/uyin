@@ -1,0 +1,6 @@
+{
+  "name": "Raqamli Viktorina",
+  "description": "Real vaqt rejimida o'qituvchi va jamoalar o'rtasida o'tkaziladigan interaktiv viktorina o'yini",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "q_fb_1786349720974_0_dh2a",
+    "text": "Quyidagilardan qaysi biri dasturlash tili hisoblanadi?",
+    "options": [
+      "Python",
+      "HTML",
+      "CSS",
+      "HTTP"
+    ],
+    "correctAnswer": "Python",
+    "timeLimit": 30,
+    "category": "Informatika va Raqamli Texnologiyalar",
+    "difficulty": "O'rta",
+    "explanation": "Python ob'ektga yo'naltirilgan yuqori darajali dasturlash tilidir."
+  },
+  {
+    "id": "q_fb_1786349720974_1_d3g1",
+    "text": "Ma'lumotlar bazasini boshqarish uchun eng mashhur til qaysi?",
+    "options": [
+      "SQL",
+      "HTML",
+      "JSON",
+      "XML"
+    ],
+    "correctAnswer": "SQL",
+    "timeLimit": 30,
+    "category": "Informatika va Raqamli Texnologiyalar",
+    "difficulty": "O'rta",
+    "explanation": "SQL relational ma'lumotlar bazalari bilan ishlash standart tilidir."
+  },
+  {
+    "id": "q_fb_1786349720974_2_0637",
+    "text": "Algoritmlashda shartli o'tish operatori qaysi so'z bilan ifodalanadi?",
+    "options": [
+      "IF / ELSE",
+      "FOR / WHILE",
+      "PRINT",
+      "FUNCTION"
+    ],
+    "correctAnswer": "IF / ELSE",
+    "timeLimit": 30,
+    "category": "Informatika va Raqamli Texnologiyalar",
+    "difficulty": "O'rta",
+    "explanation": "IF/ELSE shart qanoatlantirilishiga ko'ra mos tarmoqqa yo'naltiradi."
+  }
+]
