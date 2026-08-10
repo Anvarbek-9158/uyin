@@ -4,13 +4,11 @@ import { createServer } from 'http';
 import path from 'path';
 import fs from 'fs';
 import { Server, Socket } from 'socket.io';
-import { GoogleGenAI } from '@google/genai';
 import {
   GameSession,
   Question,
   Student,
   Team,
-  GamePhase,
   ClientToServerEvents,
   ServerToClientEvents,
 } from './src/types.js';
@@ -138,190 +136,6 @@ function startQuestionTimer(pin: string) {
   }, 1000);
 }
 
-function generateTopicQuestionsFallback(
-  topic: string,
-  userPrompt: string,
-  count: number = 10,
-  difficulty: 'Oson' | "O'rta" | 'Qiyin' = "O'rta"
-): Question[] {
-  const cleanTopic = (topic || 'Umumiy Bilimlar').trim();
-  const lower = cleanTopic.toLowerCase();
-
-  const questionPool: {
-    text: string;
-    options: string[];
-    correctAnswer: string;
-    explanation: string;
-    difficulty?: 'Oson' | "O'rta" | 'Qiyin';
-  }[] = [];
-
-  if (
-    lower.includes('informatika') ||
-    lower.includes('dastur') ||
-    lower.includes('kompyuter') ||
-    lower.includes('raqamli')
-  ) {
-    questionPool.push(
-      { text: "Kompyuterning asosiy mantiqiy hisoblash va boshqaruv qurilmasi qaysi?", options: ["Protsessor (CPU)", "Operativ xotira (RAM)", "Qattiq disk (HDD)", "Videokarta (GPU)"], correctAnswer: "Protsessor (CPU)", explanation: "CPU barcha buyruq va hisob-kitoblarni bajaruvchi asosiy mantiqiy markazdir.", difficulty: "Oson" },
-      { text: "1 Gigabayt (GB) necha Megabayt (MB) ga teng?", options: ["1024 MB", "1000 MB", "512 MB", "2048 MB"], correctAnswer: "1024 MB", explanation: "Ikkilik sanoq tizimida 1 GB = 2^10 MB = 1024 MB.", difficulty: "Oson" },
-      { text: "Quyidagilardan qaysi biri dasturlash tili hisoblanadi?", options: ["Python", "HTML", "CSS", "HTTP"], correctAnswer: "Python", explanation: "Python ob'ektga yo'naltirilgan yuqori darajali dasturlash tilidir.", difficulty: "O'rta" },
-      { text: "Internetda veb-sahifalarni ko'rish uchun mo'ljallangan dastur nima deyiladi?", options: ["Brauzer", "Protsessor", "Operatsion tizim", "Antivirus"], correctAnswer: "Brauzer", explanation: "Chrome, Firefox, Safari kabi dasturlar brauzerlar turiga kiradi.", difficulty: "Oson" },
-      { text: "Axborotning eng kichik o'lchov birligi nima?", options: ["Bit", "Bayt", "Kilobayt", "Megabayt"], correctAnswer: "Bit", explanation: "Bit 0 yoki 1 qiymatlarini oluvchi eng kichik birlikdir.", difficulty: "Oson" },
-      { text: "Ma'lumotlar bazasini boshqarish uchun eng mashhur til qaysi?", options: ["SQL", "HTML", "JSON", "XML"], correctAnswer: "SQL", explanation: "SQL relational ma'lumotlar bazalari bilan ishlash standart tilidir.", difficulty: "O'rta" },
-      { text: "Taqsimlangan ma'lumotlar bazalarida CAP teoremasiga ko'ra nechta kafolatga erishiladi?", options: ["Faqat 2 tasiga", "Barcha 3 tasiga", "Faqat 1 tasiga", "Birontasiga emas"], correctAnswer: "Faqat 2 tasiga", explanation: "CAP teoremasiga ko'ra ko'pi bilan 2 ta kafolat bir vaqtda ta'minlanadi.", difficulty: "Qiyin" },
-      { text: "Algoritmlashda shartli o'tish operatori qaysi so'z bilan ifodalanadi?", options: ["IF / ELSE", "FOR / WHILE", "PRINT", "FUNCTION"], correctAnswer: "IF / ELSE", explanation: "IF/ELSE shart qanoatlantirilishiga ko'ra mos tarmoqqa yo'naltiradi.", difficulty: "O'rta" }
-    );
-  } else if (
-    lower.includes('matematika') ||
-    lower.includes('hisob') ||
-    lower.includes('algebra') ||
-    lower.includes('geometriya')
-  ) {
-    questionPool.push(
-      { text: "To'g'ri burchakli uchburchakda gipotenuza kvadratiga bag'ishlangan teorema muallifi kim?", options: ["Pifagor", "Evklid", "Arximed", "Nyuton"], correctAnswer: "Pifagor", explanation: "Pifagor teoremasi: a² + b² = c².", difficulty: "O'rta" },
-      { text: "Doiraning yuzi formulasi qanday ifodalanadi?", options: ["S = πr²", "S = 2πr", "S = πd", "S = 4πr²"], correctAnswer: "S = πr²", explanation: "r - doira radiusi bo'lganda yuzi πr² bo'ladi.", difficulty: "O'rta" },
-      { text: "Eng kichik tub son nechaga teng?", options: ["2", "1", "3", "0"], correctAnswer: "2", explanation: "2 yagona juft tub sondir va eng kichigidir.", difficulty: "Oson" },
-      { text: "√144 amali qanday qiymat beradi?", options: ["12", "14", "16", "10"], correctAnswer: "12", explanation: "12 * 12 = 144.", difficulty: "Oson" },
-      { text: "Kvadrat tenglama diskriminanti D < 0 bo'lsa, haqiqiy ildizlar soni nechta?", options: ["0 ta", "1 ta", "2 ta", "Cheksiz"], correctAnswer: "0 ta", explanation: "Diskriminant manfiy bo'lganda haqiqiy ildizlar bo'lmaydi.", difficulty: "Qiyin" },
-      { text: "Sinus 90 darajada nechaga teng?", options: ["1", "0", "0.5", "-1"], correctAnswer: "1", explanation: "Birlik aylanada sin(90°) = 1.", difficulty: "O'rta" }
-    );
-  } else {
-    questionPool.push(
-      { text: `"${cleanTopic}" sohasining eng muhim va asosiy tushunchasi nimadan iborat?`, options: ["Mantiq va tahlil", "Xotira va tezlik", "Standart qoidalar", "Tizimli yondashuv"], correctAnswer: "Mantiq va tahlil", explanation: `${cleanTopic} fanida mantiqiy tahlil eng asosiy o'rinni egallaydi.`, difficulty: "Oson" },
-      { text: `"${cleanTopic}" mavzusida bilimlarni muvaffaqiyatli baholashning samarali usuli qaysi?`, options: ["Amaliy test va viktorina", "Faqat nazariya yodlash", "Izohsiz topshiriqlar", "Natijani tekshirmaslik"], correctAnswer: "Amaliy test va viktorina", explanation: "Interaktiv viktorinalar bilimni mustahkamlash uchun optimaldir.", difficulty: "O'rta" },
-      { text: `"${cleanTopic}" bo'yicha berilgan murakkab masalalarni yechishda birinchi navbatda nima qilinadi?`, options: ["Shartni sinchiklab tahlil qilish", "Shoshilib javob belgilash", "Faqat birinchi variantni tanlash", "Savolni o'tkazib yuborish"], correctAnswer: "Shartni sinchiklab tahlil qilish", explanation: "To'g'ri tahlil to'g'ri yechimning yarmi hisoblanadi.", difficulty: "Qiyin" },
-      { text: `Raqamli o'qitish tizimida "${cleanTopic}" fanining asosiy afzalligi nima?`, options: ["Interaktiv va qiziqarli o'rganish", "Qiyin formulasiz yondashuv", "Vaqtni cheklab qo'yish", "Natijasiz baholash"], correctAnswer: "Interaktiv va qiziqarli o'rganish", explanation: "Interaktiv texnologiyalar o'quvchilar motivatsiyasini oshiradi.", difficulty: "Oson" }
-    );
-  }
-
-  const matchingPool = questionPool.filter((q) => q.difficulty === difficulty);
-  const poolToUse = matchingPool.length >= 3 ? matchingPool : questionPool;
-
-  const shuffled = [...poolToUse].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
-
-  return selected.map((q, idx) => ({
-    id: `q_fb_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-    text: q.text,
-    options: q.options,
-    correctAnswer: q.correctAnswer,
-    timeLimit: difficulty === 'Qiyin' ? 45 : difficulty === 'Oson' ? 25 : 30,
-    category: cleanTopic,
-    difficulty: q.difficulty || difficulty,
-    explanation: q.explanation,
-  }));
-}
-
-// REST API: Gemini AI Question Generator Endpoint
-app.post('/api/ai-generate-questions', async (req, res) => {
-  const { topic = 'Umumiy bilimlar', userPrompt = '', count = 10, difficulty = "O'rta", imageBase64 } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  const reqDifficulty: 'Oson' | "O'rta" | 'Qiyin' = ['Oson', "O'rta", 'Qiyin'].includes(difficulty) ? difficulty : "O'rta";
-
-  if (apiKey) {
-    try {
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          },
-        },
-      });
-
-      let imagePart: any = null;
-      if (imageBase64 && typeof imageBase64 === 'string') {
-        const matches = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-        if (matches) {
-          imagePart = {
-            inlineData: {
-              mimeType: matches[1],
-              data: matches[2],
-            },
-          };
-        } else {
-          imagePart = {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: imageBase64,
-            },
-          };
-        }
-      }
-
-      const systemPromptText = `Siz maktab o'quvchilari va talabalar uchun professional interaktiv viktorina o'yini tuzuvchi mutaxassissiz.
-Mavzu: "${topic}".
-Qiyinlik darajasi: "${reqDifficulty}" (Oson, O'rta yoki Qiyin).
-${userPrompt ? `O'qituvchi maxsus ko'rsatmasi (prompt): "${userPrompt}".` : ''}
-${imagePart ? "Yuklangan rasm (darslik, topshiriq yoki masalalar) mazmunidan foydalanib savollar yarating." : ''}
-
-Iltimos, ushbu manba/mavzu/rasm asosida mos ravishda "${reqDifficulty}" qiyinlik darajasidagi ${count || 10} ta qiziqarli, aniq va bilimni sinovchi 4 variantli test savollarini tuzing.
-Javobni FAQAT QUYIDAGI JSON FORMATIDA QAYTARING (hech qanday qo'shimcha matnsiz):
-[
-  {
-    "id": "q1",
-    "text": "Savol matni",
-    "options": ["A variant", "B variant", "C variant", "D variant"],
-    "correctAnswer": "A variant",
-    "timeLimit": 30,
-    "category": "${topic || 'Umumiy'}",
-    "difficulty": "${reqDifficulty}",
-    "explanation": "Qisqa va tushunarli izoh"
-  }
-]`;
-
-      let contents: any;
-      if (imagePart) {
-        contents = { parts: [imagePart, { text: systemPromptText }] };
-      } else {
-        contents = systemPromptText;
-      }
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
-        contents,
-      });
-
-      const responseText = response.text || '';
-      const cleanText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
-
-      if (jsonMatch) {
-        let parsedQuestions: any[] = JSON.parse(jsonMatch[0]);
-        const generatedQuestions: Question[] = parsedQuestions.map((q, idx) => {
-          const opts = Array.isArray(q.options) && q.options.length >= 2
-            ? q.options
-            : ['Variant A', 'Variant B', 'Variant C', 'Variant D'];
-
-          let correct = q.correctAnswer || opts[0];
-          if (!opts.includes(correct)) {
-            correct = opts[0];
-          }
-
-          return {
-            id: `ai_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-            text: q.text || `Savol ${idx + 1}`,
-            options: opts,
-            correctAnswer: correct,
-            timeLimit: Number(q.timeLimit) || (reqDifficulty === 'Qiyin' ? 45 : reqDifficulty === 'Oson' ? 20 : 30),
-            category: q.category || topic || 'Umumiy',
-            difficulty: reqDifficulty,
-            explanation: q.explanation || '',
-          };
-        });
-
-        return res.json({ success: true, questions: generatedQuestions });
-      }
-    } catch (err: any) {
-      console.warn('Gemini API call warning/fallback triggered:', err?.message || err);
-    }
-  }
-
-  const fallbackQuestions = generateTopicQuestionsFallback(topic, userPrompt, count || 10, reqDifficulty);
-  return res.json({ success: true, questions: fallbackQuestions, isFallback: true });
-});
-
 // REST API: Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeGames: Object.keys(games).length });
@@ -329,7 +143,7 @@ app.get('/api/health', (req, res) => {
 
 // Socket.io Real-Time Event Handlers
 io.on('connection', (socket: Socket) => {
-  console.log(`🔌 Yangi ulanish: ${socket.id}`);
+  console.log(`рџ”Њ Yangi ulanish: ${socket.id}`);
 
   // Create game
   socket.on('create_game', (callback) => {
@@ -414,7 +228,7 @@ io.on('connection', (socket: Socket) => {
     if (game.phase !== 'LOBBY' && game.phase !== 'TEAMS_SETUP') {
       io.to(cleanPin).emit('notification', {
         type: 'warning',
-        text: `🔔 Yangi o'quvchi (${cleanName}) ulandi! O'yin boshlanganligi sababli u kutish zalida.`,
+        text: `рџ”” Yangi o'quvchi (${cleanName}) ulandi! O'yin boshlanganligi sababli u kutish zalida.`,
       });
     } else {
       io.to(cleanPin).emit('notification', {
@@ -601,7 +415,7 @@ io.on('connection', (socket: Socket) => {
     broadcastGameState(pin);
     io.to(pin).emit('notification', {
       type: 'warning',
-      text: `🔊 ${team.name} jamoasidan ${reason || 'shovqin qilgani uchun'} -${penalty} ball olindi! Joriy ball: ${team.score}`,
+      text: `рџ”Љ ${team.name} jamoasidan ${reason || 'shovqin qilgani uchun'} -${penalty} ball olindi! Joriy ball: ${team.score}`,
     });
   });
 
@@ -781,7 +595,7 @@ io.on('connection', (socket: Socket) => {
       team.isEliminated = true;
       io.to(pin).emit('notification', {
         type: 'warning',
-        text: `⚠️ ${team.name} jamoasining bali 0 ga tushib qoldi va avtomatik ravishda o'yindan chiqdi!`,
+        text: `вљ пёЏ ${team.name} jamoasining bali 0 ga tushib qoldi va avtomatik ravishda o'yindan chiqdi!`,
       });
     }
 
@@ -994,13 +808,13 @@ io.on('connection', (socket: Socket) => {
     broadcastGameState(pin);
     io.to(pin).emit('notification', {
       type: 'success',
-      text: `💬 ${student.name} o'yin haqida fikr bildirdi!`,
+      text: `рџ’¬ ${student.name} o'yin haqida fikr bildirdi!`,
     });
   });
 
   // Disconnect
   socket.on('disconnect', () => {
-    console.log(`❌ Ulanish uzildi: ${socket.id}`);
+    console.log(`вќЊ Ulanish uzildi: ${socket.id}`);
     const pin = socketPinMap[socket.id];
     if (pin) {
       const game = games[pin];
@@ -1028,5 +842,5 @@ io.on('connection', (socket: Socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Raqamli Viktorina Backend Serveri ishga tushdi: http://localhost:${PORT}`);
+  console.log(`рџљЂ Raqamli Viktorina Backend Serveri ishga tushdi: http://localhost:${PORT}`);
 });

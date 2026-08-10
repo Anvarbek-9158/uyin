@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { GameSession, Question, Student, Team } from '../types';
 import { Leaderboard } from './Leaderboard';
-import { GeminiAiModal } from './GeminiAiModal';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import {
@@ -13,7 +12,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Sparkles,
   Award,
   Crown,
   Trash2,
@@ -43,7 +41,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 }) => {
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [isOptionless, setIsOptionless] = useState(false);
   const [newOptA, setNewOptA] = useState('');
@@ -983,14 +980,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             )}
 
             <button
-              onClick={() => setIsAiModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(79,70,229,0.3)]"
-            >
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              AI Bilan Generatsiya Qilish
-            </button>
-
-            <button
               onClick={() => setShowAddQuestion(!showAddQuestion)}
               className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
             >
@@ -1346,15 +1335,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         questions={questions}
         onSelectQuestion={(originalIndex) => {
           socket?.emit('start_betting_phase', originalIndex);
-        }}
-      />
-
-      {/* Gemini AI Modal */}
-      <GeminiAiModal
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-        onQuestionsGenerated={(newQs) => {
-          socket?.emit('set_questions', newQs);
         }}
       />
 

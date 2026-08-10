@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { GameSession, Question, Student, Team } from '../types';
 import { Leaderboard } from './Leaderboard';
-import { GeminiAiModal } from './GeminiAiModal';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import {
@@ -14,7 +13,6 @@ import {
   XCircle,
   HelpCircle,
   Clock,
-  Sparkles,
   Award,
   Crown,
   Trash2,
@@ -47,7 +45,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 }) => {
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [isOptionless, setIsOptionless] = useState(false);
   const [newOptA, setNewOptA] = useState('');
@@ -131,7 +128,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       return;
     }
 
-    socket?.emit('update_pin', { newPin: cleanPin }, (res) => {
+    socket?.emit('update_pin', { newPin: cleanPin }, (res: { success: boolean; pin?: string; message?: string }) => {
       if (res?.success) {
         setIsEditingPin(false);
         setCustomPinInput('');
@@ -912,19 +909,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               Savollar Bazasi va Boshqarish ({questions.length} ta)
             </h3>
             <p className="text-xs text-slate-400 mt-1">
-              Savollarni AI (Gemini) orqali yaratishingiz yoki o'zingiz qo'lda qo'shishingiz hamda qiyinchilik darajalari bo'yicha saralashingiz mumkin.
+              Savollarni o'zingiz qo'lda qo'shishingiz hamda qiyinchilik darajalari bo'yicha saralashingiz mumkin.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setIsAiModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>AI Bilan Generatsiya</span>
-            </button>
-
             <button
               onClick={() => setShowAddQuestion(!showAddQuestion)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
@@ -1233,15 +1222,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           </div>
         </div>
       )}
-
-      {/* AI GENERATION MODAL */}
-      <GeminiAiModal
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-        onQuestionsGenerated={(newQuestions) => {
-          socket?.emit('set_questions', [...questions, ...newQuestions]);
-        }}
-      />
 
       {/* QUESTION SELECTION MODAL BEFORE ROUND */}
       <QuestionSelectModal

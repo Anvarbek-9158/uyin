@@ -14,7 +14,6 @@ npm install
 Alohida `.env` fayl yarating va kerakli kalitlarni kiritishingiz mumkin:
 ```env
 PORT=3000
-GEMINI_API_KEY=sizning_gemini_api_kalitingiz
 ```
 
 ### 3. Serverni ishlab chiqish (Dev) rejimida indatish:
@@ -32,5 +31,4 @@ npm start
 ## 🛠 Impotant Xususiyatlar
 - **Real-time Socket.IO**: Barcha o'quvchilar va o'qituvchi o'rtasida real-vaqt rejimida tezkor va ishonchli aloqa.
 - **Persistent Questions DB**: Yaratilgan yoki tahrirlangan savollar `questions_db.json` faylida xavfsiz saqlanadi.
-- **Gemini AI API Intergration**: AI yordamida har qanday fandan avtomatik testlar va darslik rasmidan savollar generatsiya qilish.
 - **CORS sozlamalari**: Frontend boshqa domenda (masalan Netlify, Vercel yoki alohida serverda) joylashsa ham bemalol ulanadi.
