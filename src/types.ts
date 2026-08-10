@@ -1,5 +1,5 @@
 export interface Student {
-  id: string; // Socket ID or unique student ID
+  id: string; // Client ID (UUID from localStorage)
   name: string;
   pin: string;
   teamId: string | null;
@@ -20,7 +20,7 @@ export interface Team {
   name: string;
   color: string;
   score: number;
-  leaderSocketId: string | null;
+  leaderClientId: string | null;
   memberIds: string[];
   currentBet: number | null;
   currentAnswer: string | null;
@@ -62,9 +62,9 @@ export interface StudentFeedback {
 
 export interface GameSession {
   pin: string;
-  teacherSocketId: string;
+  teacherClientId: string;
   phase: GamePhase;
-  students: Record<string, Student>; // socketId -> Student
+  students: Record<string, Student>; // clientId -> Student
   teams: Record<string, Team>;       // teamId -> Team
   questions: Question[];
   currentQuestionIndex: number;
@@ -75,50 +75,22 @@ export interface GameSession {
   createdAt: number;
 }
 
-// Socket Events Payload Types
-export interface ServerToClientEvents {
-  game_state: (state: GameSession) => void;
-  timer_tick: (seconds: number) => void;
-  phase_changed: (phase: GamePhase) => void;
-  error_message: (message: string) => void;
-  kicked_out: (reason: string) => void;
-  notification: (data: { type: 'success' | 'info' | 'warning'; text: string }) => void;
-  answer_submitted: (data: { teamId: string; teamName: string }) => void;
-  bet_placed: (data: { teamId: string; bet: number }) => void;
-  feedback_received: (feedback: StudentFeedback) => void;
+// Pusher Channels Event Payload Types
+export interface GameChannelEvents {
+  game_state: GameSession;
+  timer_tick: number;
+  notification: { type: 'success' | 'info' | 'warning'; text: string };
+  answer_submitted: { teamId: string; teamName: string };
+  bet_placed: { teamId: string; bet: number };
+  kicked_out: string;
+  error_message: string;
 }
 
-export interface ClientToServerEvents {
-  // Teacher actions
-  create_game: (callback?: (response: { success: boolean; pin?: string; error?: string }) => void) => void;
-  create_team: (data: { name: string; color?: string }) => void;
-  delete_team: (data: { teamId: string }) => void;
-  assign_student: (data: { studentId: string; teamId: string | null }) => void;
-  bulk_assign_students: (data: { studentIds: string[]; teamId: string | null }) => void;
-  kick_student: (data: { studentId: string }) => void;
-  set_team_leader: (data: { studentId: string; teamId: string }) => void;
-  penalize_team: (data: { teamId: string; points: number; reason?: string }) => void;
-  set_questions: (questions: Question[]) => void;
-  set_game_phase: (phase: GamePhase) => void;
-  start_betting_phase: (questionIndex: number) => void;
-  start_answering_phase: () => void;
-  stop_answering_phase: () => void;
-  grade_team_answer: (data: { teamId: string; isCorrect: boolean }) => void;
-  finish_round: () => void;
-  next_question: () => void;
-  reset_game: () => void;
-  reset_game_keep_teams: () => void;
-  update_pin: (
-    data: { newPin: string },
-    callback?: (response: { success: boolean; pin?: string; message?: string }) => void
-  ) => void;
-
-  // Student actions
-  join_game: (
-    data: { pin: string; name: string },
-    callback?: (response: { success: boolean; studentId?: string; message?: string }) => void
-  ) => void;
-  place_bet: (data: { bet: number }) => void;
-  submit_answer: (data: { answer: string }) => void;
-  submit_feedback: (data: { rating: 'Yaxshi' | 'Yomon' | "A'lo"; comment: string }) => void;
+// REST API response payloads (subset shared across endpoints)
+export interface ApiResponse {
+  success: boolean;
+  message?: string;
+  pin?: string;
+  studentId?: string;
+  game?: GameSession;
 }

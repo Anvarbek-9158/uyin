@@ -1,24 +1,30 @@
+import 'dotenv/config';
 import express from 'express';
-import { createServer } from 'http';
 import path from 'path';
 import fs from 'fs';
-import { Server, Socket } from 'socket.io';
+import Pusher from 'pusher';
 import { createServer as createViteServer } from 'vite';
 import {
   GameSession,
   Question,
   Student,
   Team,
-  ClientToServerEvents,
-  ServerToClientEvents,
+  GamePhase,
 } from './src/types.js';
 import { DEFAULT_QUESTIONS } from './src/data/defaultQuestions.js';
 
 const app = express();
-const httpServer = createServer(app);
 const PORT = 3000;
 
 app.use(express.json());
+
+// Pusher Channels instance
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID || '2185025',
+  key: process.env.PUSHER_KEY || '307958d4cd4d6d38e210',
+  secret: process.env.PUSHER_SECRET || '4427b2ff1430ab587020',
+  cluster: process.env.PUSHER_CLUSTER || 'ap2',
+});
 
 // Persistent Questions File Storage
 const QUESTIONS_FILE_PATH = path.join(process.cwd(), 'questions_db.json');
@@ -46,20 +52,14 @@ function saveQuestionsToFile(questions: Question[]) {
   }
 }
 
-// Initialize Socket.io
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
-
 // In-Memory Games Repository
 // Key: 6-digit PIN code -> GameSession
 const games: Record<string, GameSession> = {};
-// Map socket ID -> PIN code
-const socketPinMap: Record<string, string> = {};
-// Map socket ID -> Timer Interval
+// Map client ID -> PIN code (teachers only)
+const teacherPinMap: Record<string, string> = {};
+// Map client ID -> PIN code (students only)
+const studentPinMap: Record<string, string> = {};
+// Map PIN -> Timer Interval
 const gameTimers: Record<string, NodeJS.Timeout> = {};
 
 // Helper: Generate unique 6-digit PIN
@@ -83,11 +83,20 @@ const TEAM_COLORS = [
   '#f97316', // Orange
 ];
 
-// Helper: Broadcast game state to room
+// Helper: Trigger an event on a game channel via Pusher
+function emitToGame(pin: string, event: string, data: unknown) {
+  pusher
+    .trigger(`game-${pin}`, event, data)
+    .catch((err) => {
+      console.error(`Pusher trigger error (${event} -> ${pin}):`, err);
+    });
+}
+
+// Helper: Broadcast game state to game channel
 function broadcastGameState(pin: string) {
   const game = games[pin];
   if (game) {
-    io.to(pin).emit('game_state', game);
+    emitToGame(pin, 'game_state', game);
   }
 }
 
@@ -118,15 +127,15 @@ function startQuestionTimer(pin: string) {
     }
 
     games[pin].timerSeconds -= 1;
-    io.to(pin).emit('timer_tick', games[pin].timerSeconds);
+    emitToGame(pin, 'timer_tick', games[pin].timerSeconds);
 
     if (games[pin].timerSeconds <= 0) {
       stopTimer(pin);
       games[pin].phase = 'GRADING';
       broadcastGameState(pin);
-      io.to(pin).emit('notification', {
+      emitToGame(pin, 'notification', {
         type: 'warning',
-        text: 'Vaqt tugadi! Javoblar qabul qilish to\'xtatildi.',
+        text: `Vaqt tugadi! Javoblar qabul qilish to'xtatildi.`,
       });
     }
   }, 1000);
@@ -137,184 +146,264 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', activeGames: Object.keys(games).length });
 });
 
-// Socket.io Real-Time Connection Handling
-io.on('connection', (socket: Socket) => {
-  console.log(`рџ”Њ Yangi ulanish: ${socket.id}`);
+// ============================================================
+// REST API + Pusher Channels (Socket.io replaced)
+// ============================================================
 
-  // 1. TEACHER: Create new game session (or reset)
-  socket.on('create_game', (callback) => {
-    // Generate fresh unique 6-digit PIN
-    const pin = generateUniquePin();
+// Helper: Get teacher's game (validates client is the game host)
+function getTeacherGame(clientId: string): { pin: string; game: GameSession } | null {
+  const pin = teacherPinMap[clientId];
+  const game = games[pin];
+  if (!game || game.teacherClientId !== clientId) return null;
+  return { pin, game };
+}
 
-    // Clean up old game if socket was host elsewhere
-    const oldPin = socketPinMap[socket.id];
-    if (oldPin && games[oldPin]) {
-      io.to(oldPin).emit('kicked_out', 'Parolni xato kiritdingiz');
-      io.to(oldPin).emit('error_message', 'Parolni xato kiritdingiz');
-      stopTimer(oldPin);
-      delete games[oldPin];
-      socket.leave(oldPin);
+// Helper: Get student's game by their clientId
+function getStudentGame(clientId: string): { pin: string; game: GameSession; student: Student } | null {
+  const pin = studentPinMap[clientId];
+  const game = games[pin];
+  const student = game?.students[clientId];
+  if (!game || !student) return null;
+  return { pin, game, student };
+}
+
+// 1. TEACHER: Create new game session (or reset)
+app.post('/api/create-game', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  if (!clientId) {
+    res.json({ success: false, message: 'clientId topilmadi!' });
+    return;
+  }
+
+  // Clean up old game if this client was host elsewhere
+  const oldPin = teacherPinMap[clientId];
+  if (oldPin && games[oldPin]) {
+    emitToGame(oldPin, 'kicked_out', 'Parolni xato kiritdingiz');
+    emitToGame(oldPin, 'error_message', 'Parolni xato kiritdingiz');
+    stopTimer(oldPin);
+    delete games[oldPin];
+  }
+
+  const pin = generateUniquePin();
+  const initialQuestions = loadSavedQuestions();
+  const newGame: GameSession = {
+    pin,
+    teacherClientId: clientId,
+    phase: 'LOBBY',
+    students: {},
+    teams: {},
+    questions: initialQuestions,
+    currentQuestionIndex: 0,
+    timerSeconds: initialQuestions[0]?.timeLimit || 30,
+    isTimerRunning: false,
+    maxScoreLimit: 500,
+    feedbacks: [],
+    createdAt: Date.now(),
+  };
+
+  games[pin] = newGame;
+  teacherPinMap[clientId] = pin;
+
+  console.log(`Yangi o'yin seansi yaratildi! PIN: ${pin}`);
+
+  broadcastGameState(pin);
+  res.json({ success: true, pin, game: newGame });
+});
+
+// 2. STUDENT: Join existing game via PIN & Name
+app.post('/api/join-game', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const pin = (req.body?.pin || '').toString().trim();
+  const name = (req.body?.name || '').toString().trim();
+
+  if (!clientId) {
+    res.json({ success: false, message: 'clientId topilmadi!' });
+    return;
+  }
+
+  const game = games[pin];
+  if (!game) {
+    res.json({
+      success: false,
+      message: `Bunday PIN-kodli faol o'yin topilmadi! Iltimos, o'qituvchidan PIN-kodni qayta surishtiring.`,
+    });
+    return;
+  }
+
+  // Check name collision in game
+  const existingStudent = Object.values(game.students).find(
+    (s) => s.name.toLowerCase() === name.toLowerCase()
+  );
+
+  let studentId = clientId;
+
+  if (existingStudent) {
+    // Reconnect student: remove the stale entry under the old client id
+    // so the same student is NOT duplicated in the game.
+    const oldId = existingStudent.id;
+    if (oldId && oldId !== clientId) {
+      delete game.students[oldId];
     }
-
-    const initialQuestions = loadSavedQuestions();
-    const newGame: GameSession = {
+    existingStudent.id = clientId;
+    existingStudent.connected = true;
+    game.students[clientId] = existingStudent;
+  } else {
+    // New student register
+    const newStudent: Student = {
+      id: clientId,
+      name,
       pin,
-      teacherSocketId: socket.id,
-      phase: 'LOBBY',
-      students: {},
-      teams: {},
-      questions: initialQuestions,
-      currentQuestionIndex: 0,
-      timerSeconds: initialQuestions[0]?.timeLimit || 30,
-      isTimerRunning: false,
-      maxScoreLimit: 500,
-      feedbacks: [],
-      createdAt: Date.now(),
+      teamId: null,
+      isLeader: false,
+      connected: true,
     };
+    game.students[clientId] = newStudent;
+  }
 
-    games[pin] = newGame;
-    socketPinMap[socket.id] = pin;
-    socket.join(pin);
+  studentPinMap[clientId] = pin;
 
-    console.log(`рџЋ® Yangi o'yin seansi yaratildi! PIN: ${pin}`);
+  if (game.phase !== 'LOBBY' && game.phase !== 'TEAMS_SETUP') {
+    emitToGame(pin, 'notification', {
+      type: 'warning',
+      text: `Yangi o'quvchi (${name}) ulandi! O'yin boshlanganligi sababli u kutish zalida.`,
+    });
+  } else {
+    emitToGame(pin, 'notification', {
+      type: 'info',
+      text: `${name} o'yinga qo'shildi!`,
+    });
+  }
 
-    if (callback) {
-      callback({ success: true, pin });
-    }
-    broadcastGameState(pin);
-  });
+  broadcastGameState(pin);
+  res.json({ success: true, studentId, game });
+});
 
-  // 2. STUDENT: Join existing game via PIN & Name
-  socket.on('join_game', ({ pin, name }, callback) => {
-    const cleanPin = pin ? pin.trim() : '';
-    const cleanName = name ? name.trim() : '';
+// 3. TEACHER: Create a Team
+app.post('/api/create-team', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
 
-    const game = games[cleanPin];
-    if (!game) {
-      if (callback) {
-        callback({
-          success: false,
-          message: 'Bunday PIN-kodli faol o\'yin topilmadi! Iltimos, o\'qituvchidan PIN-kodni qayta surishtiring.',
-        });
+  const { pin, game } = context;
+  const teamCount = Object.keys(game.teams).length;
+  const teamId = `team_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+  const teamColor = req.body?.color || TEAM_COLORS[teamCount % TEAM_COLORS.length];
+
+  const newTeam: Team = {
+    id: teamId,
+    name: req.body?.name || `Guruh ${teamCount + 1}`,
+    color: teamColor,
+    score: 100, // Initial score 100 points
+    leaderClientId: null,
+    memberIds: [],
+    currentBet: null,
+    currentAnswer: null,
+    answerSubmittedAt: null,
+    isEliminated: false,
+    lastResult: null,
+  };
+
+  game.teams[teamId] = newTeam;
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 4. TEACHER: Delete a Team
+app.post('/api/delete-team', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const team = game.teams[req.body?.teamId];
+  if (team) {
+    // Remove team assignment from students
+    team.memberIds.forEach((studentId) => {
+      if (game.students[studentId]) {
+        game.students[studentId].teamId = null;
+        game.students[studentId].isLeader = false;
       }
-      return;
-    }
-
-    // Check name collision in room
-    const existingStudent = Object.values(game.students).find(
-      (s) => s.name.toLowerCase() === cleanName.toLowerCase()
-    );
-
-    let studentId = socket.id;
-
-    if (existingStudent) {
-      // Reconnect student: remove the stale entry under the old socket id
-      // so the same student is NOT duplicated in the room.
-      const oldId = existingStudent.id;
-      if (oldId && oldId !== socket.id) {
-        delete game.students[oldId];
-      }
-      existingStudent.id = socket.id;
-      existingStudent.connected = true;
-      game.students[socket.id] = existingStudent;
-    } else {
-      // New student register
-      const newStudent: Student = {
-        id: socket.id,
-        name: cleanName,
-        pin: cleanPin,
-        teamId: null,
-        isLeader: false,
-        connected: true,
-      };
-      game.students[socket.id] = newStudent;
-    }
-
-    socketPinMap[socket.id] = cleanPin;
-    socket.join(cleanPin);
-
-    if (callback) {
-      callback({ success: true, studentId });
-    }
-
-    if (game.phase !== 'LOBBY' && game.phase !== 'TEAMS_SETUP') {
-      io.to(cleanPin).emit('notification', {
-        type: 'warning',
-        text: `рџ”” Yangi o'quvchi (${cleanName}) ulandi! O'yin boshlanganligi sababli u kutish zalida.`,
-      });
-    } else {
-      io.to(cleanPin).emit('notification', {
-        type: 'info',
-        text: `${cleanName} o'yinga qo'shildi!`,
-      });
-    }
-
-    broadcastGameState(cleanPin);
-  });
-
-  // 3. TEACHER: Create a Team
-  socket.on('create_team', ({ name, color }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    const teamCount = Object.keys(game.teams).length;
-    const teamId = `team_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-    const teamColor = color || TEAM_COLORS[teamCount % TEAM_COLORS.length];
-
-    const newTeam: Team = {
-      id: teamId,
-      name: name || `Guruh ${teamCount + 1}`,
-      color: teamColor,
-      score: 100, // Initial score 100 points
-      leaderSocketId: null,
-      memberIds: [],
-      currentBet: null,
-      currentAnswer: null,
-      answerSubmittedAt: null,
-      isEliminated: false,
-      lastResult: null,
-    };
-
-    game.teams[teamId] = newTeam;
+    });
+    delete game.teams[team.id];
     broadcastGameState(pin);
-  });
+  }
+  res.json({ success: true });
+});
 
-  // 4. TEACHER: Delete a Team
-  socket.on('delete_team', ({ teamId }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+// 5. TEACHER: Assign Student to Team
+app.post('/api/assign-student', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
 
-    const team = game.teams[teamId];
-    if (team) {
-      // Remove team assignment from students
-      team.memberIds.forEach((studentId) => {
-        if (game.students[studentId]) {
-          game.students[studentId].teamId = null;
-          game.students[studentId].isLeader = false;
-        }
-      });
-      delete game.teams[teamId];
-      broadcastGameState(pin);
+  const { pin, game } = context;
+  const studentId = req.body?.studentId;
+  const teamId = req.body?.teamId || null;
+  const student = game.students[studentId];
+  if (!student) {
+    res.json({ success: false });
+    return;
+  }
+
+  // Remove from previous team if any
+  if (student.teamId && game.teams[student.teamId]) {
+    const prevTeam = game.teams[student.teamId];
+    prevTeam.memberIds = prevTeam.memberIds.filter((id) => id !== studentId);
+    if (prevTeam.leaderClientId === studentId) {
+      prevTeam.leaderClientId = prevTeam.memberIds[0] || null;
     }
-  });
+  }
 
-  // 5. TEACHER: Assign Student to Team
-  socket.on('assign_student', ({ studentId, teamId }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+  student.teamId = teamId;
+  student.isLeader = false;
 
+  if (teamId && game.teams[teamId]) {
+    const targetTeam = game.teams[teamId];
+    if (!targetTeam.memberIds.includes(studentId)) {
+      targetTeam.memberIds.push(studentId);
+    }
+    // If team has no leader, assign this student as leader automatically
+    if (!targetTeam.leaderClientId) {
+      targetTeam.leaderClientId = studentId;
+      student.isLeader = true;
+    }
+  }
+
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 5b. TEACHER: Bulk Assign Students to Team
+app.post('/api/bulk-assign-students', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const studentIds: string[] = req.body?.studentIds || [];
+  const teamId = req.body?.teamId || null;
+
+  studentIds.forEach((studentId) => {
     const student = game.students[studentId];
     if (!student) return;
 
-    // Remove from previous team if any
     if (student.teamId && game.teams[student.teamId]) {
       const prevTeam = game.teams[student.teamId];
       prevTeam.memberIds = prevTeam.memberIds.filter((id) => id !== studentId);
-      if (prevTeam.leaderSocketId === studentId) {
-        prevTeam.leaderSocketId = prevTeam.memberIds[0] || null;
+      if (prevTeam.leaderClientId === studentId) {
+        prevTeam.leaderClientId = prevTeam.memberIds[0] || null;
       }
     }
 
@@ -326,145 +415,419 @@ io.on('connection', (socket: Socket) => {
       if (!targetTeam.memberIds.includes(studentId)) {
         targetTeam.memberIds.push(studentId);
       }
-      // If team has no leader, assign this student as leader automatically
-      if (!targetTeam.leaderSocketId) {
-        targetTeam.leaderSocketId = studentId;
+      if (!targetTeam.leaderClientId) {
+        targetTeam.leaderClientId = studentId;
         student.isLeader = true;
       }
     }
-
-    broadcastGameState(pin);
   });
 
-  // 5b. TEACHER: Bulk Assign Students to Team
-  socket.on('bulk_assign_students', ({ studentIds, teamId }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id || !Array.isArray(studentIds)) return;
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
 
-    studentIds.forEach((studentId) => {
-      const student = game.students[studentId];
-      if (!student) return;
+// 5c. TEACHER: Kick / Remove student from game
+app.post('/api/kick-student', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
 
-      if (student.teamId && game.teams[student.teamId]) {
-        const prevTeam = game.teams[student.teamId];
-        prevTeam.memberIds = prevTeam.memberIds.filter((id) => id !== studentId);
-        if (prevTeam.leaderSocketId === studentId) {
-          prevTeam.leaderSocketId = prevTeam.memberIds[0] || null;
-        }
-      }
+  const { pin, game } = context;
+  const studentId = req.body?.studentId;
+  const student = game.students[studentId];
+  if (!student) {
+    res.json({ success: false });
+    return;
+  }
 
-      student.teamId = teamId;
-      student.isLeader = false;
-
-      if (teamId && game.teams[teamId]) {
-        const targetTeam = game.teams[teamId];
-        if (!targetTeam.memberIds.includes(studentId)) {
-          targetTeam.memberIds.push(studentId);
-        }
-        if (!targetTeam.leaderSocketId) {
-          targetTeam.leaderSocketId = studentId;
-          student.isLeader = true;
-        }
-      }
-    });
-
-    broadcastGameState(pin);
-  });
-
-  // 5c. TEACHER: Kick / Remove student from game
-  socket.on('kick_student', ({ studentId }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    const student = game.students[studentId];
-    if (!student) return;
-
-    if (student.teamId && game.teams[student.teamId]) {
-      const team = game.teams[student.teamId];
-      team.memberIds = team.memberIds.filter((id) => id !== studentId);
-      if (team.leaderSocketId === studentId) {
-        team.leaderSocketId = team.memberIds[0] || null;
-      }
+  if (student.teamId && game.teams[student.teamId]) {
+    const team = game.teams[student.teamId];
+    team.memberIds = team.memberIds.filter((id) => id !== studentId);
+    if (team.leaderClientId === studentId) {
+      team.leaderClientId = team.memberIds[0] || null;
     }
+  }
 
-    delete game.students[studentId];
-    broadcastGameState(pin);
-  });
+  delete game.students[studentId];
+  delete studentPinMap[studentId];
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
 
-  // 6. TEACHER: Set explicit Team Leader
-  socket.on('set_team_leader', ({ studentId, teamId }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+// 6. TEACHER: Set explicit Team Leader
+app.post('/api/set-team-leader', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
 
-    const team = game.teams[teamId];
-    if (!team) return;
+  const { pin, game } = context;
+  const studentId = req.body?.studentId;
+  const teamId = req.body?.teamId;
+  const team = game.teams[teamId];
+  if (!team) {
+    res.json({ success: false });
+    return;
+  }
 
-    // Unset current leader in team
-    team.memberIds.forEach((id) => {
-      if (game.students[id]) {
-        game.students[id].isLeader = id === studentId;
-      }
-    });
-
-    team.leaderSocketId = studentId;
-    broadcastGameState(pin);
-  });
-
-  // 6b. TEACHER: Penalize Team (-5 points for noise/disruption)
-  socket.on('penalize_team', ({ teamId, points, reason }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    const team = game.teams[teamId];
-    if (!team) return;
-
-    const penalty = points || 5;
-    team.score = Math.max(0, team.score - penalty);
-    if (team.score <= 0) {
-      team.isEliminated = true;
+  // Unset current leader in team
+  team.memberIds.forEach((id) => {
+    if (game.students[id]) {
+      game.students[id].isLeader = id === studentId;
     }
+  });
 
-    broadcastGameState(pin);
-    io.to(pin).emit('notification', {
+  team.leaderClientId = studentId;
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 6b. TEACHER: Penalize Team (-5 points for noise/disruption)
+app.post('/api/penalize-team', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const team = game.teams[req.body?.teamId];
+  if (!team) {
+    res.json({ success: false });
+    return;
+  }
+
+  const penalty = req.body?.points || 5;
+  team.score = Math.max(0, team.score - penalty);
+  if (team.score <= 0) {
+    team.isEliminated = true;
+  }
+
+  broadcastGameState(pin);
+  emitToGame(pin, 'notification', {
+    type: 'warning',
+    text: `${team.name} jamoasidan ${req.body?.reason || 'shovqin qilgani uchun'} -${penalty} ball olindi! Joriy ball: ${team.score}`,
+  });
+  res.json({ success: true });
+});
+
+// 7. TEACHER: Set Question Database
+app.post('/api/set-questions', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const questions: Question[] = req.body?.questions || [];
+  game.questions = questions;
+  game.currentQuestionIndex = 0;
+  game.timerSeconds = questions[0]?.timeLimit || 30;
+  saveQuestionsToFile(questions);
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 8. TEACHER: Start Betting Phase for a Question
+app.post('/api/start-betting-phase', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  stopTimer(pin);
+
+  const questionIndex = req.body?.questionIndex;
+  const qIndex = typeof questionIndex === 'number' && questionIndex >= 0 && questionIndex < game.questions.length
+    ? questionIndex
+    : (game.currentQuestionIndex || 0);
+
+  game.currentQuestionIndex = qIndex;
+  const currentQ = game.questions[qIndex];
+  game.timerSeconds = currentQ?.timeLimit || 30;
+  game.phase = 'BETTING';
+
+  // Reset current bets and answers for all non-eliminated teams
+  Object.values(game.teams).forEach((team) => {
+    team.currentBet = null;
+    team.currentAnswer = null;
+    team.answerSubmittedAt = null;
+    team.lastResult = null;
+  });
+
+  broadcastGameState(pin);
+  emitToGame(pin, 'notification', {
+    type: 'info',
+    text: 'Savol ekranga chiqdi! Jamoalar ball tikishni boshlang.',
+  });
+  res.json({ success: true });
+});
+
+// 9. TEAM LEADER: Place Bet
+app.post('/api/place-bet', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getStudentGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: `Siz o'yinga ulanmagansiz!` });
+    return;
+  }
+
+  const { pin, game, student } = context;
+  if (game.phase !== 'BETTING') {
+    res.json({ success: false, message: 'Hozir ball tikish vaqti emas!' });
+    return;
+  }
+
+  if (!student.teamId || !student.isLeader) {
+    res.json({ success: false, message: `Faqat Guruh Boshlig'i (Sardor) ball tika oladi!` });
+    return;
+  }
+
+  const team = game.teams[student.teamId];
+  if (!team || team.isEliminated) {
+    res.json({ success: false, message: `Sizning jamoangiz o'yindan chiqqan!` });
+    return;
+  }
+
+  const numericBet = Math.floor(Number(req.body?.bet));
+  if (isNaN(numericBet) || numericBet < 1 || numericBet > team.score) {
+    res.json({
+      success: false,
+      message: `Tikiladigan ball 1 va jamoaning mavjud bali (${team.score}) oralig'ida bo'lishi shart!`,
+    });
+    return;
+  }
+
+  team.currentBet = numericBet;
+  broadcastGameState(pin);
+
+  emitToGame(pin, 'bet_placed', { teamId: team.id, bet: numericBet });
+  emitToGame(pin, 'notification', {
+    type: 'success',
+    text: `${team.name} jamoasi ${numericBet} ball tikdi!`,
+  });
+  res.json({ success: true });
+});
+
+// 10. TEACHER: Click "Boshlash" to enable answering & timer
+app.post('/api/start-answering-phase', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
+  const unbetTeams = activeTeams.filter((t) => t.currentBet === null);
+
+  if (activeTeams.length > 0 && unbetTeams.length > 0) {
+    res.json({
+      success: false,
+      message: `Hali barcha guruhlar ball tikmadi! (${activeTeams.length - unbetTeams.length}/${activeTeams.length} guruh tikdi)`,
+    });
+    return;
+  }
+
+  const currentQ = game.questions[game.currentQuestionIndex];
+  game.timerSeconds = currentQ?.timeLimit || 30;
+  game.phase = 'ANSWERING';
+
+  broadcastGameState(pin);
+  startQuestionTimer(pin);
+
+  emitToGame(pin, 'notification', {
+    type: 'info',
+    text: `O'qituvchi taymerni boshladi! Guruh sardorlari javob kiritishi mumkin!`,
+  });
+  res.json({ success: true });
+});
+
+// 11. TEACHER: Manually Stop Answering Phase
+app.post('/api/stop-answering-phase', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  stopTimer(pin);
+  game.phase = 'GRADING';
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 12. TEAM LEADER: Submit Answer
+app.post('/api/submit-answer', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getStudentGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: `Siz o'yinga ulanmagansiz!` });
+    return;
+  }
+
+  const { pin, game, student } = context;
+  if (game.phase !== 'ANSWERING') {
+    res.json({ success: false, message: 'Hozir javob yuborish vaqti emas yoki javoblar yopiq!' });
+    return;
+  }
+
+  if (!student.teamId || !student.isLeader) {
+    res.json({ success: false, message: `Faqat Guruh Boshlig'i (Sardor) javob yubora oladi!` });
+    return;
+  }
+
+  const team = game.teams[student.teamId];
+  if (!team || team.isEliminated) {
+    res.json({ success: false, message: `Sizning jamoangiz o'yindan chiqqan!` });
+    return;
+  }
+
+  if (team.currentBet === null) {
+    res.json({ success: false, message: 'Javob berishdan oldin ball tikish shart edi!' });
+    return;
+  }
+
+  team.currentAnswer = (req.body?.answer || '').trim();
+  team.answerSubmittedAt = Date.now();
+
+  broadcastGameState(pin);
+  emitToGame(pin, 'answer_submitted', { teamId: team.id, teamName: team.name });
+  emitToGame(pin, 'notification', {
+    type: 'success',
+    text: `${team.name} javob yubordi!`,
+  });
+  res.json({ success: true });
+});
+
+// 13. TEACHER: Grade/Evaluate Team Answer
+app.post('/api/grade-team-answer', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  const team = game.teams[req.body?.teamId];
+  if (!team || team.currentBet === null) {
+    res.json({ success: false });
+    return;
+  }
+
+  const isCorrect = req.body?.isCorrect === true;
+  const bet = team.currentBet;
+  const pointsDelta = isCorrect ? bet : -bet;
+  const currentQ = game.questions[game.currentQuestionIndex];
+
+  team.score += pointsDelta;
+  team.lastResult = {
+    isCorrect,
+    pointsDelta,
+    bet,
+    answer: team.currentAnswer || '(Javob berilmadi)',
+    correctAnswer: currentQ?.correctAnswer || '',
+  };
+
+  // Check elimination rule (Score <= 0)
+  if (team.score <= 0) {
+    team.score = 0;
+    team.isEliminated = true;
+    emitToGame(pin, 'notification', {
       type: 'warning',
-      text: `рџ”Љ ${team.name} jamoasidan ${reason || 'shovqin qilgani uchun'} -${penalty} ball olindi! Joriy ball: ${team.score}`,
+      text: `${team.name} jamoasining bali 0 ga tushib qoldi va avtomatik ravishda o'yindan chiqdi!`,
     });
-  });
+  }
 
-  // 7. TEACHER: Set Question Database
-  socket.on('set_questions', (questions) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
 
-    game.questions = questions;
-    game.currentQuestionIndex = 0;
-    game.timerSeconds = questions[0]?.timeLimit || 30;
-    saveQuestionsToFile(questions);
-    broadcastGameState(pin);
-  });
+// 14. TEACHER: Finish Round & Show Round Standings
+app.post('/api/finish-round', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
 
-  // 8. TEACHER: Start Betting Phase for a Question
-  socket.on('start_betting_phase', (questionIndex) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+  const { pin, game } = context;
+  // Auto-grade remaining un-graded teams against current question's correct answer if options match
+  const currentQ = game.questions[game.currentQuestionIndex];
+  if (currentQ) {
+    Object.values(game.teams).forEach((team) => {
+      if (!team.isEliminated && team.currentBet !== null && team.lastResult === null) {
+        const isMatch =
+          team.currentAnswer &&
+          team.currentAnswer.trim().toLowerCase() ===
+            currentQ.correctAnswer.trim().toLowerCase();
+        const bet = team.currentBet;
+        const pointsDelta = isMatch ? bet : -bet;
 
-    stopTimer(pin);
-    const qIndex = typeof questionIndex === 'number' && questionIndex >= 0 && questionIndex < game.questions.length
-      ? questionIndex
-      : (game.currentQuestionIndex || 0);
+        team.score += pointsDelta;
+        team.lastResult = {
+          isCorrect: !!isMatch,
+          pointsDelta,
+          bet,
+          answer: team.currentAnswer || '(Javob berilmadi)',
+          correctAnswer: currentQ.correctAnswer,
+        };
 
-    game.currentQuestionIndex = qIndex;
-    const currentQ = game.questions[qIndex];
-    game.timerSeconds = currentQ?.timeLimit || 30;
+        if (team.score <= 0) {
+          team.score = 0;
+          team.isEliminated = true;
+        }
+      }
+    });
+  }
+
+  // Check if game is over (only 1 non-eliminated team left or all questions completed)
+  const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
+  if (
+    activeTeams.length <= 1 ||
+    game.currentQuestionIndex >= game.questions.length - 1
+  ) {
+    game.phase = 'GAME_OVER';
+  } else {
+    game.phase = 'ROUND_RESULT';
+  }
+
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 15. TEACHER: Next Question
+app.post('/api/next-question', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  if (game.currentQuestionIndex < game.questions.length - 1) {
+    const nextIdx = game.currentQuestionIndex + 1;
+    game.currentQuestionIndex = nextIdx;
+    game.timerSeconds = game.questions[nextIdx]?.timeLimit || 30;
     game.phase = 'BETTING';
 
-    // Reset current bets and answers for all non-eliminated teams
     Object.values(game.teams).forEach((team) => {
       team.currentBet = null;
       team.currentAnswer = null;
@@ -473,416 +836,188 @@ io.on('connection', (socket: Socket) => {
     });
 
     broadcastGameState(pin);
-    io.to(pin).emit('notification', {
-      type: 'info',
-      text: 'Savol ekranga chiqdi! Jamoalar ball tikishni boshlang.',
-    });
-  });
-
-  // 9. TEAM LEADER: Place Bet
-  socket.on('place_bet', ({ bet }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.phase !== 'BETTING') return;
-
-    const student = game.students[socket.id];
-    if (!student || !student.teamId || !student.isLeader) {
-      socket.emit('error_message', 'Faqat Guruh Boshlig\'i (Sardor) ball tika oladi!');
-      return;
-    }
-
-    const team = game.teams[student.teamId];
-    if (!team || team.isEliminated) {
-      socket.emit('error_message', 'Sizning jamoangiz o\'yindan chiqqan!');
-      return;
-    }
-
-    const numericBet = Math.floor(Number(bet));
-    if (isNaN(numericBet) || numericBet < 1 || numericBet > team.score) {
-      socket.emit(
-        'error_message',
-        `Tikiladigan ball 1 va jamoaning mavjud bali (${team.score}) oralig'ida bo'lishi shart!`
-      );
-      return;
-    }
-
-    team.currentBet = numericBet;
+  } else {
+    game.phase = 'GAME_OVER';
     broadcastGameState(pin);
+  }
+  res.json({ success: true });
+});
 
-    io.to(pin).emit('bet_placed', { teamId: team.id, bet: numericBet });
-    io.to(pin).emit('notification', {
-      type: 'success',
-      text: `${team.name} jamoasi ${numericBet} ball tikdi!`,
-    });
+// 16. TEACHER: Change Game Phase directly
+app.post('/api/set-game-phase', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  game.phase = (req.body?.phase as GamePhase) || game.phase;
+  broadcastGameState(pin);
+  res.json({ success: true });
+});
+
+// 17. TEACHER: Reset/Start New Game (Regenerate PIN)
+app.post('/api/reset-game', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const oldPin = teacherPinMap[clientId];
+
+  if (oldPin && games[oldPin]) {
+    emitToGame(oldPin, 'kicked_out', 'Parolni xato kiritdingiz');
+    emitToGame(oldPin, 'error_message', 'Parolni xato kiritdingiz');
+    stopTimer(oldPin);
+    delete games[oldPin];
+  }
+
+  // Generate NEW PIN Code
+  const newPin = generateUniquePin();
+  const resetQuestions = loadSavedQuestions();
+
+  const newGame: GameSession = {
+    pin: newPin,
+    teacherClientId: clientId,
+    phase: 'LOBBY',
+    students: {},
+    teams: {},
+    questions: resetQuestions,
+    currentQuestionIndex: 0,
+    timerSeconds: resetQuestions[0]?.timeLimit || 30,
+    isTimerRunning: false,
+    maxScoreLimit: 500,
+    feedbacks: [],
+    createdAt: Date.now(),
+  };
+
+  games[newPin] = newGame;
+  teacherPinMap[clientId] = newPin;
+
+  console.log(`Yangi o'yin boshlandi! Yangi PIN: ${newPin}`);
+  broadcastGameState(newPin);
+  res.json({ success: true, pin: newPin, game: newGame });
+});
+
+// 17b. TEACHER: Stop Game but KEEP Teams & Students
+app.post('/api/reset-game-keep-teams', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game } = context;
+  stopTimer(pin);
+  game.phase = 'TEAMS_SETUP';
+  game.currentQuestionIndex = 0;
+  game.timerSeconds = game.questions[0]?.timeLimit || 30;
+
+  Object.values(game.teams).forEach((team) => {
+    team.currentBet = null;
+    team.currentAnswer = null;
+    team.answerSubmittedAt = null;
+    team.lastResult = null;
+    team.isEliminated = false;
   });
 
-  // 10. TEACHER: Click "Boshlash" to enable answering & timer
-  socket.on('start_answering_phase', () => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
-    const unbetTeams = activeTeams.filter((t) => t.currentBet === null);
-
-    if (activeTeams.length > 0 && unbetTeams.length > 0) {
-      socket.emit('error_message', `Hali barcha guruhlar ball tikmadi! (${activeTeams.length - unbetTeams.length}/${activeTeams.length} guruh tikdi)`);
-      return;
-    }
-
-    const currentQ = game.questions[game.currentQuestionIndex];
-    game.timerSeconds = currentQ?.timeLimit || 30;
-    game.phase = 'ANSWERING';
-
-    broadcastGameState(pin);
-    startQuestionTimer(pin);
-
-    io.to(pin).emit('notification', {
-      type: 'info',
-      text: 'O\'qituvchi taymerni boshladi! Guruh sardorlari javob kiritishi mumkin!',
-    });
+  broadcastGameState(pin);
+  emitToGame(pin, 'notification', {
+    type: 'info',
+    text: `O'yin to'xtatildi! Barcha guruhlar va o'quvchilar saqlanib qolindi.`,
   });
+  res.json({ success: true });
+});
 
-  // 11. TEACHER: Manually Stop Answering Phase
-  socket.on('stop_answering_phase', () => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+// 18. TEACHER: Update PIN code / password manually
+app.post('/api/update-pin', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const cleanPin = (req.body?.newPin || '').toString().trim().toUpperCase();
+  if (!cleanPin || cleanPin.length !== 6) {
+    res.json({ success: false, message: `O'yin PIN-kodi (paroli) rosa 6 xonali bo'lishi shart!` });
+    return;
+  }
 
-    stopTimer(pin);
-    game.phase = 'GRADING';
-    broadcastGameState(pin);
-  });
+  const currentPin = teacherPinMap[clientId];
+  const game = games[currentPin];
+  if (!game || game.teacherClientId !== clientId) {
+    res.json({ success: false, message: `Faqat o'qituvchi PIN-kodni o'zgartira oladi!` });
+    return;
+  }
 
-  // 12. TEAM LEADER: Submit Answer
-  socket.on('submit_answer', ({ answer }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.phase !== 'ANSWERING') {
-      socket.emit('error_message', 'Hozir javob yuborish vaqti emas yoki javoblar yopiq!');
-      return;
-    }
+  if (cleanPin !== currentPin && games[cleanPin]) {
+    res.json({ success: false, message: 'Ushbu PIN-kod (parol) boshqa faol o\'yinda ishlatilmoqda!' });
+    return;
+  }
 
-    const student = game.students[socket.id];
-    if (!student || !student.teamId || !student.isLeader) {
-      socket.emit('error_message', 'Faqat Guruh Boshlig\'i (Sardor) javob yubora oladi!');
-      return;
-    }
+  if (cleanPin === currentPin) {
+    res.json({ success: true, pin: cleanPin, game });
+    return;
+  }
 
-    const team = game.teams[student.teamId];
-    if (!team || team.isEliminated) return;
+  // Notify connected students that PIN changed and kick them out
+  emitToGame(currentPin, 'kicked_out', 'Parolni xato kiritdingiz');
+  emitToGame(currentPin, 'error_message', 'Parolni xato kiritdingiz');
 
-    if (team.currentBet === null) {
-      socket.emit('error_message', 'Javob berishdan oldin ball tikish shart edi!');
-      return;
-    }
+  // Transfer game to new PIN key and clear student list so they re-authenticate
+  delete games[currentPin];
+  game.pin = cleanPin;
+  game.students = {};
+  games[cleanPin] = game;
 
-    team.currentAnswer = answer.trim();
-    team.answerSubmittedAt = Date.now();
-
-    broadcastGameState(pin);
-    io.to(pin).emit('answer_submitted', { teamId: team.id, teamName: team.name });
-    io.to(pin).emit('notification', {
-      type: 'success',
-      text: `${team.name} javob yubordi!`,
-    });
-  });
-
-  // 13. TEACHER: Grade/Evaluate Team Answer
-  socket.on('grade_team_answer', ({ teamId, isCorrect }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    const team = game.teams[teamId];
-    if (!team || team.currentBet === null) return;
-
-    const bet = team.currentBet;
-    const pointsDelta = isCorrect ? bet : -bet;
-    const currentQ = game.questions[game.currentQuestionIndex];
-
-    team.score += pointsDelta;
-    team.lastResult = {
-      isCorrect,
-      pointsDelta,
-      bet,
-      answer: team.currentAnswer || '(Javob berilmadi)',
-      correctAnswer: currentQ?.correctAnswer || '',
-    };
-
-    // Check elimination rule (Score <= 0)
-    if (team.score <= 0) {
-      team.score = 0;
-      team.isEliminated = true;
-      io.to(pin).emit('notification', {
-        type: 'warning',
-        text: `вљ пёЏ ${team.name} jamoasining bali 0 ga tushib qoldi va avtomatik ravishda o'yindan chiqdi!`,
-      });
-    }
-
-    broadcastGameState(pin);
-  });
-
-  // 14. TEACHER: Finish Round & Show Round Standings
-  socket.on('finish_round', () => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    // Auto-grade remaining un-graded teams against current question's correct answer if options match
-    const currentQ = game.questions[game.currentQuestionIndex];
-    if (currentQ) {
-      Object.values(game.teams).forEach((team) => {
-        if (!team.isEliminated && team.currentBet !== null && team.lastResult === null) {
-          const isMatch =
-            team.currentAnswer &&
-            team.currentAnswer.trim().toLowerCase() ===
-              currentQ.correctAnswer.trim().toLowerCase();
-          const bet = team.currentBet;
-          const pointsDelta = isMatch ? bet : -bet;
-
-          team.score += pointsDelta;
-          team.lastResult = {
-            isCorrect: !!isMatch,
-            pointsDelta,
-            bet,
-            answer: team.currentAnswer || '(Javob berilmadi)',
-            correctAnswer: currentQ.correctAnswer,
-          };
-
-          if (team.score <= 0) {
-            team.score = 0;
-            team.isEliminated = true;
-          }
-        }
-      });
-    }
-
-    // Check if game is over (only 1 non-eliminated team left or all questions completed)
-    const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
-    if (
-      activeTeams.length <= 1 ||
-      game.currentQuestionIndex >= game.questions.length - 1
-    ) {
-      game.phase = 'GAME_OVER';
-    } else {
-      game.phase = 'ROUND_RESULT';
-    }
-
-    broadcastGameState(pin);
-  });
-
-  // 15. TEACHER: Next Question
-  socket.on('next_question', () => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    if (game.currentQuestionIndex < game.questions.length - 1) {
-      const nextIdx = game.currentQuestionIndex + 1;
-      game.currentQuestionIndex = nextIdx;
-      game.timerSeconds = game.questions[nextIdx]?.timeLimit || 30;
-      game.phase = 'BETTING';
-
-      Object.values(game.teams).forEach((team) => {
-        team.currentBet = null;
-        team.currentAnswer = null;
-        team.answerSubmittedAt = null;
-        team.lastResult = null;
-      });
-
-      broadcastGameState(pin);
-    } else {
-      game.phase = 'GAME_OVER';
-      broadcastGameState(pin);
+  // Clear student pin mappings for the old game
+  Object.keys(studentPinMap).forEach((id) => {
+    if (studentPinMap[id] === currentPin) {
+      delete studentPinMap[id];
     }
   });
 
-  // 16. TEACHER: Change Game Phase directly
-  socket.on('set_game_phase', (phase) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
+  // Re-map teacher client
+  teacherPinMap[clientId] = cleanPin;
 
-    game.phase = phase;
-    broadcastGameState(pin);
+  console.log(`PIN-kod (parol) o'zgartirildi va o'quvchilar chiqarildi: ${currentPin} -> ${cleanPin}`);
+  broadcastGameState(cleanPin);
+  res.json({ success: true, pin: cleanPin, game });
+});
+
+// 19. STUDENT: Submit Feedback/Review
+app.post('/api/submit-feedback', (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = getStudentGame(clientId);
+  if (!context) {
+    res.json({ success: false });
+    return;
+  }
+
+  const { pin, game, student } = context;
+  const team = student.teamId ? game.teams[student.teamId] : null;
+
+  if (!game.feedbacks) {
+    game.feedbacks = [];
+  }
+
+  const newFeedback = {
+    id: 'fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    studentId: clientId,
+    studentName: student.name,
+    teamName: team ? team.name : 'Guruhsiz',
+    rating: (req.body?.rating || "A'lo") as 'Yaxshi' | 'Yomon' | "A'lo",
+    comment: (req.body?.comment || '').toString().trim(),
+    createdAt: Date.now(),
+  };
+
+  const existingIdx = game.feedbacks.findIndex((f) => f.studentId === clientId);
+  if (existingIdx >= 0) {
+    game.feedbacks[existingIdx] = newFeedback;
+  } else {
+    game.feedbacks.push(newFeedback);
+  }
+
+  broadcastGameState(pin);
+  emitToGame(pin, 'notification', {
+    type: 'success',
+    text: `${student.name} o'yin haqida fikr bildirdi!`,
   });
-
-  // 17. TEACHER: Reset/Start New Game (Regenerate PIN)
-  socket.on('reset_game', () => {
-    const oldPin = socketPinMap[socket.id];
-    if (oldPin && games[oldPin]) {
-      io.to(oldPin).emit('kicked_out', 'Parolni xato kiritdingiz');
-      io.to(oldPin).emit('error_message', 'Parolni xato kiritdingiz');
-      stopTimer(oldPin);
-      delete games[oldPin];
-      socket.leave(oldPin);
-    }
-
-    // Generate NEW PIN Code
-    const newPin = generateUniquePin();
-    const resetQuestions = loadSavedQuestions();
-
-    const newGame: GameSession = {
-      pin: newPin,
-      teacherSocketId: socket.id,
-      phase: 'LOBBY',
-      students: {},
-      teams: {},
-      questions: resetQuestions,
-      currentQuestionIndex: 0,
-      timerSeconds: resetQuestions[0]?.timeLimit || 30,
-      isTimerRunning: false,
-      maxScoreLimit: 500,
-      feedbacks: [],
-      createdAt: Date.now(),
-    };
-
-    games[newPin] = newGame;
-    socketPinMap[socket.id] = newPin;
-    socket.join(newPin);
-
-    console.log(`рџ”„ Yangi o'yin boshlandi! Yangi PIN: ${newPin}`);
-    broadcastGameState(newPin);
-  });
-
-  // 17b. TEACHER: Stop Game but KEEP Teams & Students
-  socket.on('reset_game_keep_teams', () => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game || game.teacherSocketId !== socket.id) return;
-
-    stopTimer(pin);
-    game.phase = 'TEAMS_SETUP';
-    game.currentQuestionIndex = 0;
-    game.timerSeconds = game.questions[0]?.timeLimit || 30;
-
-    Object.values(game.teams).forEach((team) => {
-      team.currentBet = null;
-      team.currentAnswer = null;
-      team.answerSubmittedAt = null;
-      team.lastResult = null;
-      team.isEliminated = false;
-    });
-
-    broadcastGameState(pin);
-    io.to(pin).emit('notification', {
-      type: 'info',
-      text: "O'yin to'xtatildi! Barcha guruhlar va o'quvchilar saqlanib qolindi.",
-    });
-  });
-
-  // 18. TEACHER: Update PIN code / password manually
-  socket.on('update_pin', ({ newPin }, callback) => {
-    const cleanPin = newPin ? newPin.trim().toUpperCase() : '';
-    if (!cleanPin || cleanPin.length !== 6) {
-      if (callback) callback({ success: false, message: "O'yin PIN-kodi (paroli) rosa 6 xonali bo'lishi shart!" });
-      return;
-    }
-
-    const currentPin = socketPinMap[socket.id];
-    const game = games[currentPin];
-    if (!game || game.teacherSocketId !== socket.id) {
-      if (callback) callback({ success: false, message: 'Faqat o\'qituvchi PIN-kodni o\'zgartira oladi!' });
-      return;
-    }
-
-    if (cleanPin !== currentPin && games[cleanPin]) {
-      if (callback) callback({ success: false, message: 'Ushbu PIN-kod (parol) boshqa faol o\'yinda ishlatilmoqda!' });
-      return;
-    }
-
-    if (cleanPin === currentPin) {
-      if (callback) callback({ success: true, pin: cleanPin });
-      return;
-    }
-
-    // Notify connected students that PIN changed and kick them out
-    io.to(currentPin).emit('kicked_out', 'Parolni xato kiritdingiz');
-    io.to(currentPin).emit('error_message', 'Parolni xato kiritdingiz');
-
-    // Transfer game to new PIN key and clear student list so they re-authenticate
-    delete games[currentPin];
-    game.pin = cleanPin;
-    game.students = {};
-    games[cleanPin] = game;
-
-    // Re-map teacher socket
-    socketPinMap[socket.id] = cleanPin;
-    socket.leave(currentPin);
-    socket.join(cleanPin);
-
-    console.log(`рџ”‘ PIN-kod (parol) o'zgartirildi va o'quvchilar chiqarildi: ${currentPin} -> ${cleanPin}`);
-    if (callback) callback({ success: true, pin: cleanPin });
-    broadcastGameState(cleanPin);
-  });
-
-  // 19. STUDENT: Submit Feedback/Review
-  socket.on('submit_feedback', ({ rating, comment }) => {
-    const pin = socketPinMap[socket.id];
-    const game = games[pin];
-    if (!game) return;
-
-    const student = game.students[socket.id];
-    if (!student) return;
-
-    const team = student.teamId ? game.teams[student.teamId] : null;
-
-    if (!game.feedbacks) {
-      game.feedbacks = [];
-    }
-
-    const newFeedback = {
-      id: 'fb_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      studentId: socket.id,
-      studentName: student.name,
-      teamName: team ? team.name : 'Guruhsiz',
-      rating: (rating || "A'lo") as 'Yaxshi' | 'Yomon' | "A'lo",
-      comment: (comment || '').trim(),
-      createdAt: Date.now(),
-    };
-
-    const existingIdx = game.feedbacks.findIndex((f) => f.studentId === socket.id);
-    if (existingIdx >= 0) {
-      game.feedbacks[existingIdx] = newFeedback;
-    } else {
-      game.feedbacks.push(newFeedback);
-    }
-
-    broadcastGameState(pin);
-    io.to(pin).emit('notification', {
-      type: 'success',
-      text: `рџ’¬ ${student.name} o'yin haqida fikr bildirdi!`,
-    });
-  });
-
-  // Disconnect handling
-  socket.on('disconnect', () => {
-    console.log(`вќЊ Ulanish uzildi: ${socket.id}`);
-    const pin = socketPinMap[socket.id];
-    if (pin) {
-      const game = games[pin];
-
-      // If the TEACHER disconnects, the game session has no host anymore:
-      // stop the timer, notify all students and remove the session.
-      if (game && game.teacherSocketId === socket.id) {
-        stopTimer(pin);
-        io.to(pin).emit('kicked_out', "O'qituvchi tizimdan chiqdi. O'yin yopildi!");
-        io.to(pin).emit('error_message', "O'qituvchi tizimdan chiqdi. O'yin yopildi!");
-        delete games[pin];
-        delete socketPinMap[socket.id];
-        socket.leave(pin);
-        return;
-      }
-
-      // Student disconnect
-      if (game && game.students[socket.id]) {
-        game.students[socket.id].connected = false;
-        broadcastGameState(pin);
-      }
-      delete socketPinMap[socket.id];
-    }
-  });
+  res.json({ success: true });
 });
 
 // Serve frontend in dev or prod
@@ -901,8 +1036,8 @@ async function main() {
     });
   }
 
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`рџљЂ Raqamli Viktorina serveri ishga tushdi: http://0.0.0.0:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Raqamli Viktorina serveri ishga tushdi: http://0.0.0.0:${PORT}`);
   });
 }
 

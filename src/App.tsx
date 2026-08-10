@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import Pusher, { Channel } from 'pusher-js';
 import { GameSession } from './types';
 import { Navbar } from './components/Navbar';
 import { TeacherView } from './components/TeacherView';
 import { StudentView } from './components/StudentView';
 import { sounds } from './utils/soundEffects';
+import { apiPost, getClientId } from './utils/api';
+
+const pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY || '307958d4cd4d6d38e210', {
+  cluster: import.meta.env.VITE_PUSHER_CLUSTER || 'ap2',
+});
 import {
   Sparkles,
   ArrowLeft,
@@ -17,13 +22,14 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [clientId] = useState<string>(() => getClientId());
+  const [channel, setChannel] = useState<Channel | null>(null);
   const [viewMode, setViewMode] = useState<'LANDING' | 'TEACHER' | 'STUDENT'>('STUDENT');
   const [gameState, setGameState] = useState<GameSession | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notification, setNotification] = useState<{ type: string; text: string } | null>(null);
 
-  // Keep sound preference accessible inside socket event handlers without reconnecting the socket
+  // Keep sound preference accessible inside Pusher event handlers without re-subscribing
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
@@ -54,44 +60,39 @@ export default function App() {
   const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
   const [changePasswordSuccess, setChangePasswordSuccess] = useState<string | null>(null);
 
-  // Initialize socket connection (created once; sound changes must not reset the connection)
+  // Subscribe to the game channel via Pusher whenever the game PIN changes
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || undefined;
-    const newSocket = io(backendUrl, {
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-    });
+    const pin = gameState?.pin;
+    if (!pin) return;
 
-    setSocket(newSocket);
+    const gameChannel = pusher.subscribe(`game-${pin}`);
+    setChannel(gameChannel);
 
-    newSocket.on('connect', () => {
-      console.log('⚡ Socket connected:', newSocket.id);
-    });
-
-    newSocket.on('game_state', (state: GameSession) => {
+    gameChannel.bind('game_state', (state: GameSession) => {
       setGameState(state);
     });
 
-    newSocket.on('timer_tick', (seconds: number) => {
+    gameChannel.bind('timer_tick', (seconds: number) => {
       if (soundEnabledRef.current && seconds <= 5 && seconds > 0) {
         sounds.playTick();
       }
       setGameState((prev) => (prev ? { ...prev, timerSeconds: seconds } : prev));
     });
 
-    newSocket.on('notification', (data) => {
+    gameChannel.bind('notification', (data) => {
       setNotification(data);
       setTimeout(() => setNotification(null), 4000);
     });
 
-    newSocket.on('bet_placed', () => {
+    gameChannel.bind('bet_placed', () => {
       if (soundEnabledRef.current) sounds.playBet();
     });
 
     return () => {
-      newSocket.disconnect();
+      setChannel(null);
+      pusher.unsubscribe(`game-${pin}`);
     };
-  }, []);
+  }, [gameState?.pin]);
 
   // URL route detection (/student, /teacher)
   useEffect(() => {
@@ -104,9 +105,6 @@ export default function App() {
           setIsTeacherAuth(true);
           setViewMode('TEACHER');
           setShowTeacherPasswordModal(false);
-          if (socket && !gameState) {
-            socket.emit('create_game');
-          }
         } else {
           setViewMode('STUDENT');
           setShowTeacherPasswordModal(true);
@@ -120,14 +118,24 @@ export default function App() {
     syncRouteFromUrl();
     window.addEventListener('popstate', syncRouteFromUrl);
     return () => window.removeEventListener('popstate', syncRouteFromUrl);
-  }, [socket, gameState]);
+  }, []);
+
+  // Create a new game session via REST when teacher mode is active
+  const handleCreateGame = async () => {
+    const res = await apiPost<{ success: boolean; game?: GameSession }>('/api/create-game', {
+      clientId,
+    });
+    if (res.success && res.game) {
+      setGameState(res.game);
+    }
+  };
 
   // Auto-create game session when teacher mode is active
   useEffect(() => {
-    if (viewMode === 'TEACHER' && isTeacherAuth && socket && !gameState) {
-      socket.emit('create_game');
+    if (viewMode === 'TEACHER' && isTeacherAuth && !gameState) {
+      handleCreateGame();
     }
-  }, [viewMode, isTeacherAuth, socket, gameState]);
+  }, [viewMode, isTeacherAuth, gameState]);
 
   // Navigation handler with URL sync & password protection
   const handleSetViewMode = (mode: 'LANDING' | 'TEACHER' | 'STUDENT') => {
@@ -136,9 +144,6 @@ export default function App() {
         setViewMode('TEACHER');
         setShowTeacherPasswordModal(false);
         window.history.pushState({}, '', '/teacher');
-        if (socket && !gameState) {
-          socket.emit('create_game');
-        }
       } else {
         setShowTeacherPasswordModal(true);
       }
@@ -160,9 +165,6 @@ export default function App() {
       setTeacherPasswordInput('');
       setViewMode('TEACHER');
       window.history.pushState({}, '', '/teacher');
-      if (socket && !gameState) {
-        socket.emit('create_game');
-      }
     } else {
       setTeacherPasswordError("Xato parol! O'qituvchi paroli noto'g'ri.");
     }
@@ -226,10 +228,17 @@ export default function App() {
     }
   }, [gameState?.phase, soundEnabled]);
 
-  const handleResetGame = () => {
-    if (socket) {
-      socket.emit('reset_game');
+  const handleResetGame = async () => {
+    const res = await apiPost<{ success: boolean; game?: GameSession }>('/api/reset-game', {
+      clientId,
+    });
+    if (res.success && res.game) {
+      setGameState(res.game);
     }
+  };
+
+  const handleGameStateChange = (state: GameSession) => {
+    setGameState(state);
   };
 
   return (
@@ -534,19 +543,23 @@ export default function App() {
             {/* TEACHER ADMIN PANEL */}
             {viewMode === 'TEACHER' && isTeacherAuth && (
               <TeacherView
-                socket={socket}
+                clientId={clientId}
                 gameState={gameState}
                 onResetGame={handleResetGame}
+                onCreateGame={handleCreateGame}
+                onPinUpdated={handleGameStateChange}
               />
             )}
 
             {/* STUDENT PANEL (DEFAULT) */}
             {viewMode === 'STUDENT' && (
               <StudentView
-                socket={socket}
+                clientId={clientId}
+                channel={channel}
                 gameState={gameState}
                 initialPin={gameState?.pin || ''}
                 onTeacherClick={() => setShowTeacherPasswordModal(true)}
+                onGameStateChange={handleGameStateChange}
               />
             )}
           </>
@@ -559,7 +572,7 @@ export default function App() {
           <p className="break-words">© 2026 Raqamli Viktorina — Real-Time O'quv va Chempionat Platformasi</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-[11px]">
             <span>Node.js</span>
-            <span>Socket.io</span>
+            <span>Pusher Channels</span>
             <span>Express</span>
             <span>React</span>
           </div>

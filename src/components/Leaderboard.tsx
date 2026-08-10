@@ -36,7 +36,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       ) : (
         <div className="space-y-4">
           {teamList.map((team, index) => {
-            const leader = team.leaderSocketId ? students[team.leaderSocketId] : null;
+            const leader = team.leaderClientId ? students[team.leaderClientId] : null;
             const isEliminated = team.isEliminated || team.score <= 0;
             const accentColors = ['#06b6d4', '#f59e0b', '#f43f5e', '#6366f1', '#10b981', '#a855f7'];
             const teamAccent = team.color || accentColors[index % accentColors.length];

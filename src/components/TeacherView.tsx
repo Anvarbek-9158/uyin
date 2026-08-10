@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Socket } from 'socket.io-client';
 import { GameSession, Question, Student, Team } from '../types';
 import { Leaderboard } from './Leaderboard';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
+import { apiPost } from '../utils/api';
 import {
   Users,
   Shield,
@@ -29,15 +29,19 @@ import {
 } from 'lucide-react';
 
 interface TeacherViewProps {
-  socket: Socket | null;
+  clientId: string;
   gameState: GameSession | null;
   onResetGame: () => void;
+  onCreateGame: () => void;
+  onPinUpdated: (game: GameSession) => void;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
-  socket,
+  clientId,
   gameState,
   onResetGame,
+  onCreateGame,
+  onPinUpdated,
 }) => {
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -82,7 +86,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           O'quvchilar uchun yangi real-time viktorina va chempionat seansini yarating.
         </p>
         <button
-          onClick={() => socket?.emit('create_game')}
+          onClick={onCreateGame}
           className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
         >
           🎮 Yangi O'yin Yaratish (PIN Generatsiya)
@@ -112,11 +116,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const handleCreateTeam = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamName.trim()) return;
-    socket?.emit('create_team', { name: newTeamName.trim() });
+    apiPost('/api/create-team', { clientId, name: newTeamName.trim() });
     setNewTeamName('');
   };
 
-  const handleUpdatePin = (e: React.FormEvent) => {
+  const handleUpdatePin = async (e: React.FormEvent) => {
     e.preventDefault();
     setPinChangeError('');
     const cleanPin = customPinInput.trim();
@@ -125,14 +129,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       return;
     }
 
-    socket?.emit('update_pin', { newPin: cleanPin }, (res) => {
-      if (res?.success) {
-        setIsEditingPin(false);
-        setCustomPinInput('');
-      } else {
-        setPinChangeError(res?.message || 'PIN xatosi yuz berdi');
-      }
-    });
+    const res = await apiPost<{ success: boolean; pin?: string; message?: string; game?: GameSession }>(
+      '/api/update-pin',
+      { clientId, newPin: cleanPin }
+    );
+    if (res?.success && res.game) {
+      setIsEditingPin(false);
+      setCustomPinInput('');
+      onPinUpdated(res.game);
+    } else {
+      setPinChangeError(res?.message || 'PIN xatosi yuz berdi');
+    }
   };
 
   const handleAddQuestion = (e: React.FormEvent) => {
@@ -150,7 +157,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       difficulty: newDifficulty,
     };
 
-    socket?.emit('set_questions', [...questions, newQ]);
+    apiPost('/api/set-questions', { clientId, questions: [...questions, newQ] });
     setNewQuestionText('');
     setIsOptionless(false);
     setNewOptA('');
@@ -163,13 +170,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   const handleDeleteQuestion = (indexToDelete: number) => {
     const updated = questions.filter((_, idx) => idx !== indexToDelete);
-    socket?.emit('set_questions', updated);
+    apiPost('/api/set-questions', { clientId, questions: updated });
     setConfirmDeleteIndex(null);
   };
 
   const handleDeleteAllQuestions = () => {
     if (questions.length === 0) return;
-    socket?.emit('set_questions', []);
+    apiPost('/api/set-questions', { clientId, questions: [] });
     setConfirmDeleteAll(false);
   };
 
@@ -377,7 +384,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     <select
                       onChange={(e) => {
                         if (e.target.value) {
-                          socket?.emit('bulk_assign_students', {
+                          apiPost('/api/bulk-assign-students', {
+                            clientId,
                             studentIds: selectedStudentIds,
                             teamId: e.target.value,
                           });
@@ -434,7 +442,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => socket?.emit('kick_student', { studentId: st.id })}
+                          onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
                           className="p-1 px-2 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
                           title="Tizimdan/o'yindan chiqarib yuborish"
                         >
@@ -519,7 +527,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => socket?.emit('penalize_team', { teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
+                            onClick={() => apiPost('/api/penalize-team', { clientId, teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
                             title="Shovqin qilgani uchun 5 ball ayirish"
                           >
@@ -528,7 +536,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           </button>
 
                           <button
-                            onClick={() => socket?.emit('delete_team', { teamId: team.id })}
+                            onClick={() => apiPost('/api/delete-team', { clientId, teamId: team.id })}
                             className="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition-colors"
                             title="Guruhni o'chirish"
                           >
@@ -573,7 +581,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                     {!isLeader && (
                                       <button
                                         onClick={() =>
-                                          socket?.emit('set_team_leader', {
+                                          apiPost('/api/set-team-leader', {
+                                            clientId,
                                             studentId: st.id,
                                             teamId: team.id,
                                           })
@@ -585,7 +594,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                     )}
                                     <button
                                       onClick={() =>
-                                        socket?.emit('assign_student', {
+                                        apiPost('/api/assign-student', {
+                                          clientId,
                                           studentId: st.id,
                                           teamId: null,
                                         })
@@ -597,7 +607,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                       <span>Kutish zaliga</span>
                                     </button>
                                     <button
-                                      onClick={() => socket?.emit('kick_student', { studentId: st.id })}
+                                      onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
                                       className="p-1 rounded bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
                                       title="Tizimdan/o'yindan butunlay o'chirish"
                                     >
@@ -617,7 +627,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <select
                             onChange={(e) => {
                               if (e.target.value) {
-                                socket?.emit('assign_student', {
+                                apiPost('/api/assign-student', {
+                                  clientId,
                                   studentId: e.target.value,
                                   teamId: team.id,
                                 });
@@ -677,7 +688,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <div className="flex flex-wrap items-center gap-3">
                     {phase === 'BETTING' && (
                       <button
-                        onClick={() => socket?.emit('start_answering_phase')}
+                        onClick={() => apiPost('/api/start-answering-phase', { clientId })}
                         disabled={!allBetPlaced}
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
                           allBetPlaced
@@ -693,7 +704,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                     {phase === 'ANSWERING' && (
                       <button
-                        onClick={() => socket?.emit('stop_answering_phase')}
+                        onClick={() => apiPost('/api/stop-answering-phase', { clientId })}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.4)]"
                       >
                         <Clock className="w-4 h-4" />
@@ -703,7 +714,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                     {phase === 'GRADING' && (
                       <button
-                        onClick={() => socket?.emit('finish_round')}
+                        onClick={() => apiPost('/api/finish-round', { clientId })}
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.4)]"
                       >
                         <Check className="w-4 h-4" />
@@ -724,7 +735,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     <button
                       onClick={() => {
                         if (window.confirm("O'yinni to'xtatmoqchimisiz? Barcha guruhlar va o'quvchilar saqlanib qoladi!")) {
-                          socket?.emit('reset_game_keep_teams');
+                          apiPost('/api/reset-game-keep-teams', { clientId });
                         }
                       }}
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs uppercase tracking-wider transition-all"
@@ -817,7 +828,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     </div>
                     <div className="flex flex-wrap items-center gap-2 pt-1">
                       <button
-                        onClick={() => socket?.emit('reset_game_keep_teams')}
+                        onClick={() => apiPost('/api/reset-game-keep-teams', { clientId })}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer"
                       >
                         <RefreshCw className="w-4 h-4" /> Yangi Raund (Guruhlar Saqlanadi)
@@ -880,7 +891,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             </span>
 
                             <button
-                              onClick={() => socket?.emit('penalize_team', { teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
+                              onClick={() => apiPost('/api/penalize-team', { clientId, teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
                               className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
                               title="Shovqin va intizomsizlik uchun 5 ball ayirish"
                             >
@@ -909,7 +920,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <div className="flex items-center gap-2 shrink-0">
                             <button
                               onClick={() =>
-                                socket?.emit('grade_team_answer', {
+                                apiPost('/api/grade-team-answer', {
+                                  clientId,
                                   teamId: team.id,
                                   isCorrect: true,
                                 })
@@ -925,7 +937,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                             <button
                               onClick={() =>
-                                socket?.emit('grade_team_answer', {
+                                apiPost('/api/grade-team-answer', {
+                                  clientId,
                                   teamId: team.id,
                                   isCorrect: false,
                                 })
@@ -1334,7 +1347,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         onClose={() => setIsQuestionSelectModalOpen(false)}
         questions={questions}
         onSelectQuestion={(originalIndex) => {
-          socket?.emit('start_betting_phase', originalIndex);
+          apiPost('/api/start-betting-phase', { clientId, questionIndex: originalIndex });
         }}
       />
 

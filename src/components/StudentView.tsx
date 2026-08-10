@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Socket } from 'socket.io-client';
+import type { Channel } from 'pusher-js';
 import { GameSession, Student, Team } from '../types';
 import { QuestionCard } from './QuestionCard';
 import { Leaderboard } from './Leaderboard';
+import { apiPost } from '../utils/api';
 import {
   User,
   Crown,
@@ -22,17 +23,21 @@ import {
 } from 'lucide-react';
 
 interface StudentViewProps {
-  socket: Socket | null;
+  clientId: string;
+  channel: Channel | null;
   gameState: GameSession | null;
   initialPin?: string;
   onTeacherClick?: () => void;
+  onGameStateChange: (state: GameSession) => void;
 }
 
 export const StudentView: React.FC<StudentViewProps> = ({
-  socket,
+  clientId,
+  channel,
   gameState,
   initialPin = '',
   onTeacherClick,
+  onGameStateChange,
 }) => {
   const [pinInput, setPinInput] = useState('');
   const [nameInput, setNameInput] = useState('');
@@ -56,8 +61,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!socket) return;
-    socket.emit('submit_feedback', {
+    apiPost('/api/submit-feedback', {
+      clientId,
       rating: feedbackRating,
       comment: feedbackComment.trim(),
     });
@@ -90,44 +95,49 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
   const currentQ = gameState?.questions[gameState.currentQuestionIndex];
 
-  // Sync state on socket events
+  // Sync state on Pusher channel events
   useEffect(() => {
-    if (!socket) return;
+    if (!channel) return;
 
-    socket.on('error_message', (msg: string) => {
+    const onError = (msg: string) => {
       setErrorMsg(msg);
       setLoading(false);
-    });
+    };
 
-    socket.on('kicked_out', (reason: string) => {
+    const onKicked = (reason: string) => {
       setJoined(false);
       setStudentId(null);
       setErrorMsg(reason || 'Parolni xato kiritdingiz!');
       setLoading(false);
-    });
+    };
 
-    socket.on('bet_placed', ({ teamId }) => {
+    const onBetPlaced = ({ teamId }: { teamId: string }) => {
       if (myTeam && myTeam.id === teamId) {
         setBetSubmitted(true);
       }
-    });
+    };
 
-    socket.on('answer_submitted', ({ teamId }) => {
+    const onAnswerSubmitted = ({ teamId }: { teamId: string }) => {
       if (myTeam && myTeam.id === teamId) {
         setAnswerSubmitted(true);
       }
-    });
+    };
+
+    channel.bind('error_message', onError);
+    channel.bind('kicked_out', onKicked);
+    channel.bind('bet_placed', onBetPlaced);
+    channel.bind('answer_submitted', onAnswerSubmitted);
 
     return () => {
-      socket.off('error_message');
-      socket.off('kicked_out');
-      socket.off('bet_placed');
-      socket.off('answer_submitted');
+      channel.unbind('error_message', onError);
+      channel.unbind('kicked_out', onKicked);
+      channel.unbind('bet_placed', onBetPlaced);
+      channel.unbind('answer_submitted', onAnswerSubmitted);
     };
-  }, [socket, gameState, myTeam]);
+  }, [channel, gameState, myTeam]);
 
   // Handle Join
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPin = pinInput.trim();
     if (cleanPin.length !== 6) {
@@ -135,24 +145,26 @@ export const StudentView: React.FC<StudentViewProps> = ({
       return;
     }
 
-    if (!nameInput.trim() || !socket) return;
+    if (!nameInput.trim()) return;
 
     setLoading(true);
     setErrorMsg(null);
 
-    socket.emit(
-      'join_game',
-      { pin: cleanPin, name: nameInput.trim() },
-      (res: { success: boolean; studentId?: string; message?: string }) => {
-        setLoading(false);
-        if (res.success && res.studentId) {
-          setJoined(true);
-          setStudentId(res.studentId);
-        } else {
-          setErrorMsg(res.message || 'O\'yinga ulanishda xatolik yuz berdi!');
-        }
-      }
-    );
+    const res = await apiPost<{
+      success: boolean;
+      studentId?: string;
+      message?: string;
+      game?: GameSession;
+    }>('/api/join-game', { clientId, pin: cleanPin, name: nameInput.trim() });
+
+    setLoading(false);
+    if (res.success && res.studentId && res.game) {
+      setJoined(true);
+      setStudentId(res.studentId);
+      onGameStateChange(res.game);
+    } else {
+      setErrorMsg(res.message || 'O\'yinga ulanishda xatolik yuz berdi!');
+    }
   };
 
   // Reset local bet/answer state when phase or question changes
@@ -167,25 +179,39 @@ export const StudentView: React.FC<StudentViewProps> = ({
   }, [gameState?.phase, gameState?.currentQuestionIndex]);
 
   // Handle Bet submit
-  const handlePlaceBet = () => {
-    if (!socket || !isLeader || !myTeam) return;
+  const handlePlaceBet = async () => {
+    if (!isLeader || !myTeam) return;
     if (betAmount < 1 || betAmount > myTeam.score) {
       setErrorMsg(`Tikiladigan ball 1 va ${myTeam.score} oralig'ida bo'lishi lozim!`);
       return;
     }
     setErrorMsg(null);
-    socket.emit('place_bet', { bet: betAmount });
-    setBetSubmitted(true);
+    const res = await apiPost<{ success: boolean; message?: string }>('/api/place-bet', {
+      clientId,
+      bet: betAmount,
+    });
+    if (res.success) {
+      setBetSubmitted(true);
+    } else {
+      setErrorMsg(res.message || 'Ball tikishda xatolik yuz berdi!');
+    }
   };
 
   // Handle Answer submit
-  const handleAnswerSubmit = (finalAns?: string) => {
+  const handleAnswerSubmit = async (finalAns?: string) => {
     const val = finalAns !== undefined ? finalAns : answerInput;
-    if (!socket || !isLeader || !val.trim()) return;
+    if (!isLeader || !val.trim()) return;
 
     setErrorMsg(null);
-    socket.emit('submit_answer', { answer: val.trim() });
-    setAnswerSubmitted(true);
+    const res = await apiPost<{ success: boolean; message?: string }>('/api/submit-answer', {
+      clientId,
+      answer: val.trim(),
+    });
+    if (res.success) {
+      setAnswerSubmitted(true);
+    } else {
+      setErrorMsg(res.message || 'Javob yuborishda xatolik yuz berdi!');
+    }
   };
 
   // 1. LOGIN SCREEN (If not joined yet)
