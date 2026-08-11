@@ -480,10 +480,25 @@ app.post('/api/penalize-team', ah(async (req, res) => {
   const r = await store.withGameLock(context.pin, (game) => {
     const team = game.teams[req.body?.teamId];
     if (!team) {
-      return { ok: false, game };
+      return { ok: false, message: 'Guruh topilmadi!', game };
     }
 
-    const penalty = req.body?.points || 5;
+    // Points must be a positive integer (1, 2, 3, ...). A negative or zero
+    // value would otherwise add points back to the team (Math.max floor).
+    let penalty = 5;
+    const rawPoints = req.body?.points;
+    if (rawPoints !== undefined && rawPoints !== null && rawPoints !== '') {
+      const p = Number(rawPoints);
+      if (!Number.isInteger(p) || p < 1) {
+        return {
+          ok: false,
+          message: 'Jarima balli 1 yoki undan katta butun son bo\'lishi shart!',
+          game,
+        };
+      }
+      penalty = p;
+    }
+
     team.score = Math.max(0, team.score - penalty);
     if (team.score <= 0) {
       team.isEliminated = true;
@@ -501,7 +516,15 @@ app.post('/api/penalize-team', ah(async (req, res) => {
     };
   });
 
-  if (!r || !r.game || !r.ok) {
+  if (!r) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message || 'Jarima qo\'shishda xatolik yuz berdi' });
+    return;
+  }
+  if (!r.game) {
     res.json({ success: false });
     return;
   }
@@ -828,9 +851,19 @@ app.post('/api/grade-team-answer', ah(async (req, res) => {
   }
 
   const r = await store.withGameLock(context.pin, (game) => {
+    if (game.phase !== 'GRADING') {
+      return { ok: false, message: 'Hozir baholash bosqichi emas!', game };
+    }
+
     const team = game.teams[req.body?.teamId];
     if (!team || team.currentBet === null) {
-      return { ok: false, game };
+      return { ok: false, message: 'Bu guruh tikish kiritmagan yoki topilmadi!', game };
+    }
+
+    // Double-grading protection: each team is graded exactly once per round.
+    // A repeated grade would silently add/subtract the bet a second time.
+    if (team.lastResult !== null) {
+      return { ok: false, message: `${team.name} jamoasi allaqachon baholangan!`, game };
     }
 
     const isCorrect = req.body?.isCorrect === true;
@@ -860,7 +893,15 @@ app.post('/api/grade-team-answer', ah(async (req, res) => {
     return { ok: true, game };
   });
 
-  if (!r || !r.game || !r.ok) {
+  if (!r) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message || 'Baholashda xatolik yuz berdi' });
+    return;
+  }
+  if (!r.game) {
     res.json({ success: false });
     return;
   }
@@ -878,6 +919,12 @@ app.post('/api/finish-round', ah(async (req, res) => {
   }
 
   const r = await store.withGameLock(context.pin, (game) => {
+    // Guard against double-finish: only valid from the GRADING phase, so a
+    // repeated request cannot auto-grade and advance the round twice.
+    if (game.phase !== 'GRADING') {
+      return { ok: false, message: 'Hozir baholash bosqichi emas!', game };
+    }
+
     // Auto-grade remaining un-graded teams against current question's correct answer if options match
     const currentQ = game.questions[game.currentQuestionIndex];
     if (currentQ) {
@@ -922,7 +969,15 @@ app.post('/api/finish-round', ah(async (req, res) => {
     return { ok: true, game };
   });
 
-  if (!r || !r.game) {
+  if (!r) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message || 'Raund yakunlashda xatolik yuz berdi' });
+    return;
+  }
+  if (!r.game) {
     res.json({ success: false });
     return;
   }

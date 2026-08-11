@@ -959,39 +959,51 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         {/* Manual Grading Buttons during GRADING phase */}
                         {phase === 'GRADING' && team.currentBet !== null && (
                           <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              onClick={() =>
-                                apiPost('/api/grade-team-answer', {
-                                  clientId,
-                                  teamId: team.id,
-                                  isCorrect: true,
-                                })
-                              }
-                              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                team.lastResult?.isCorrect
-                                  ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                                  : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30'
-                              }`}
-                            >
-                              <CheckCircle2 className="w-4 h-4" /> To'g'ri (+{team.currentBet})
-                            </button>
+                            {team.lastResult !== null ? (
+                              <span
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider ${
+                                  team.lastResult.isCorrect
+                                    ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+                                    : 'bg-rose-500/30 text-rose-300 border border-rose-500/50'
+                                }`}
+                              >
+                                {team.lastResult.isCorrect ? (
+                                  <CheckCircle2 className="w-4 h-4" />
+                                ) : (
+                                  <XCircle className="w-4 h-4" />
+                                )}
+                                Baholandi ✓ ({team.lastResult.isCorrect ? '+' : ''}
+                                {team.lastResult.pointsDelta})
+                              </span>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    apiPost('/api/grade-team-answer', {
+                                      clientId,
+                                      teamId: team.id,
+                                      isCorrect: true,
+                                    })
+                                  }
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" /> To'g'ri (+{team.currentBet})
+                                </button>
 
-                            <button
-                              onClick={() =>
-                                apiPost('/api/grade-team-answer', {
-                                  clientId,
-                                  teamId: team.id,
-                                  isCorrect: false,
-                                })
-                              }
-                              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                                team.lastResult && !team.lastResult.isCorrect
-                                  ? 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]'
-                                  : 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30'
-                              }`}
-                            >
-                              <XCircle className="w-4 h-4" /> Xato (-{team.currentBet})
-                            </button>
+                                <button
+                                  onClick={() =>
+                                    apiPost('/api/grade-team-answer', {
+                                      clientId,
+                                      teamId: team.id,
+                                      isCorrect: false,
+                                    })
+                                  }
+                                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30"
+                                >
+                                  <XCircle className="w-4 h-4" /> Xato (-{team.currentBet})
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
