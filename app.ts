@@ -108,12 +108,23 @@ app.get('/api/health', ah(async (req, res) => {
 
 // TEMP diagnostic (remove after Redis verification)
 app.get('/api/diag', ah(async (req, res) => {
+  const pin = (req.query.pin || '').toString();
+  const direct = pin ? await store.getGame(pin) : null;
+  const lockResult = pin
+    ? await store.withGameLock(pin, (game) => ({ ok: true, game }))
+    : null;
   res.json({
     redisActive: store.isRedisActive(),
     vercel: IS_VERCEL,
     kvUrlPresent: Boolean(process.env.KV_REST_API_URL),
     kvTokenPresent: Boolean(process.env.KV_REST_API_TOKEN),
     activeGames: await store.listActiveGames(),
+    queriedPin: pin || null,
+    directGameFound: !!direct,
+    directPhase: direct?.phase ?? null,
+    directStudents: direct ? Object.keys(direct.students).length : null,
+    lockResultOk: lockResult ? lockResult.ok : null,
+    lockResultGameFound: lockResult ? !!lockResult.game : null,
   });
 }));
 
