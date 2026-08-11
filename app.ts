@@ -106,6 +106,17 @@ app.get('/api/health', ah(async (req, res) => {
   res.json({ status: 'ok', activeGames: await store.listActiveGames() });
 }));
 
+// TEMP diagnostic (remove after Redis verification)
+app.get('/api/diag', ah(async (req, res) => {
+  res.json({
+    redisActive: store.isRedisActive(),
+    vercel: IS_VERCEL,
+    kvUrlPresent: Boolean(process.env.KV_REST_API_URL),
+    kvTokenPresent: Boolean(process.env.KV_REST_API_TOKEN),
+    activeGames: await store.listActiveGames(),
+  });
+}));
+
 // 1. TEACHER: Create new game session (or reset)
 app.post('/api/create-game', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();

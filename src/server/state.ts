@@ -15,6 +15,10 @@ import { DEFAULT_QUESTIONS } from '../data/defaultQuestions.js';
 
 const USE_REDIS = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
+export function isRedisActive(): boolean {
+  return USE_REDIS;
+}
+
 const redis = USE_REDIS
   ? new Redis({
       url: process.env.KV_REST_API_URL as string,
