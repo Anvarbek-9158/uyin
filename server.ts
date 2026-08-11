@@ -17,7 +17,7 @@ async function main() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Raqamli Viktorina serveri ishga tushdi: http://0.0.0.0:${PORT}`);
+    console.log(`EduPlay serveri ishga tushdi: http://0.0.0.0:${PORT}`);
   });
 }
 

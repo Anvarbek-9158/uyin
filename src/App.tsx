@@ -569,7 +569,7 @@ export default function App() {
       {/* Modern Footer */}
       <footer className="bg-[#0B1121]/80 border-t border-white/5 py-6 text-center text-xs text-[#94A3B8] backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
-          <p className="break-words">© 2026 Raqamli Viktorina — Real-Time O'quv va Chempionat Platformasi</p>
+          <p className="break-words">© 2026 EduPlay — Real-Time O'quv va Chempionat Platformasi</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-[11px]">
             <span>Node.js</span>
             <span>Pusher Channels</span>

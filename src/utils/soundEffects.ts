@@ -1,4 +1,4 @@
-// Web Audio API Sound Synthesizer for Raqamli Viktorina
+// Web Audio API Sound Synthesizer for EduPlay
 class SoundManager {
   private ctx: AudioContext | null = null;
 
