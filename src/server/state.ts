@@ -66,13 +66,16 @@ async function withMemLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
 // ------------------------------------------------------------
 export async function getGame(pin: string): Promise<GameSession | null> {
   if (redis) {
-    const raw = await redis.get<string>(KEYS.game(pin));
+    const raw = await redis.get<GameSession | string>(KEYS.game(pin));
     if (!raw) return null;
-    try {
-      return JSON.parse(raw) as GameSession;
-    } catch {
-      return null;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as GameSession;
+      } catch {
+        return null;
+      }
     }
+    return raw;
   }
   return memGames.get(pin) ?? null;
 }
@@ -105,7 +108,10 @@ export async function listActiveGames(): Promise<number> {
 // Teacher / student -> PIN reverse maps
 // ------------------------------------------------------------
 export async function getTeacherPin(clientId: string): Promise<string | null> {
-  if (redis) return redis.get<string>(KEYS.teacher(clientId));
+  if (redis) {
+    const raw = await redis.get<string | number>(KEYS.teacher(clientId));
+    return raw == null ? null : String(raw);
+  }
   return memTeacherPin.get(clientId) ?? null;
 }
 
@@ -126,7 +132,10 @@ export async function deleteTeacherPin(clientId: string): Promise<void> {
 }
 
 export async function getStudentPin(clientId: string): Promise<string | null> {
-  if (redis) return redis.get<string>(KEYS.student(clientId));
+  if (redis) {
+    const raw = await redis.get<string | number>(KEYS.student(clientId));
+    return raw == null ? null : String(raw);
+  }
   return memStudentPin.get(clientId) ?? null;
 }
 
@@ -155,7 +164,7 @@ export async function clearStudentPinsForGame(pin: string): Promise<void> {
     const values = await redis.mget<string[]>(...keys);
     const toDelete: string[] = [];
     keys.forEach((k, i) => {
-      if (values[i] === pin) toDelete.push(k);
+      if (String(values[i]) === pin) toDelete.push(k);
     });
     if (toDelete.length > 0) {
       await redis.del(...toDelete);
@@ -174,10 +183,10 @@ const QUESTIONS_FILE_PATH = path.join(process.cwd(), 'questions_db.json');
 
 export async function loadQuestions(): Promise<Question[]> {
   if (redis) {
-    const raw = await redis.get<string>(KEYS.questions());
+    const raw = await redis.get<Question[] | string>(KEYS.questions());
     if (raw) {
       try {
-        const parsed = JSON.parse(raw);
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
         if (Array.isArray(parsed)) return parsed;
       } catch {
         // fall through to defaults
