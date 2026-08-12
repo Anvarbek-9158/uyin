@@ -42,3 +42,31 @@ Vercel serverless lambda'lari statsiz, shuning uchun o'yin holati uchun Redis (V
   (`/api/timer-tick` har soniyada), chunki serverless'da `setInterval` ishlamaydi.
 - Savollar bazasi `questions_db.json` (lokal) yoki Redis'da (serverless) saqlanadi.
 
+### Chat xavfsizligi va session-token migratsiyasi
+
+Har bir `clientId` endi serverda yaratilgan, taxmin qilib bo'lmaydigan session
+token bilan bog'langan (token `create-game` / `join-game` javobida qaytadi va
+`localStorage`'da saqlanadi). Chat endpointlari (`/api/chat/send`,
+`/api/chat/messages`, `/api/pusher/auth`) `clientId` BILAN birga token ham
+talab qiladi — o'g'irlangan `clientId`'ning o'zi endi yetarli emas.
+
+**Production migratsiya rejasi (qo'lda bajariladigan qadamlar):**
+
+1. Deploy qiling. Yangi frontend avtomatik ravishda token oladi: keyingi har bir
+   `create-game` / `join-game` chaqiruvida server token yaratib qaytaradi.
+2. Eski (token'siz) brauzerlar uchun 30 kunlik imtiyoz davri bor: token'siz
+   so'rov faqat `clientId` eski formatda (`UUID` yoki `id_<ts>_<rand>`) VA
+   tizimda ro'yxatdan o'tgan bo'lsa qabul qilinadi (serverda `console.warn`
+   log'i chiqadi). Buning muddatini uzaytirish/qisqartirish uchun
+   `CHAT_LEGACY_TOKEN_GRACE_UNTIL` (unix ms yoki ISO sana) env o'zgaruvchisidan
+   foydalaning.
+3. 30 kundan keyin (yoki barcha faol brauzerlar qayta ro'yxatdan o'tgach) eski
+   yo'lni butunlay o'chirish uchun `CHAT_LEGACY_TOKEN_GRACE_UNTIL=0` qilib qayta
+   deploy qiling.
+
+**Qo'shimcha sozlashlar:**
+
+- `CHAT_RATE_LIMIT_MAX` (sukut: 20) — har bir `clientId` uchun `chat/send` soni
+- `CHAT_RATE_LIMIT_WINDOW_SECONDS` (sukut: 60) — shu oyna (soniya) ichida
+
+

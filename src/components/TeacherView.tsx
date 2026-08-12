@@ -3,6 +3,7 @@ import { GameSession, Question, Student, Team } from '../types';
 import { Leaderboard } from './Leaderboard';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
+import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
 import {
   Users,
@@ -265,6 +266,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 )}
               </button>
+
+              <TeacherChatLauncher
+                clientId={clientId}
+                pin={pin}
+                students={students}
+                teams={teams}
+              />
 
               <button
                 onClick={() => {

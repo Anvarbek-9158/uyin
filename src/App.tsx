@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Pusher, { Channel } from 'pusher-js';
+import { Channel } from 'pusher-js';
 import { GameSession } from './types';
 import { Navbar } from './components/Navbar';
 import { TeacherView } from './components/TeacherView';
 import { StudentView } from './components/StudentView';
 import { sounds } from './utils/soundEffects';
-import { apiPost, getClientId } from './utils/api';
-
-const pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY || '307958d4cd4d6d38e210', {
-  cluster: import.meta.env.VITE_PUSHER_CLUSTER || 'ap2',
-});
+import { apiPost, apiGet, getClientId, setSessionToken } from './utils/api';
+import { pusher } from './utils/pusher';
 import {
   Sparkles,
   ArrowLeft,
@@ -68,31 +65,68 @@ export default function App() {
     const gameChannel = pusher.subscribe(`game-${pin}`);
     setChannel(gameChannel);
 
-    gameChannel.bind('game_state', (state: GameSession) => {
+    const onGameState = (state: GameSession) => {
       setGameState(state);
-    });
+    };
 
-    gameChannel.bind('timer_tick', (seconds: number) => {
+    const onTick = (seconds: number) => {
       if (soundEnabledRef.current && seconds <= 5 && seconds > 0) {
         sounds.playTick();
       }
       setGameState((prev) => (prev ? { ...prev, timerSeconds: seconds } : prev));
-    });
+    };
 
-    gameChannel.bind('notification', (data) => {
+    const onNotification = (data: { type: string; text: string }) => {
       setNotification(data);
       setTimeout(() => setNotification(null), 4000);
-    });
+    };
 
-    gameChannel.bind('bet_placed', () => {
+    const onBetPlaced = () => {
       if (soundEnabledRef.current) sounds.playBet();
-    });
+    };
+
+    // Reconcile authoritative state once the channel subscription is live.
+    // Pusher does not replay events that were broadcast before this client was
+    // actually subscribed, so a game_state event for the very first student
+    // login is silently dropped if it races the subscription. Pulling the
+    // current state on subscription success (and again after every reconnect,
+    // which re-triggers subscription_succeeded) recovers any missed event.
+    let cancelled = false;
+    const reconcile = async () => {
+      if (cancelled) return;
+      try {
+        const res = await apiGet<{ success: boolean; game?: GameSession }>(
+          `/api/game-state?clientId=${encodeURIComponent(clientId)}`
+        );
+        if (cancelled) return;
+        if (res?.success && res.game) {
+          setGameState(res.game);
+        }
+      } catch {
+        // The next live event or subscription will reconcile again.
+      }
+    };
+
+    gameChannel.bind('game_state', onGameState);
+    gameChannel.bind('timer_tick', onTick);
+    gameChannel.bind('notification', onNotification);
+    gameChannel.bind('bet_placed', onBetPlaced);
+    gameChannel.bind('pusher:subscription_succeeded', reconcile);
+    if (gameChannel.subscribed) {
+      reconcile();
+    }
 
     return () => {
+      cancelled = true;
+      gameChannel.unbind('game_state', onGameState);
+      gameChannel.unbind('timer_tick', onTick);
+      gameChannel.unbind('notification', onNotification);
+      gameChannel.unbind('bet_placed', onBetPlaced);
+      gameChannel.unbind('pusher:subscription_succeeded', reconcile);
       setChannel(null);
       pusher.unsubscribe(`game-${pin}`);
     };
-  }, [gameState?.pin]);
+  }, [clientId, gameState?.pin]);
 
   // URL route detection (/student, /teacher)
   useEffect(() => {
@@ -122,10 +156,14 @@ export default function App() {
 
   // Create a new game session via REST when teacher mode is active
   const handleCreateGame = async () => {
-    const res = await apiPost<{ success: boolean; game?: GameSession }>('/api/create-game', {
-      clientId,
-    });
+    const res = await apiPost<{ success: boolean; game?: GameSession; sessionToken?: string }>(
+      '/api/create-game',
+      {
+        clientId,
+      }
+    );
     if (res.success && res.game) {
+      if (res.sessionToken) setSessionToken(res.sessionToken);
       setGameState(res.game);
     }
   };

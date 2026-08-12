@@ -3,7 +3,8 @@ import type { Channel } from 'pusher-js';
 import { GameSession, Student, Team } from '../types';
 import { QuestionCard } from './QuestionCard';
 import { Leaderboard } from './Leaderboard';
-import { apiPost } from '../utils/api';
+import { StudentChatLauncher } from './ChatSection';
+import { apiPost, setSessionToken } from '../utils/api';
 import {
   User,
   Crown,
@@ -155,10 +156,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
       studentId?: string;
       message?: string;
       game?: GameSession;
+      sessionToken?: string;
     }>('/api/join-game', { clientId, pin: cleanPin, name: nameInput.trim() });
 
     setLoading(false);
     if (res.success && res.studentId && res.game) {
+      if (res.sessionToken) setSessionToken(res.sessionToken);
       setJoined(true);
       setStudentId(res.studentId);
       onGameStateChange(res.game);
@@ -331,8 +334,9 @@ export const StudentView: React.FC<StudentViewProps> = ({
   // 2. KUTISH ZALI (Waiting Room - Unassigned student)
   if (!myTeam || !gameState || gameState.phase === 'LOBBY' || gameState.phase === 'TEAMS_SETUP') {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl space-y-6 backdrop-blur-md">
+      <>
+        <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+          <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl space-y-6 backdrop-blur-md">
           <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto animate-pulse">
             <Users className="w-10 h-10" />
           </div>
@@ -381,7 +385,17 @@ export const StudentView: React.FC<StudentViewProps> = ({
             </div>
           )}
         </div>
-      </div>
+        </div>
+        {gameState?.pin && (
+          <StudentChatLauncher
+            clientId={clientId}
+            pin={gameState.pin}
+            students={gameState.students}
+            teams={gameState.teams}
+            groupId={myStudent?.teamId || null}
+          />
+        )}
+      </>
     );
   }
 
@@ -390,6 +404,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   const isGameOver = gameState?.phase === 'GAME_OVER';
 
   return (
+    <>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Team Header Banner */}
       <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4 backdrop-blur-md">
@@ -813,5 +828,15 @@ export const StudentView: React.FC<StudentViewProps> = ({
         </div>
       )}
     </div>
+    {gameState?.pin && (
+      <StudentChatLauncher
+        clientId={clientId}
+        pin={gameState.pin}
+        students={gameState.students}
+        teams={gameState.teams}
+        groupId={myStudent?.teamId || null}
+      />
+    )}
+    </>
   );
 };

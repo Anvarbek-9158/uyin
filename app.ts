@@ -14,6 +14,9 @@ import * as store from './src/server/state.js';
 const app = express();
 
 app.use(express.json());
+// pusher-js POSTs auth requests as application/x-www-form-urlencoded (it is not
+// a JSON client), so both parsers must be mounted for /api/pusher/auth to work.
+app.use(express.urlencoded({ extended: true }));
 
 // Vercel serverless functions run on an ephemeral, read-only filesystem and are
 // bundled into a lambda. All persistent game state is kept in Redis (Vercel KV
@@ -22,12 +25,17 @@ app.use(express.json());
 // Vercel's CDN (see vercel.json); see the guard at the bottom of this file.
 const IS_VERCEL = process.env.VERCEL === '1';
 
-// Pusher Channels instance
+// Pusher Channels instance.
+// PUSHER_HOST/PUSHER_PORT/PUSHER_TIMEOUT are optional overrides (self-hosted
+// Channels-compatible servers, or fast-fail local testing).
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID || '2185025',
   key: process.env.PUSHER_KEY || '307958d4cd4d6d38e210',
   secret: process.env.PUSHER_SECRET || '4427b2ff1430ab587020',
   cluster: process.env.PUSHER_CLUSTER || 'ap2',
+  ...(process.env.PUSHER_HOST ? { host: process.env.PUSHER_HOST } : {}),
+  ...(process.env.PUSHER_PORT ? { port: Number(process.env.PUSHER_PORT) } : {}),
+  ...(process.env.PUSHER_TIMEOUT ? { timeout: Number(process.env.PUSHER_TIMEOUT) } : {}),
 });
 
 // Team Colors Palette for visual appealing UI
@@ -55,18 +63,110 @@ function ah(fn: (req: Request, res: Response) => Promise<void>) {
   };
 }
 
-// Helper: Trigger an event on a game channel via Pusher
-function emitToGame(pin: string, event: string, data: unknown) {
-  pusher
+// Helper: Trigger an event on a game channel via Pusher. The returned promise
+// resolves only after Pusher confirms the event was accepted, so callers can
+// await it (e.g. before sending the HTTP response) and never lose an event when
+// a serverless lambda is frozen right after the response is returned.
+function emitToGame(pin: string, event: string, data: unknown): Promise<void> {
+  return pusher
     .trigger(`game-${pin}`, event, data)
+    .then(() => undefined)
     .catch((err) => {
       console.error(`Pusher trigger error (${event} -> ${pin}):`, err);
     });
 }
 
-// Helper: Broadcast the full game state to a game channel
-function broadcastGameState(pin: string, game: GameSession) {
-  emitToGame(pin, 'game_state', game);
+// Helper: Broadcast the full game state to a game channel. Awaited at every call
+// site so the state is persisted AND the event is actually sent before the
+// response goes out.
+async function broadcastGameState(pin: string, game: GameSession): Promise<void> {
+  await emitToGame(pin, 'game_state', game);
+}
+
+// Chat channel naming:
+//   private: private-chat-<pin>-<studentId>   (student <-> teacher, 1:1)
+//   group:   private-chat-<pin>-g-<teamId>    (all members of one group)
+// Embedding the group in the channel name is what keeps group traffic isolated
+// at the realtime layer: a student only ever subscribes to their own group's
+// channel, so other groups' messages are never delivered to them.
+function chatChannelName(pin: string, roomType: 'private' | 'group', id: string): string {
+  return roomType === 'group' ? `private-chat-${pin}-g-${id}` : `private-chat-${pin}-${id}`;
+}
+
+// Helper: Trigger an event on a private/group chat channel.
+function emitToChat(
+  pin: string,
+  roomType: 'private' | 'group',
+  roomId: string,
+  event: string,
+  data: unknown
+): Promise<void> {
+  return pusher
+    .trigger(chatChannelName(pin, roomType, roomId), event, data)
+    .then(() => undefined)
+    .catch((err) => {
+      console.error(`Pusher trigger error (${event} -> chat ${pin}/${roomType}/${roomId}):`, err);
+    });
+}
+
+// ============================================================
+// Client session verification.
+//
+// Every chat-related request must carry BOTH a clientId and the session token
+// the server minted for it (create-game / join-game). The token is sent as an
+// `Authorization: Bearer ...` header (JSON API calls) or as a `sessionToken`
+// field (pusher-js form posts). Without a matching token a stolen clientId is
+// useless, closing the clientId-spoofing hole.
+// ============================================================
+
+// The token is a 64-char lowercase hex string (32 random bytes).
+const SESSION_TOKEN_REGEX = /^[0-9a-f]{64}$/;
+
+// Chat rate limit: per clientId, at most N messages per fixed window. The
+// defaults (20 / 60s) are generous for a classroom chat but stop a single
+// script from flooding every student's inbox. Overridable via env vars.
+const CHAT_RATE_LIMIT_MAX = Number(process.env.CHAT_RATE_LIMIT_MAX ?? 20);
+const CHAT_RATE_LIMIT_WINDOW_MS = (Number(process.env.CHAT_RATE_LIMIT_WINDOW_SECONDS) || 60) * 1000;
+
+function extractSessionToken(req: Request): string | null {
+  const auth = req.headers['authorization'];
+  if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    const t = auth.slice(7).trim();
+    if (t) return t;
+  }
+  const body = (req.body as Record<string, unknown> | undefined)?.sessionToken;
+  if (typeof body === 'string' && body) return body;
+  const query = (req.query as Record<string, unknown> | undefined)?.sessionToken;
+  if (typeof query === 'string' && query) return query;
+  return null;
+}
+
+function looksLikeSessionToken(token: string | null): boolean {
+  return typeof token === 'string' && SESSION_TOKEN_REGEX.test(token);
+}
+
+// Shared gate for /api/pusher/auth, /api/chat/send and /api/chat/messages.
+// Returns null when the client is authorized, or a JSON-ready rejection to send.
+type ChatAuthError = { status: number; body: Record<string, unknown> } | null;
+
+async function verifyChatClient(req: Request, clientId: string): Promise<ChatAuthError> {
+  if (!clientId) {
+    return { status: 400, body: { success: false, message: 'clientId topilmadi!' } };
+  }
+  const presentedToken = extractSessionToken(req);
+  // Reject malformed tokens outright instead of comparing them: this also
+  // protects the store against junk lookups.
+  if (presentedToken !== null && !looksLikeSessionToken(presentedToken)) {
+    return {
+      status: 401,
+      body: { success: false, message: 'Avtorizatsiya tokeni noto\'g\'ri formatda!' },
+    };
+  }
+  const verdict = await store.verifyClientSession(clientId, presentedToken);
+  if (!verdict.ok) {
+    return { status: verdict.status, body: { success: false, message: verdict.message } };
+  }
+  return null;
 }
 
 // Helper: Generate a unique 6-digit PIN (checks the shared store)
@@ -104,6 +204,40 @@ async function getStudentGame(clientId: string): Promise<{ pin: string; game: Ga
 // REST API: Health Check
 app.get('/api/health', ah(async (req, res) => {
   res.json({ status: 'ok', activeGames: await store.listActiveGames() });
+}));
+
+// REST API: Fetch authoritative game state for a teacher or student client.
+// Clients subscribe to a Pusher channel asynchronously, so a game_state event
+// broadcast before the subscription was confirmed is silently dropped by
+// Channels and never replayed. Clients pull the current state once their
+// subscription is live (and again after every reconnect) to recover any missed
+// event — this is what guarantees a teacher sees the very first student login.
+app.get('/api/game-state', ah(async (req, res) => {
+  const clientId = (req.query?.clientId || '').toString();
+  if (!clientId) {
+    res.json({ success: false, message: 'clientId topilmadi!' });
+    return;
+  }
+
+  const teacherPin = await store.getTeacherPin(clientId);
+  if (teacherPin) {
+    const game = await store.getGame(teacherPin);
+    if (game && game.teacherClientId === clientId) {
+      res.json({ success: true, game });
+      return;
+    }
+  }
+
+  const studentPin = await store.getStudentPin(clientId);
+  if (studentPin) {
+    const game = await store.getGame(studentPin);
+    if (game && game.students[clientId]) {
+      res.json({ success: true, game });
+      return;
+    }
+  }
+
+  res.json({ success: false, message: "Faol o'yin topilmadi!" });
 }));
 
 // 1. TEACHER: Create new game session (or reset)
@@ -145,10 +279,14 @@ app.post('/api/create-game', ah(async (req, res) => {
   await store.setGame(pin, newGame);
   await store.setTeacherPin(clientId, pin);
 
+  // Mint the client's session token on first registration. From now on every
+  // chat request for this clientId must also present this token.
+  const sessionToken = await store.createSessionToken(clientId);
+
   console.log(`Yangi o'yin seansi yaratildi! PIN: ${pin}`);
 
-  broadcastGameState(pin, newGame);
-  res.json({ success: true, pin, game: newGame });
+  await broadcastGameState(pin, newGame);
+  res.json({ success: true, pin, game: newGame, sessionToken });
 }));
 
 // 2. STUDENT: Join existing game via PIN & Name
@@ -162,7 +300,7 @@ app.post('/api/join-game', ah(async (req, res) => {
     return;
   }
 
-  const r = await store.withGameLock(pin, (game) => {
+  const r = await store.withGameLock(pin, async (game) => {
     // Check name collision in game
     const existingStudent = Object.values(game.students).find(
       (s) => s.name.toLowerCase() === name.toLowerCase()
@@ -174,6 +312,8 @@ app.post('/api/join-game', ah(async (req, res) => {
       const oldId = existingStudent.id;
       if (oldId && oldId !== clientId) {
         delete game.students[oldId];
+        // The abandoned clientId must not remain able to act on this game.
+        await store.deleteSessionToken(oldId);
       }
       existingStudent.id = clientId;
       existingStudent.connected = true;
@@ -204,6 +344,10 @@ app.post('/api/join-game', ah(async (req, res) => {
 
   await store.setStudentPin(clientId, pin);
 
+  // Mint the client's session token on first registration; reuse if it already
+  // exists (reconnect on the same browser keeps the same clientId).
+  const sessionToken = await store.createSessionToken(clientId);
+
   if (r.game.phase !== 'LOBBY' && r.game.phase !== 'TEAMS_SETUP') {
     emitToGame(pin, 'notification', {
       type: 'warning',
@@ -216,8 +360,8 @@ app.post('/api/join-game', ah(async (req, res) => {
     });
   }
 
-  broadcastGameState(pin, r.game);
-  res.json({ success: true, studentId: clientId, game: r.game });
+  await broadcastGameState(pin, r.game);
+  res.json({ success: true, studentId: clientId, game: r.game, sessionToken });
 }));
 
 // 3. TEACHER: Create a Team
@@ -256,7 +400,7 @@ app.post('/api/create-team', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -288,7 +432,7 @@ app.post('/api/delete-team', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -340,7 +484,7 @@ app.post('/api/assign-student', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -391,7 +535,7 @@ app.post('/api/bulk-assign-students', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -421,6 +565,7 @@ app.post('/api/kick-student', ah(async (req, res) => {
 
     delete game.students[studentId];
     await store.deleteStudentPin(studentId);
+    await store.deleteSessionToken(studentId);
     return { ok: true, game };
   });
 
@@ -428,7 +573,7 @@ app.post('/api/kick-student', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -464,7 +609,7 @@ app.post('/api/set-team-leader', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -528,7 +673,7 @@ app.post('/api/penalize-team', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'notification', {
     type: 'warning',
     text: `${r.data?.teamName} jamoasidan ${r.data?.reason} -${r.data?.penalty} ball olindi! Joriy ball: ${r.data?.teamScore}`,
@@ -558,7 +703,7 @@ app.post('/api/set-questions', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -598,7 +743,7 @@ app.post('/api/start-betting-phase', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'notification', {
     type: 'info',
     text: 'Savol ekranga chiqdi! Jamoalar ball tikishni boshlang.',
@@ -654,7 +799,7 @@ app.post('/api/place-bet', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
 
   emitToGame(context.pin, 'bet_placed', { teamId: r.data?.teamId, bet: r.data?.bet });
   emitToGame(context.pin, 'notification', {
@@ -707,7 +852,7 @@ app.post('/api/start-answering-phase', ah(async (req, res) => {
     return;
   }
 
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'notification', {
     type: 'info',
     text: `O'qituvchi taymerni boshladi! Guruh sardorlari javob kiritishi mumkin!`,
@@ -752,7 +897,7 @@ app.post('/api/timer-tick', ah(async (req, res) => {
   }
 
   if (r.game.phase === 'GRADING') {
-    broadcastGameState(pin, r.game);
+    await broadcastGameState(pin, r.game);
     emitToGame(pin, 'notification', {
       type: 'warning',
       text: `Vaqt tugadi! Javoblar qabul qilish to'xtatildi.`,
@@ -782,7 +927,7 @@ app.post('/api/stop-answering-phase', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -832,7 +977,7 @@ app.post('/api/submit-answer', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'answer_submitted', { teamId: r.data?.teamId, teamName: r.data?.teamName });
   emitToGame(context.pin, 'notification', {
     type: 'success',
@@ -905,7 +1050,7 @@ app.post('/api/grade-team-answer', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -981,7 +1126,7 @@ app.post('/api/finish-round', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -1020,7 +1165,7 @@ app.post('/api/next-question', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -1048,7 +1193,7 @@ app.post('/api/set-game-phase', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   res.json({ success: true });
 }));
 
@@ -1089,7 +1234,7 @@ app.post('/api/reset-game', ah(async (req, res) => {
   await store.setTeacherPin(clientId, newPin);
 
   console.log(`Yangi o'yin boshlandi! Yangi PIN: ${newPin}`);
-  broadcastGameState(newPin, newGame);
+  await broadcastGameState(newPin, newGame);
   res.json({ success: true, pin: newPin, game: newGame });
 }));
 
@@ -1123,7 +1268,7 @@ app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'notification', {
     type: 'info',
     text: `O'yin to'xtatildi! Barcha guruhlar va o'quvchilar saqlanib qolindi.`,
@@ -1174,7 +1319,7 @@ app.post('/api/update-pin', ah(async (req, res) => {
   await store.setTeacherPin(clientId, cleanPin);
 
   console.log(`PIN-kod (parol) o'zgartirildi va o'quvchilar chiqarildi: ${currentPin} -> ${cleanPin}`);
-  broadcastGameState(cleanPin, game);
+  await broadcastGameState(cleanPin, game);
   res.json({ success: true, pin: cleanPin, game });
 }));
 
@@ -1222,12 +1367,292 @@ app.post('/api/submit-feedback', ah(async (req, res) => {
     res.json({ success: false });
     return;
   }
-  broadcastGameState(context.pin, r.game);
+  await broadcastGameState(context.pin, r.game);
   emitToGame(context.pin, 'notification', {
     type: 'success',
     text: `${r.data?.studentName} o'yin haqida fikr bildirdi!`,
   });
   res.json({ success: true });
+}));
+
+// ============================================================
+// Chat (private student <-> teacher)
+// ============================================================
+
+// Pusher private-channel authentication. Only the teacher of the game or the
+// student who owns the chat may subscribe to `private-chat-{pin}-{studentId}`.
+app.post('/api/pusher/auth', ah(async (req, res) => {
+  const socketId = (req.body?.socket_id || '').toString();
+  const channelName = (req.body?.channel_name || '').toString();
+  const clientId = (req.body?.clientId || '').toString();
+
+  if (!socketId || !channelName) {
+    res.status(400).json({ error: 'socket_id va channel_name talab qilinadi!' });
+    return;
+  }
+
+  // pusher-js sends "<digits>.<digits>"; anything else would make the Pusher
+  // client throw and bubble up as a 500, so reject it cleanly instead.
+  if (!socketId.match(/^\d+\.\d+$/)) {
+    res.status(400).json({ error: 'socket_id noto\'g\'ri formatda!' });
+    return;
+  }
+
+  // The caller must prove they own the clientId by presenting its session token.
+  const authError = await verifyChatClient(req, clientId);
+  if (authError) {
+    res.status(authError.status).json(authError.body);
+    return;
+  }
+
+  const match = channelName.match(/^private-chat-([A-Za-z0-9]+)-(.+)$/);
+  if (!match) {
+    res.status(400).json({ error: 'Noto\'g\'ri kanal nomi!' });
+    return;
+  }
+
+  const pin = match[1];
+  const rest = match[2];
+  // "private-chat-<pin>-g-<teamId>" = group room, otherwise it is the 1:1
+  // student <-> teacher room for that student id.
+  const isGroupRoom = rest.startsWith('g-');
+  const teamId = isGroupRoom ? rest.slice(2) : null;
+  const studentId = isGroupRoom ? null : rest;
+
+  const game = await store.getGame(pin);
+  if (!game) {
+    res.status(400).json({ error: 'O\'yin topilmadi!' });
+    return;
+  }
+
+  const teacherPin = await store.getTeacherPin(clientId);
+  const isTeacher = teacherPin === pin && game.teacherClientId === clientId;
+  const student = game.students[clientId];
+
+  let allowed = false;
+  if (isTeacher) {
+    // Teacher may subscribe to any room of their own game.
+    allowed = true;
+  } else if (isGroupRoom) {
+    // A student may only join the room of their OWN group.
+    allowed = !!teamId && !!student && student.teamId === teamId && !!game.teams[teamId];
+  } else {
+    // A student may only join their own 1:1 room with the teacher.
+    allowed = clientId === studentId && !!student;
+  }
+
+  if (!allowed) {
+    res.status(403).json({ error: 'Ushbu chatga kirish ruxsati yo\'q!' });
+    return;
+  }
+
+  res.send(pusher.authorizeChannel(socketId, channelName));
+}));
+
+// Send a chat message. Students may only write to their own chat with the
+// teacher; the teacher may write to any student's chat.
+app.post('/api/chat/send', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+
+  // 1) Identity: clientId must be bound to a valid session token.
+  const authError = await verifyChatClient(req, clientId);
+  if (authError) {
+    res.status(authError.status).json(authError.body);
+    return;
+  }
+
+  // 2) Payload validation: text is required and hard-truncated to 1000 chars
+  //    both here and in the UI (input maxLength=1000).
+  const text = (req.body?.text || '').toString().trim().slice(0, 1000);
+  if (!text) {
+    res.json({ success: false, message: 'Xabar bo\'sh bo\'lishi mumkin emas!' });
+    return;
+  }
+
+  // 3) Rate limit: no more than CHAT_RATE_LIMIT_MAX messages per window per
+  //    client, so a single client cannot flood the chat.
+  const rl = await store.checkRateLimit(
+    `chat:send:${clientId}`,
+    CHAT_RATE_LIMIT_MAX,
+    CHAT_RATE_LIMIT_WINDOW_MS
+  );
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rl.retryAfterMs / 1000))));
+    res.status(429).json({
+      success: false,
+      message: 'Juda tez xabar yubormoqdasiz, biroz kuting!',
+      retryAfterMs: rl.retryAfterMs,
+    });
+    return;
+  }
+
+  const teacherPin = await store.getTeacherPin(clientId);
+  const studentPin = await store.getStudentPin(clientId);
+
+  // The requested room. roomType defaults to "private"; a group message is
+  // requested by passing teamId (or roomType: "group").
+  const requestedRoomType: 'private' | 'group' = req.body?.roomType === 'group' ? 'group' : 'private';
+
+  let pin: string | null = null;
+  let role: 'teacher' | 'student';
+  let senderName: string;
+  let roomType: 'private' | 'group';
+  let roomId: string; // studentId for private rooms, teamId for group rooms
+
+  if (teacherPin) {
+    const game = await store.getGame(teacherPin);
+    if (game && game.teacherClientId === clientId) {
+      pin = teacherPin;
+      role = 'teacher';
+      senderName = "O'qituvchi";
+      roomType = requestedRoomType;
+
+      if (roomType === 'group') {
+        // Teacher may write to any group room of their game.
+        const teamId = (req.body?.teamId || '').toString();
+        if (!teamId || !game.teams[teamId]) {
+          res.json({ success: false, message: 'Bunday guruh bu o\'yinda topilmadi!' });
+          return;
+        }
+        roomId = teamId;
+      } else {
+        const targetStudentId = (req.body?.studentId || '').toString();
+        if (!targetStudentId || !game.students[targetStudentId]) {
+          res.json({ success: false, message: 'Bunday o\'quvchi bu o\'yinda topilmadi!' });
+          return;
+        }
+        roomId = targetStudentId;
+      }
+    }
+  } else if (studentPin) {
+    const game = await store.getGame(studentPin);
+    const student = game?.students[clientId];
+    if (game && student) {
+      pin = studentPin;
+      role = 'student';
+      senderName = student.name;
+
+      if (requestedRoomType === 'group') {
+        const teamId = (req.body?.teamId || '').toString();
+        roomType = 'group';
+        // GROUP ISOLATION: a student may only post inside their own group's
+        // room. Claiming another group's teamId is an attack -> 403.
+        const ownTeamId = student.teamId;
+        if (!teamId || !game.teams[teamId] || ownTeamId !== teamId) {
+          res
+            .status(403)
+            .json({
+              success: false,
+              message: 'Boshqa guruh chatiga yozish ruxsati yo\'q! (faqat o\'z guruhingizga yozishingiz mumkin)',
+            });
+          return;
+        }
+        roomId = teamId;
+      } else {
+        roomType = 'private';
+        // A student can only ever write inside their own private chat.
+        roomId = clientId;
+        // Explicitly claiming another student's chat is an attack: reject it
+        // instead of silently redirecting so the violation is visible.
+        const claimedTarget = (req.body?.studentId || '').toString();
+        if (claimedTarget && claimedTarget !== clientId) {
+          res
+            .status(403)
+            .json({ success: false, message: 'Boshqa o\'quvchi chatiga yozish ruxsati yo\'q!' });
+          return;
+        }
+      }
+    }
+  }
+
+  if (!pin || !roomId) {
+    res.json({ success: false, message: 'Avval o\'yinga ulanish kerak!' });
+    return;
+  }
+
+  const message = {
+    id: 'cm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    senderId: clientId,
+    senderName,
+    role,
+    text,
+    createdAt: Date.now(),
+    roomType,
+    groupId: roomType === 'group' ? roomId : null,
+  };
+
+  await store.addChatMessage(pin, roomType === 'group' ? `g:${roomId}` : roomId, message);
+  await emitToChat(pin, roomType, roomId, 'chat_message', message);
+
+  res.json({ success: true, message });
+}));
+
+// Fetch message history for a chat room (private student<->teacher or a
+// per-group room). Only the teacher of the game or the owning student may
+// read a room, and students are isolated to their own group's room.
+app.get('/api/chat/messages', ah(async (req, res) => {
+  const clientId = (req.query?.clientId || '').toString();
+
+  // Identity: clientId must be bound to a valid session token.
+  const authError = await verifyChatClient(req, clientId);
+  if (authError) {
+    res.status(authError.status).json(authError.body);
+    return;
+  }
+
+  const pin = (req.query?.pin || '').toString();
+  const requestedRoomType: 'private' | 'group' = req.query?.roomType === 'group' ? 'group' : 'private';
+  const teamId = (req.query?.teamId || '').toString();
+  const studentId = (req.query?.studentId || '').toString();
+
+  const game = await store.getGame(pin);
+  if (!game) {
+    res.json({ success: false, message: 'O\'yin topilmadi!' });
+    return;
+  }
+
+  const teacherPin = await store.getTeacherPin(clientId);
+  const isTeacher = teacherPin === pin && game.teacherClientId === clientId;
+  const student = game.students[clientId];
+
+  if (requestedRoomType === 'group') {
+    // GROUP ISOLATION: a student may only read their OWN group's room.
+    if (!isTeacher) {
+      if (!student || student.teamId !== teamId || !game.teams[teamId]) {
+        res
+          .status(403)
+          .json({ success: false, message: 'Boshqa guruh chatiga kirish ruxsati yo\'q!' });
+        return;
+      }
+    } else if (!teamId || !game.teams[teamId]) {
+      res.json({ success: false, message: 'Bunday guruh bu o\'yinda topilmadi!' });
+      return;
+    }
+    const messages = await store.getChatMessages(pin, `g:${teamId}`);
+    res.json({ success: true, roomType: 'group', teamId, messages });
+    return;
+  }
+
+  // Private room (student <-> teacher).
+  if (!isTeacher) {
+    if (studentId && studentId !== clientId) {
+      res
+        .status(403)
+        .json({ success: false, message: 'Boshqa o\'quvchi chatiga kirish ruxsati yo\'q!' });
+      return;
+    }
+    if (!student) {
+      res.status(401).json({ success: false, message: 'Avval o\'yinga ulanish kerak!' });
+      return;
+    }
+  } else if (!game.students[studentId]) {
+    res.json({ success: false, message: 'O\'quvchi topilmadi!' });
+    return;
+  }
+
+  const roomId = isTeacher ? studentId : clientId;
+  const messages = await store.getChatMessages(pin, roomId);
+  res.json({ success: true, roomType: 'private', studentId: roomId, messages });
 }));
 
 // Serve frontend static files in production. On Vercel this is skipped: the

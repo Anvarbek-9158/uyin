@@ -75,6 +75,23 @@ export interface GameSession {
   createdAt: number;
 }
 
+// Chat message. Every message belongs to a chat room:
+//   - "private" rooms are 1:1 student <-> teacher (roomId = the student's id),
+//   - "group" rooms are shared by all members of one team/group
+//     (roomId = the team id; groupId === roomId).
+// The teacher can read/write every room of the game; a student may only access
+// their own private room and the room of their own group.
+export interface ChatMessage {
+  id: string;
+  senderId: string; // student clientId or teacher clientId
+  senderName: string;
+  role: 'teacher' | 'student';
+  text: string;
+  createdAt: number;
+  roomType: 'private' | 'group';
+  groupId?: string | null;
+}
+
 // Pusher Channels Event Payload Types
 export interface GameChannelEvents {
   game_state: GameSession;
