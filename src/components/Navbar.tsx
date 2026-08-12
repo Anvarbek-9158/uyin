@@ -48,7 +48,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-black text-base sm:text-xl md:text-2xl tracking-tight truncate">
                 <span className="text-white">Edu</span>
                 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Play</span>
-                <span className="ml-1.5 text-indigo-400 font-mono text-[10px] sm:text-xs font-bold">v2.0</span>
               </span>
               <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hidden lg:inline-block shrink-0">
                 {viewMode === 'TEACHER' ? "O'qituvchi Boshqaruvi" : "O'quvchi Tizimi"}

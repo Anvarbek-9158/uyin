@@ -4,16 +4,20 @@ import { getClientId, getSessionToken } from './api';
 // Shared Pusher client for the whole app. It is configured with an auth
 // endpoint so both public game channels and private chat channels can be
 // subscribed to. The clientId AND its session token are attached dynamically
-// (as functions) so the server can prove the client owns that clientId before
-// authorizing private chat subscriptions.
+// (via paramsProvider) so the server can prove the client owns that clientId
+// before authorizing private chat subscriptions. NOTE: they must NOT go in
+// `auth.params` — pusher-js serializes those values as-is (function sources
+// would be sent instead of their results); only `paramsProvider` is evaluated
+// at request time.
 export const pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY || '307958d4cd4d6d38e210', {
   cluster: import.meta.env.VITE_PUSHER_CLUSTER || 'ap2',
-  authEndpoint: '/api/pusher/auth',
-  auth: {
-    params: {
-      clientId: () => getClientId(),
-      sessionToken: () => getSessionToken() || '',
-    },
+  channelAuthorization: {
+    transport: 'ajax',
+    endpoint: '/api/pusher/auth',
+    paramsProvider: () => ({
+      clientId: getClientId(),
+      sessionToken: getSessionToken() || '',
+    }),
   },
 });
 
