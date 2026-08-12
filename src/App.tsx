@@ -7,6 +7,7 @@ import { StudentView } from './components/StudentView';
 import { sounds } from './utils/soundEffects';
 import { apiPost, apiGet, getClientId, setSessionToken } from './utils/api';
 import { pusher } from './utils/pusher';
+import { useHeartbeat } from './utils/useHeartbeat';
 import {
   Sparkles,
   ArrowLeft,
@@ -278,6 +279,32 @@ export default function App() {
   const handleGameStateChange = (state: GameSession) => {
     setGameState(state);
   };
+
+  // Teacher presence heartbeat (QISM D/F). Runs only while the teacher panel is
+  // active with a live game. If the server stops receiving these, it auto-ends
+  // the game after the teacher grace period.
+  useHeartbeat(
+    async () => {
+      if (!gameState?.pin) return;
+      await apiPost('/api/teacher-heartbeat', { clientId });
+    },
+    5000,
+    viewMode === 'TEACHER' && isTeacherAuth && !!gameState?.pin
+  );
+
+  // Teacher closing the tab/app: a fire-and-forget beacon ends the game right
+  // away instead of waiting for the heartbeat grace period. Navigating inside
+  // the SPA (e.g. switching to the student view) does NOT fire pagehide, so it
+  // never falsely ends a game.
+  useEffect(() => {
+    if (viewMode !== 'TEACHER' || !isTeacherAuth || !gameState?.pin) return;
+    const onPageHide = () => {
+      const blob = new Blob([JSON.stringify({ clientId })], { type: 'application/json' });
+      navigator.sendBeacon?.('/api/teacher-leave', blob);
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, [clientId, viewMode, isTeacherAuth, gameState?.pin]);
 
   return (
     <div className="min-h-screen bg-[#0B1121] text-[#F8FAFC] flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-[#0EA5E9] selection:text-[#0B1121]">

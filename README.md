@@ -69,4 +69,41 @@ talab qiladi — o'g'irlangan `clientId`'ning o'zi endi yetarli emas.
 - `CHAT_RATE_LIMIT_MAX` (sukut: 20) — har bir `clientId` uchun `chat/send` soni
 - `CHAT_RATE_LIMIT_WINDOW_SECONDS` (sukut: 60) — shu oyna (soniya) ichida
 
+### Ishtirokchilar mavjudligi (presence) va raundlar
+
+O'yin holati server tomonidan boshqariladi va Redis'da saqlanadi. Kim "onlayn"
+ekanligini ham backend hal qiladi: o'qituvchi va har bir o'quvchi brauzeri
+`/api/teacher-heartbeat` / `/api/student-heartbeat` orqali har ~5 soniyada
+"men shu yerdaman" signalini yuboradi. Signal to'xtasa, imtiyoz muddati
+(grace) o'tgach:
+
+- **O'qituvchi** — o'yin avtomatik `GAME_OVER` holatiga o'tadi (o'yin o'chirilmaydi,
+  o'qituvchi qaytib kelib "Yangi Raund (Guruhlar Saqlanadi)" orqali davom
+  ettirishi mumkin). O'qituvchi sahifani yopsa, `pagehide` beacon
+  (`/api/teacher-leave`) o'yinni darhol yakunlaydi.
+- **O'quvchi** — o'yindan va guruhidan chiqariladi; agar sardor bo'lsa, sardorlik
+  guruhdagi navbatdagi a'zoga o'tadi. Qayta ulangan o'quvchi reconnect orqali
+  o'z o'rniga qaytadi (agar imtiyoz muddati tugamagan bo'lsa).
+
+Bu "heartbeat + grace" — hech qanday realtime stackda "hard disconnect"
+kafolati yo'q, shuning uchun bu standart heuristic usul.
+
+- `PRESENCE_TEACHER_GRACE_MS` (sukut: 45000) — o'qituvchi jimgina qolsa, o'yin shu
+  muddatdan keyin yakunlanadi
+- `PRESENCE_STUDENT_GRACE_MS` (sukut: 90000) — o'quvchi shu muddatdan keyin o'yindan
+  chiqariladi
+
+**Raundlar:** har raund `QUESTIONS_PER_ROUND` (sukut: 5) ta savoldan iborat bo'lak.
+Ballar barcha raundlar davomida kumulyativ yig'iladi (per-round reset yo'q).
+`currentRound` har raund oxirida avtomatik oshadi va o'qituvchi panelida
+"Raund N" ko'rinishida aks etadi.
+
+- `QUESTIONS_PER_ROUND` (sukut: 5) — har raunddagi savollar soni
+
+**PIN'ni yangilash (`/api/regenerate-pin`):** o'qituvchi "PIN'ni Yangilash"
+tugmasini bossa, yangi tasodifiy PIN-kod yaratiladi va barcha o'quvchilar
+chiqariladi. Guruhlar va to'plangan ballar saqlanib qoladi — o'quvchilar yangi
+PIN bilan qayta ulanib, o'qituvchi ularni yana guruhlarga biriktiradi.
+
+
 

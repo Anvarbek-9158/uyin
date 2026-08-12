@@ -184,6 +184,28 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     }
   };
 
+  // Regenerate the game PIN with one click: every student is kicked out and
+  // must re-join with the fresh PIN, while teams and their scores are kept
+  // (QISM E).
+  const handleRegeneratePin = async () => {
+    if (
+      !window.confirm(
+        "Yangi PIN-kod yaratiladi va barcha o'quvchilar chiqariladi (ular yangi PIN-kod bilan qayta ulanadi). Guruhlar va to'plangan ballar SAQLANADI. Davom etasizmi?"
+      )
+    ) {
+      return;
+    }
+    const res = await apiPost<{ success: boolean; pin?: string; message?: string; game?: GameSession }>(
+      '/api/regenerate-pin',
+      { clientId }
+    );
+    if (res?.success && res.game) {
+      onPinUpdated(res.game);
+    } else {
+      window.alert(res?.message || 'PIN-kodni yangilashda xatolik yuz berdi');
+    }
+  };
+
   const handleAddQuestion = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuestionText.trim() || !newCorrect.trim()) return;
@@ -283,6 +305,15 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               >
                 <Edit3 className="w-4 h-4 shrink-0" />
                 Parolni O'zgartirish
+              </button>
+
+              <button
+                onClick={handleRegeneratePin}
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
+                title="Yangi tasodifiy PIN-kod yaratish va barcha o'quvchilarni chiqarish (guruhlar va ballar saqlanadi)"
+              >
+                <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
+                PIN'ni Yangilash
               </button>
 
               <button
@@ -719,6 +750,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
                   <div className="flex items-center gap-3">
                     <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
+                      Raund {gameState.currentRound ?? 1}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
                       Savol {currentQuestionIndex + 1} / {questions.length}
                     </span>
                     <div className="text-xs text-slate-400 font-mono uppercase">
@@ -727,7 +761,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         {phase === 'BETTING' && '1. Ball Tikish Bosqichi'}
                         {phase === 'ANSWERING' && '2. Javob Berish (Taymer Ishlamoqda)'}
                         {phase === 'GRADING' && '3. Javoblarni Baholash'}
-                        {phase === 'ROUND_RESULT' && '4. Raund Yakunlandi'}
+                        {phase === 'ROUND_RESULT' && `4. Raund ${gameState.currentRound ?? 1} Yakunlandi`}
                         {phase === 'GAME_OVER' && '5. O\'yin Yakunlandi 🏆'}
                       </span>
                     </div>

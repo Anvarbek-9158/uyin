@@ -5,6 +5,11 @@ export interface Student {
   teamId: string | null;
   isLeader: boolean;
   connected: boolean;
+  // Client presence heartbeat. Set whenever the student's browser reports in
+  // (join, heartbeat). When it goes stale for longer than the student grace
+  // period the student is treated as disconnected and removed from the game
+  // (and, if they were a leader, leadership is handed to the next member).
+  lastSeenAt?: number | null;
 }
 
 export interface TeamResult {
@@ -73,6 +78,21 @@ export interface GameSession {
   maxScoreLimit: number;
   feedbacks?: StudentFeedback[];
   createdAt: number;
+  // --- Presence (QISM D/F/G) ---
+  // Server-side authoritative presence. The teacher's browser (and each
+  // student's browser) reports in periodically; if the value goes stale for
+  // longer than the grace period the game is auto-ended (teacher) or the
+  // student is removed (student). Optional so pre-existing Redis games and test
+  // fixtures (which predate the feature) keep working — a missing value is
+  // treated as "unknown, never expire".
+  teacherLastSeenAt?: number | null;
+  // --- Rounds (QISM H) ---
+  // A "raund" is a fixed-size chunk of consecutive questions. Scores stay
+  // cumulative across rounds. currentRound is 1-based; questionsPlayedInRound
+  // counts the questions started inside the current round.
+  currentRound?: number;
+  questionsPerRound?: number;
+  questionsPlayedInRound?: number;
 }
 
 // Chat message. Every message belongs to a chat room:

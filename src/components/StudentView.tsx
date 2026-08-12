@@ -5,6 +5,7 @@ import { QuestionCard } from './QuestionCard';
 import { Leaderboard } from './Leaderboard';
 import { StudentChatLauncher } from './ChatSection';
 import { apiPost, setSessionToken } from '../utils/api';
+import { useHeartbeat } from '../utils/useHeartbeat';
 import {
   User,
   Crown,
@@ -136,6 +137,45 @@ export const StudentView: React.FC<StudentViewProps> = ({
       channel.unbind('answer_submitted', onAnswerSubmitted);
     };
   }, [channel, gameState, myTeam]);
+
+  // Student presence heartbeat (QISM G): report in every few seconds. If the
+  // server stops receiving these for longer than the student grace period, the
+  // student is removed from the game and their team (handing leadership over if
+  // they were the leader).
+  useHeartbeat(
+    async () => {
+      if (!studentId || !gameState?.pin) return;
+      await apiPost('/api/student-heartbeat', { clientId });
+    },
+    5000,
+    !!studentId && !!gameState?.pin
+  );
+
+  // On real unload (close/reload), send one final best-effort heartbeat so the
+  // server's staleness clock starts at the close, not at the last scheduled
+  // tick. Reloads stay safe: the join-game reconnect path restores the student.
+  useEffect(() => {
+    if (!studentId || !gameState?.pin) return;
+    const onPageHide = () => {
+      const blob = new Blob([JSON.stringify({ clientId })], { type: 'application/json' });
+      navigator.sendBeacon?.('/api/student-heartbeat', blob);
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, [clientId, studentId, gameState?.pin]);
+
+  // The server may remove us mid-session (presence expiry or the teacher
+  // kicking us). When our record vanishes from the authoritative state, drop
+  // back to the login screen with an explanation instead of a broken panel.
+  useEffect(() => {
+    if (joined && studentId && gameState && !gameState.students[studentId]) {
+      setErrorMsg(
+        "Siz o'yindan chiqarildingiz (ulanish uzilgani yoki o'qituvchi tomonidan o'chirilgani sababli). Qayta ulanish uchun PIN-kod va ismingizni kiriting."
+      );
+      setJoined(false);
+      setStudentId(null);
+    }
+  }, [joined, studentId, gameState]);
 
   // Handle Join
   const handleJoin = async (e: React.FormEvent) => {

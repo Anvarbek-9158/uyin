@@ -10,6 +10,10 @@ import {
   Team,
 } from './src/types.js';
 import * as store from './src/server/state.js';
+import {
+  applyPresenceSweep,
+  questionsPerRound,
+} from './src/server/presence.js';
 
 const app = express();
 
@@ -81,6 +85,76 @@ function emitToGame(pin: string, event: string, data: unknown): Promise<void> {
 // response goes out.
 async function broadcastGameState(pin: string, game: GameSession): Promise<void> {
   await emitToGame(pin, 'game_state', game);
+}
+
+// ============================================================
+// Presence (QISM D / F / G)
+//
+// The server is authoritative for who is "present": every teacher and student
+// browser reports in periodically via /api/teacher-heartbeat and
+// /api/student-heartbeat, and the sweeper below expires anyone whose
+// heartbeat has gone stale past their grace period. Heartbeat + grace is an
+// accepted heuristic (WebSocket stacks have the same "no hard disconnect
+// guarantee"), and the lazy sweep below runs only when someone actually
+// touches the game, which is cheap and works on serverless.
+// ============================================================
+
+// Run the presence sweep on `game` (must be called inside withGameLock).
+// Cleans up the store reverse-maps/session tokens of students who were
+// removed and returns what changed.
+async function sweepGamePresence(
+  pin: string,
+  game: GameSession
+): Promise<ReturnType<typeof applyPresenceSweep>> {
+  const result = applyPresenceSweep(game, Date.now());
+  for (const { id } of result.removedStudents) {
+    await store.deleteStudentPin(id);
+    await store.deleteSessionToken(id);
+  }
+  return result;
+}
+
+function notifyPresenceSweep(
+  pin: string,
+  result: ReturnType<typeof applyPresenceSweep>
+): void {
+  if (result.teacherEnded) {
+    emitToGame(pin, 'notification', {
+      type: 'warning',
+      text: "O'qituvchi aloqasi uzilgani sababli o'yin yakunlandi! O'qituvchi qaytgach, o'yinni davom ettirishi yoki yangilashi mumkin.",
+    });
+    return;
+  }
+  if (result.removedStudents.length > 0) {
+    const names = result.removedStudents
+      .slice(0, 3)
+      .map((s) => s.name)
+      .join(', ');
+    const extra =
+      result.removedStudents.length > 3
+        ? ` va yana ${result.removedStudents.length - 3} ta o'quvchi`
+        : '';
+    emitToGame(pin, 'notification', {
+      type: 'info',
+      text: `O'quvchi(lar) ulanishi uzilgani sababli o'yindan chiqarildi: ${names}${extra}`,
+    });
+  }
+}
+
+// Kick every connected student out of the current game channel (used when the
+// PIN changes / is regenerated and everyone must re-authenticate).
+function notifyKickAllStudents(pin: string, reason: string): void {
+  emitToGame(pin, 'kicked_out', reason);
+  emitToGame(pin, 'error_message', reason);
+}
+
+// Defaults for a freshly created / reset game session.
+function newGameDefaults(game: GameSession): GameSession {
+  game.currentRound = 1;
+  game.questionsPerRound = questionsPerRound();
+  game.questionsPlayedInRound = 0;
+  game.teacherLastSeenAt = Date.now();
+  return game;
 }
 
 // Chat channel naming:
@@ -219,20 +293,39 @@ app.get('/api/game-state', ah(async (req, res) => {
     return;
   }
 
+  // Presence sweep before serving: a pull is a natural point to notice an
+  // expired teacher/student and return the up-to-date (possibly ended/trimmed)
+  // state instead of a stale snapshot.
   const teacherPin = await store.getTeacherPin(clientId);
   if (teacherPin) {
-    const game = await store.getGame(teacherPin);
-    if (game && game.teacherClientId === clientId) {
-      res.json({ success: true, game });
+    const r = await store.withGameLock(teacherPin, async (game) => {
+      if (game.teacherClientId !== clientId) return { ok: false };
+      const sweep = await sweepGamePresence(teacherPin, game);
+      return { ok: true, game, data: sweep };
+    });
+    if (r && r.game && r.ok) {
+      if (r.data && (r.data.teacherEnded || r.data.removedStudents.length > 0)) {
+        await broadcastGameState(teacherPin, r.game);
+        notifyPresenceSweep(teacherPin, r.data);
+      }
+      res.json({ success: true, game: r.game });
       return;
     }
   }
 
   const studentPin = await store.getStudentPin(clientId);
   if (studentPin) {
-    const game = await store.getGame(studentPin);
-    if (game && game.students[clientId]) {
-      res.json({ success: true, game });
+    const r = await store.withGameLock(studentPin, async (game) => {
+      if (!game.students[clientId]) return { ok: false };
+      const sweep = await sweepGamePresence(studentPin, game);
+      return { ok: true, game, data: sweep };
+    });
+    if (r && r.game && r.ok) {
+      if (r.data && (r.data.teacherEnded || r.data.removedStudents.length > 0)) {
+        await broadcastGameState(studentPin, r.game);
+        notifyPresenceSweep(studentPin, r.data);
+      }
+      res.json({ success: true, game: r.game });
       return;
     }
   }
@@ -275,6 +368,7 @@ app.post('/api/create-game', ah(async (req, res) => {
     feedbacks: [],
     createdAt: Date.now(),
   };
+  newGameDefaults(newGame);
 
   await store.setGame(pin, newGame);
   await store.setTeacherPin(clientId, pin);
@@ -317,6 +411,7 @@ app.post('/api/join-game', ah(async (req, res) => {
       }
       existingStudent.id = clientId;
       existingStudent.connected = true;
+      existingStudent.lastSeenAt = Date.now();
       game.students[clientId] = existingStudent;
     } else {
       // New student register
@@ -327,6 +422,7 @@ app.post('/api/join-game', ah(async (req, res) => {
         teamId: null,
         isLeader: false,
         connected: true,
+        lastSeenAt: Date.now(),
       };
       game.students[clientId] = newStudent;
     }
@@ -727,6 +823,10 @@ app.post('/api/start-betting-phase', ah(async (req, res) => {
     game.timerSeconds = currentQ?.timeLimit || 30;
     game.phase = 'BETTING';
     game.isTimerRunning = false;
+    // Count questions started inside the current round (QISM H). The round
+    // advances in /api/finish-round once questionsPlayedInRound reaches the
+    // questionsPerRound boundary.
+    game.questionsPlayedInRound = (game.questionsPlayedInRound ?? 0) + 1;
 
     // Reset current bets and answers for all non-eliminated teams
     Object.values(game.teams).forEach((team) => {
@@ -1107,6 +1207,14 @@ app.post('/api/finish-round', ah(async (req, res) => {
     ) {
       game.phase = 'GAME_OVER';
     } else {
+      // Advance the round once the current round's question budget is spent
+      // (QISM H). Scores stay cumulative; only the round counter moves.
+      const played = game.questionsPlayedInRound ?? 0;
+      const perRound = game.questionsPerRound ?? questionsPerRound();
+      if (played >= perRound) {
+        game.currentRound = (game.currentRound ?? 1) + 1;
+        game.questionsPlayedInRound = 0;
+      }
       game.phase = 'ROUND_RESULT';
     }
     game.isTimerRunning = false;
@@ -1229,6 +1337,7 @@ app.post('/api/reset-game', ah(async (req, res) => {
     feedbacks: [],
     createdAt: Date.now(),
   };
+  newGameDefaults(newGame);
 
   await store.setGame(newPin, newGame);
   await store.setTeacherPin(clientId, newPin);
@@ -1252,6 +1361,10 @@ app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
     game.currentQuestionIndex = 0;
     game.timerSeconds = game.questions[0]?.timeLimit || 30;
     game.isTimerRunning = false;
+    game.currentRound = 1;
+    game.questionsPlayedInRound = 0;
+    game.questionsPerRound = questionsPerRound();
+    game.teacherLastSeenAt = Date.now();
 
     Object.values(game.teams).forEach((team) => {
       team.currentBet = null;
@@ -1303,13 +1416,19 @@ app.post('/api/update-pin', ah(async (req, res) => {
   }
 
   // Notify connected students that PIN changed and kick them out
-  emitToGame(currentPin as string, 'kicked_out', 'Parolni xato kiritdingiz');
-  emitToGame(currentPin as string, 'error_message', 'Parolni xato kiritdingiz');
+  notifyKickAllStudents(currentPin as string, 'Parolni xato kiritdingiz');
 
   // Transfer game to new PIN key and clear student list so they re-authenticate
   await store.deleteGame(currentPin as string);
   game.pin = cleanPin;
   game.students = {};
+  // Students are gone, so drop their team memberships too (the teacher re-assigns
+  // everyone on the new PIN). Scores and team records are preserved.
+  Object.values(game.teams).forEach((team) => {
+    team.memberIds = [];
+    team.leaderClientId = null;
+  });
+  newGameDefaults(game);
   await store.setGame(cleanPin, game);
 
   // Clear student pin mappings for the old game
@@ -1321,6 +1440,154 @@ app.post('/api/update-pin', ah(async (req, res) => {
   console.log(`PIN-kod (parol) o'zgartirildi va o'quvchilar chiqarildi: ${currentPin} -> ${cleanPin}`);
   await broadcastGameState(cleanPin, game);
   res.json({ success: true, pin: cleanPin, game });
+}));
+
+// 18b. TEACHER: Regenerate a brand-new random PIN and kick every student out
+// (QISM E).
+//
+// Unlike /api/reset-game (which wipes everything) this PRESERVES teams and
+// their scores; only student memberships are cleared so everyone must re-join
+// with the fresh PIN. The teacher is re-mapped to the new PIN so their panel
+// keeps working without a reload.
+app.post('/api/regenerate-pin', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = await getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+
+  const newPin = await generateUniquePin();
+
+  const r = await store.withGameLock(context.pin, (game) => {
+    notifyKickAllStudents(
+      context.pin,
+      "O'qituvchi PIN-kodni yangiladi! Iltimos, doskadagi yangi PIN-kod bilan qayta ulaning."
+    );
+
+    // Preserve teams + scores; drop student bindings so a fresh join wave
+    // starts clean (no stale leader / member pointers to dead students).
+    game.students = {};
+    Object.values(game.teams).forEach((team) => {
+      team.memberIds = [];
+      team.leaderClientId = null;
+    });
+    game.pin = newPin;
+    newGameDefaults(game);
+    return { ok: true, game };
+  });
+
+  if (!r || !r.game) {
+    res.json({ success: false });
+    return;
+  }
+
+  await store.clearStudentPinsForGame(context.pin);
+  await store.deleteGame(context.pin);
+  await store.setGame(newPin, r.game);
+  await store.setTeacherPin(clientId, newPin);
+
+  console.log(`PIN-kod yangilandi (o'quvchilar chiqarildi, guruhlar saqlandi): ${context.pin} -> ${newPin}`);
+  await broadcastGameState(newPin, r.game);
+  res.json({ success: true, pin: newPin, game: r.game });
+}));
+
+// 18c. TEACHER: Presence heartbeat (QISM D/F).
+// The teacher's browser reports in every few seconds. If this stops for longer
+// than the teacher grace period, the game auto-ends (see applyPresenceSweep).
+// The heartbeat itself also lazily sweeps stale students.
+app.post('/api/teacher-heartbeat', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const pin = await store.getTeacherPin(clientId);
+  if (!pin) {
+    res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });
+    return;
+  }
+
+  const r = await store.withGameLock(pin, async (game) => {
+    if (game.teacherClientId !== clientId) return { ok: false };
+    game.teacherLastSeenAt = Date.now();
+    const sweep = await sweepGamePresence(pin, game);
+    return { ok: true, game, data: sweep };
+  });
+
+  if (!r || !r.game || !r.ok) {
+    res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });
+    return;
+  }
+  if (r.data && (r.data.teacherEnded || r.data.removedStudents.length > 0)) {
+    await broadcastGameState(pin, r.game);
+    notifyPresenceSweep(pin, r.data);
+  }
+  res.json({ success: true });
+}));
+
+// 18d. STUDENT: Presence heartbeat (QISM G).
+// Same idea as the teacher heartbeat. The caller's own lastSeen is refreshed
+// BEFORE the sweep runs, so they are never removed by their own heartbeat; the
+// sweep can only remove OTHER stale students or end the game when the TEACHER
+// has gone silent.
+app.post('/api/student-heartbeat', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const pin = await store.getStudentPin(clientId);
+  if (!pin) {
+    res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });
+    return;
+  }
+
+  const r = await store.withGameLock(pin, async (game) => {
+    const student = game.students[clientId];
+    if (!student) {
+      // Already removed (presence expiry or teacher kick). Tell the client so
+      // it can return to the login screen.
+      return { ok: false, message: 'Siz o\'yindan chiqarilgansiz! Qayta ulanish uchun kirishni takrorlang.' };
+    }
+    student.lastSeenAt = Date.now();
+    student.connected = true;
+    const sweep = await sweepGamePresence(pin, game);
+    return { ok: true, game, data: sweep };
+  });
+
+  if (!r || !r.game) {
+    res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message });
+    return;
+  }
+  if (r.data && (r.data.teacherEnded || r.data.removedStudents.length > 0)) {
+    await broadcastGameState(pin, r.game);
+    notifyPresenceSweep(pin, r.data);
+  }
+  res.json({ success: true });
+}));
+
+// 18e. TEACHER: pagehide beacon — the teacher closed the tab/app. Ends the
+// game immediately instead of waiting for the heartbeat grace period. The game
+// is kept in GAME_OVER state so the teacher can come back and reset/replay it.
+app.post('/api/teacher-leave', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const context = await getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: true });
+    return;
+  }
+
+  const r = await store.withGameLock(context.pin, (game) => {
+    game.phase = 'GAME_OVER';
+    game.isTimerRunning = false;
+    return { ok: true, game };
+  });
+
+  if (r && r.game) {
+    await broadcastGameState(context.pin, r.game);
+    emitToGame(context.pin, 'notification', {
+      type: 'warning',
+      text: "O'qituvchi o'yin sahifasini yopdi! O'yin yakunlandi.",
+    });
+  }
+  res.json({ success: true });
 }));
 
 // 19. STUDENT: Submit Feedback/Review
