@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Channel } from 'pusher-js';
 import { ChatMessage, Student, Team } from '../types';
 import { apiPost, apiGet } from '../utils/api';
@@ -432,7 +432,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       : "O'qituvchingizga savol yoki murojaat yozishingiz mumkin. Bu xabar faqat ikkingizga ko'rinadi.";
 
     return (
-      <div className="flex flex-col h-full bg-slate-900/95 border-l border-white/10 backdrop-blur-xl">
+      <div className="flex flex-col h-full bg-slate-900/95 backdrop-blur-xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-950/60">
           <div className="flex items-center gap-3 min-w-0">
@@ -452,7 +452,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             <div className="min-w-0">
               <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
                 {title}
-                {onGroupTab && groupTeam ? ` — ${groupTeam.name}` : ''}
+                {onGroupTab && groupTeam ? ` вЂ” ${groupTeam.name}` : ''}
               </h3>
               <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -558,7 +558,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
     : 0;
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/95 border-l border-white/10 backdrop-blur-xl">
+    <div className="flex flex-col h-full bg-slate-900/95 backdrop-blur-xl">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-950/60">
         <div className="flex items-center gap-3 min-w-0">
@@ -570,7 +570,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               O'quvchi Chatlari
             </h3>
             <p className="text-[11px] text-slate-400 font-mono">
-              Shaxsiy va guruh chatlari — barcha guruhlar bilan aloqa
+              Shaxsiy va guruh chatlari вЂ” barcha guruhlar bilan aloqa
             </p>
           </div>
         </div>
@@ -739,7 +739,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       {selectedTeam.name}
                     </span>
                     <p className="text-[11px] text-slate-500 font-mono truncate">
-                      {selectedTeamMemberCount} a'zo · Bu guruh ichida hamma ko'ra oladi
+                      {selectedTeamMemberCount} a'zo В· Bu guruh ichida hamma ko'ra oladi
                     </p>
                   </div>
                 </div>
@@ -874,7 +874,7 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
       )}
 
       {open && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[400px] shadow-2xl animate-fade-in">
+        <div className="fixed bottom-6 right-3 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[400px] h-[min(560px,70vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
           <ChatSection
             clientId={clientId}
             pin={pin}
@@ -924,7 +924,7 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
       </button>
 
       {open && (
-        <div className="fixed inset-y-0 right-0 z-[60] w-full sm:w-[780px] shadow-2xl animate-fade-in">
+        <div className="fixed bottom-24 right-3 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[720px] h-[min(600px,75vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
           <ChatSection
             clientId={clientId}
             pin={pin}
