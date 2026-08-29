@@ -910,7 +910,7 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-4 right-4 sm:top-5 sm:right-5 z-50 group flex items-center gap-2.5 pl-4 pr-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(99,102,241,0.6)] hover:scale-105 active:scale-95 transition-all border border-white/20 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 pl-4 pr-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(99,102,241,0.6)] hover:scale-105 active:scale-95 transition-all border border-white/20 cursor-pointer"
         title="O'quvchilar bilan chat qilish"
         aria-label="Chatni ochish"
       >
