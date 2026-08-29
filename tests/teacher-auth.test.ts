@@ -75,6 +75,7 @@ const TEACHER_ENDPOINTS: { path: string; body: Record<string, unknown> }[] = [
   { path: '/api/regenerate-pin', body: {} },
   { path: '/api/teacher-heartbeat', body: {} },
   { path: '/api/timer-tick', body: { seconds: 10 } },
+  { path: '/api/end-game-and-announce-winners', body: {} },
 ];
 
 test('SECURITY: teacher endpoints reject a missing or wrong session token with 401', async (t) => {

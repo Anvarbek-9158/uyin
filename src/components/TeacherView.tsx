@@ -841,6 +841,22 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       </button>
                     )}
 
+                    {/* End the game early and announce the winners (VAZIFA 6/QISM J) */}
+                    {phase !== 'GAME_OVER' && phase !== 'LOBBY' && phase !== 'TEAMS_SETUP' && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm("O'yinni yakunlash va g'olib guruh(lar)ni e'lon qilmoqchimisiz? Bu qaytarib bo'lmaydi.")) {
+                            apiPost('/api/end-game-and-announce-winners', { clientId });
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold text-xs uppercase tracking-wider transition-all"
+                        title="O'yinni yakunlash va eng yuqori ball to'plagan guruh(lar)ni g'olib deb e'lon qilish"
+                      >
+                        <Trophy className="w-3.5 h-3.5 text-rose-400" />
+                        Yakunlash & G'olib
+                      </button>
+                    )}
+
                     {/* Reset/Stop game but keep teams button */}
                     <button
                       onClick={() => {
@@ -931,11 +947,38 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             O'yin Yakunlandi! 🏆
                           </h4>
                           <p className="text-[11px] text-slate-300 font-mono">
-                            Barcha savollar tugadi yoki bitta guruh qoldi. Yakuniy turnir jadvali o'ng panelda.
+                            Yakuniy turnir jadvali o'ng panelda.
                           </p>
                         </div>
                       </div>
                     </div>
+
+                    {/* Winners callout (QISM J) */}
+                    {(() => {
+                      const w = gameState?.winners ?? [];
+                      if (w.length === 0) {
+                        return (
+                          <p className="text-sm font-bold text-slate-300">
+                            G'olib e'lon qilinmadi.
+                          </p>
+                        );
+                      }
+                      const names = w
+                        .map((id) => gameState.teams?.[id]?.name)
+                        .filter(Boolean);
+                      return (
+                        <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-400/50 flex flex-wrap items-center gap-2">
+                          <Crown className="w-5 h-5 text-amber-300 shrink-0" />
+                          <span className="text-xs font-black uppercase tracking-widest text-amber-300">
+                            {names.length > 1 ? 'G\'oliblar:' : 'G\'olib:'}
+                          </span>
+                          <span className="font-mono font-black text-white text-base">
+                            {names.join(', ') || '—'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex flex-wrap items-center gap-2 pt-1">
                       <button
                         onClick={() => apiPost('/api/reset-game-keep-teams', { clientId })}

@@ -1720,6 +1720,8 @@ app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
     game.questionsPlayedInRound = 0;
     game.questionsPerRound = questionsPerRound();
     game.usedQuestionIds = [];
+    game.winners = [];
+    game.winnersAnnouncedAt = undefined;
     game.teacherLastSeenAt = Date.now();
 
     Object.values(game.teams).forEach((team) => {
@@ -1949,6 +1951,49 @@ app.post('/api/teacher-leave', ah(async (req, res) => {
       text: "O'qituvchi o'yin sahifasini yopdi! O'yin yakunlandi.",
     });
   }
+  res.json({ success: true });
+}));
+
+// 18f. TEACHER: End the game early and announce the winners. Sets the phase to
+// GAME_OVER, computes and persists the champion team(s) (top-scoring
+// non-eliminated team; ties are all champions), and broadcasts so both the
+// teacher and every student see the winner banner.
+app.post('/api/end-game-and-announce-winners', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
+  const context = await getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });
+    return;
+  }
+
+  const r = await store.withGameLock(context.pin, (game) => {
+    game.phase = 'GAME_OVER';
+    game.isTimerRunning = false;
+
+    const active = Object.values(game.teams).filter((t) => !t.isEliminated);
+    const ranked = [...active].sort((a, b) => b.score - a.score);
+    if (ranked.length > 0 && ranked[0].score > 0) {
+      const top = ranked[0].score;
+      game.winners = ranked.filter((t) => t.score === top).map((t) => t.id);
+    } else {
+      game.winners = [];
+    }
+    game.winnersAnnouncedAt = Date.now();
+
+    return { ok: true, game };
+  });
+
+  if (!r || !r.game) {
+    res.json({ success: false });
+    return;
+  }
+  await broadcastGameState(context.pin, r.game);
+  emitToGame(context.pin, 'notification', {
+    type: 'success',
+    text: 'O\'yin yakunlandi! G\'olib(lar) e\'lon qilindi. 🏆',
+  });
   res.json({ success: true });
 }));
 

@@ -98,6 +98,13 @@ export interface GameSession {
   // rounds the teacher can keep playing freely but a question is never picked
   // twice; when every question has been used the game is declared over.
   usedQuestionIds?: string[];
+  // --- Winners (QISM J) ---
+  // Team ids that won the game once it is over (top-scoring, non-eliminated
+  // team; ties are all champions). Empty when the game ended with no champion
+  // (e.g. every team bankrupt). Populated by the 'end-game-and-announce-winners'
+  // endpoint and shown to both teacher and students.
+  winners?: string[];
+  winnersAnnouncedAt?: number;
   // --- Identity re-claim (teacher-assisted reconnect) ---
   // A student who switches to a new device/browser has a fresh clientId, so
   // reusing their old name would normally be rejected as a hijack. The teacher

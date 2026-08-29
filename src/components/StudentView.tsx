@@ -520,6 +520,27 @@ export const StudentView: React.FC<StudentViewProps> = ({
             )}
           </div>
 
+          {/* Winners callout (QISM J) */}
+          {isGameOver && (gameState?.winners?.length ?? 0) > 0 && (
+            <div className="p-5 rounded-3xl bg-amber-500/15 border-2 border-amber-500/50 text-center shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+              <div className="inline-flex w-14 h-14 rounded-2xl bg-amber-500 text-slate-950 items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+                <Crown className="w-7 h-7" />
+              </div>
+              <h3 className="mt-3 text-lg sm:text-xl font-black uppercase tracking-tight text-amber-200">
+                {(gameState.winners ?? []).length > 1 ? 'G\'olib Guruhlar!' : 'G\'olib Guruh!'}
+              </h3>
+              <p className="mt-1 font-mono font-black text-white text-base sm:text-lg">
+                {(gameState.winners ?? [])
+                  .map((id) => gameState.teams?.[id]?.name)
+                  .filter(Boolean)
+                  .join('  🏆  ')}
+              </p>
+              <p className="mt-2 text-xs text-slate-300 font-mono">
+                Eng yuqori ball to'plagan guruh o'yin g'olibi bo'ldi. Tabriklaymiz! 🎉
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Feedback Form */}
             <div className="lg:col-span-2">
