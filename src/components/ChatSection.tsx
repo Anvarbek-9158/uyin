@@ -5,6 +5,7 @@ import { apiPost, apiGet } from '../utils/api';
 import { pusher, chatChannelName, groupChatChannelName } from '../utils/pusher';
 import {
   MessageSquare,
+  MessagesSquare,
   Send,
   X,
   Crown,
@@ -910,15 +911,12 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 pl-4 pr-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(99,102,241,0.6)] hover:scale-105 active:scale-95 transition-all border border-white/20 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
         title="O'quvchilar bilan chat qilish"
         aria-label="Chatni ochish"
       >
-        <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/15 group-hover:bg-white/25 transition-colors">
-          <MessageSquare className="w-4 h-4 text-white" />
-        </span>
-        <span>Chat</span>
-        <span className="min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.6)]">
+        <MessagesSquare className="w-7 h-7 group-hover:scale-110 transition-transform" strokeWidth={2.2} />
+        <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black flex items-center justify-center border-2 border-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.6)]">
           {studentCount}
         </span>
       </button>
