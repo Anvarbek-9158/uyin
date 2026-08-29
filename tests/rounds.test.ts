@@ -41,20 +41,24 @@ async function startServer(): Promise<ServerCtx> {
   return { base, close };
 }
 
-function post(base: string, path: string, body: Record<string, unknown>) {
+function post(base: string, path: string, body: Record<string, unknown>, token?: string | null) {
   return fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(body),
   });
 }
 
-async function createGame(base: string, clientId: string): Promise<{ pin: string }> {
+async function createGame(base: string, clientId: string): Promise<{ pin: string; sessionToken: string }> {
   const res = await post(base, '/api/create-game', { clientId });
-  const body = (await res.json()) as { success: boolean; pin?: string };
+  const body = (await res.json()) as { success: boolean; pin?: string; sessionToken?: string };
   assert.equal(body.success, true);
   assert.ok(body.pin);
-  return { pin: body.pin as string };
+  assert.ok(body.sessionToken);
+  return { pin: body.pin as string, sessionToken: body.sessionToken as string };
 }
 
 async function joinGame(base: string, clientId: string, pin: string, name: string): Promise<void> {
@@ -68,18 +72,17 @@ async function gameWithTeams(
   base: string,
   teacherId: string,
   n: number
-): Promise<{ pin: string; teamIds: string[] }> {
+): Promise<{ pin: string; teamIds: string[]; sessionToken: string }> {
   const store = await import('../src/server/state.js');
-  const { pin } = await createGame(base, teacherId);
+  const { pin, sessionToken } = await createGame(base, teacherId);
   const teamIds: string[] = [];
   for (let i = 0; i < n; i++) {
     const studentId = `${teacherId}-s${i}`;
     await joinGame(base, studentId, pin, `Talaba ${i + 1}`);
     const res = await post(base, '/api/create-team', {
       clientId: teacherId,
-      pin,
       name: `Jamoa ${i + 1}`,
-    });
+    }, sessionToken);
     assert.equal(((await res.json()) as { success: boolean }).success, true);
     const game = await store.getGame(pin);
     assert.ok(game);
@@ -89,18 +92,18 @@ async function gameWithTeams(
       clientId: teacherId,
       studentId,
       teamId,
-    });
+    }, sessionToken);
   }
-  return { pin, teamIds };
+  return { pin, teamIds, sessionToken };
 }
 
 // Plays one question up to GRADING and finishes the round.
-async function playAndFinishRound(base: string, teacherId: string): Promise<void> {
-  const start = await post(base, '/api/start-betting-phase', { clientId: teacherId });
+async function playAndFinishRound(base: string, teacherId: string, sessionToken: string): Promise<void> {
+  const start = await post(base, '/api/start-betting-phase', { clientId: teacherId }, sessionToken);
   assert.equal(((await start.json()) as { success: boolean }).success, true);
-  const phase = await post(base, '/api/set-game-phase', { clientId: teacherId, phase: 'GRADING' });
+  const phase = await post(base, '/api/set-game-phase', { clientId: teacherId, phase: 'GRADING' }, sessionToken);
   assert.equal(((await phase.json()) as { success: boolean }).success, true);
-  const finish = await post(base, '/api/finish-round', { clientId: teacherId });
+  const finish = await post(base, '/api/finish-round', { clientId: teacherId }, sessionToken);
   assert.equal(((await finish.json()) as { success: boolean }).success, true);
 }
 
@@ -142,11 +145,11 @@ test('integration: start-betting-phase counts questions started in the round', a
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await gameWithTeams(base, 'teacher-r1', 2);
+  const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r1', 2);
 
-  const s1 = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r1' });
+  const s1 = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r1' }, sessionToken);
   assert.equal(((await s1.json()) as { success: boolean }).success, true);
-  const s2 = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r1' });
+  const s2 = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r1' }, sessionToken);
   assert.equal(((await s2.json()) as { success: boolean }).success, true);
 
   const game = await store.getGame(pin);
@@ -161,8 +164,8 @@ test('integration: finish-round below budget keeps round, shows round results', 
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await gameWithTeams(base, 'teacher-r2', 2);
-  await playAndFinishRound(base, 'teacher-r2');
+  const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r2', 2);
+  await playAndFinishRound(base, 'teacher-r2', sessionToken);
 
   const game = await store.getGame(pin);
   assert.ok(game);
@@ -176,19 +179,19 @@ test('integration: finish-round at the budget advances the round and resets the 
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin, teamIds } = await gameWithTeams(base, 'teacher-r3', 2);
+  const { pin, teamIds, sessionToken } = await gameWithTeams(base, 'teacher-r3', 2);
 
   // Round 1: one question played, finished below budget.
-  await playAndFinishRound(base, 'teacher-r3');
+  await playAndFinishRound(base, 'teacher-r3', sessionToken);
   let game = await store.getGame(pin);
   assert.ok(game);
   assert.equal(game.phase, 'ROUND_RESULT');
   assert.equal(game.currentRound, 1);
 
   // Next question still belongs to round 1.
-  const nq = await post(base, '/api/next-question', { clientId: 'teacher-r3' });
+  const nq = await post(base, '/api/next-question', { clientId: 'teacher-r3' }, sessionToken);
   assert.equal(((await nq.json()) as { success: boolean }).success, true);
-  await playAndFinishRound(base, 'teacher-r3');
+  await playAndFinishRound(base, 'teacher-r3', sessionToken);
 
   game = await store.getGame(pin);
   assert.ok(game);
@@ -206,14 +209,14 @@ test('integration: finishing twice is guarded (only from GRADING)', async (t) =>
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await gameWithTeams(base, 'teacher-r4', 2);
-  await playAndFinishRound(base, 'teacher-r4');
+  const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r4', 2);
+  await playAndFinishRound(base, 'teacher-r4', sessionToken);
 
   let game = await store.getGame(pin);
   assert.ok(game);
   assert.equal(game.phase, 'ROUND_RESULT');
 
-  const again = await post(base, '/api/finish-round', { clientId: 'teacher-r4' });
+  const again = await post(base, '/api/finish-round', { clientId: 'teacher-r4' }, sessionToken);
   const body = (await again.json()) as { success: boolean; message?: string };
   assert.equal(body.success, false, 'finishing from ROUND_RESULT is rejected');
 
@@ -228,8 +231,8 @@ test('integration: last standing team ends the game regardless of round budget',
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await gameWithTeams(base, 'teacher-r5', 1);
-  await playAndFinishRound(base, 'teacher-r5');
+  const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r5', 1);
+  await playAndFinishRound(base, 'teacher-r5', sessionToken);
 
   const game = await store.getGame(pin);
   assert.ok(game);
@@ -242,17 +245,17 @@ test('integration: reset-game-keep-teams resets round counters but keeps teams',
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin, teamIds } = await gameWithTeams(base, 'teacher-r6', 2);
+  const { pin, teamIds, sessionToken } = await gameWithTeams(base, 'teacher-r6', 2);
 
   // Drive the game into round 2 with one question started inside it.
-  await playAndFinishRound(base, 'teacher-r6'); // question 1, round 1
-  const nq = await post(base, '/api/next-question', { clientId: 'teacher-r6' });
+  await playAndFinishRound(base, 'teacher-r6', sessionToken); // question 1, round 1
+  const nq = await post(base, '/api/next-question', { clientId: 'teacher-r6' }, sessionToken);
   assert.equal(((await nq.json()) as { success: boolean }).success, true);
-  await playAndFinishRound(base, 'teacher-r6'); // question 2 -> round 2, counter reset
-  const s = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r6' });
+  await playAndFinishRound(base, 'teacher-r6', sessionToken); // question 2 -> round 2, counter reset
+  const s = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r6' }, sessionToken);
   assert.equal(((await s.json()) as { success: boolean }).success, true);
 
-  const reset = await post(base, '/api/reset-game-keep-teams', { clientId: 'teacher-r6' });
+  const reset = await post(base, '/api/reset-game-keep-teams', { clientId: 'teacher-r6' }, sessionToken);
   assert.equal(((await reset.json()) as { success: boolean }).success, true);
 
   const game = await store.getGame(pin);

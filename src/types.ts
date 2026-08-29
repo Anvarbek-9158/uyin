@@ -93,6 +93,14 @@ export interface GameSession {
   currentRound?: number;
   questionsPerRound?: number;
   questionsPlayedInRound?: number;
+  // --- Identity re-claim (teacher-assisted reconnect) ---
+  // A student who switches to a new device/browser has a fresh clientId, so
+  // reusing their old name would normally be rejected as a hijack. The teacher
+  // can explicitly allow a name to be reclaimed by pressing "Qayta ulash" on
+  // that student; the lowercased name is recorded here and the next join with
+  // that name takes over the seat (team/membership preserved). A successful
+  // reclaim removes the name from the list.
+  reconnectWhitelist?: string[];
 }
 
 // Chat message. Every message belongs to a chat room:

@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import helmet from 'helmet';
+import cors from 'cors';
 import type { Request, Response } from 'express';
 import Pusher from 'pusher';
 import {
@@ -17,6 +19,41 @@ import {
 
 const app = express();
 
+// Security headers: sensible defaults from helmet (X-Frame-Options,
+// X-Content-Type-Options, referrer policy, HSTS, etc.) sans the strict
+// Content-Security-Policy. The UI renders with inline `style` attributes (e.g.
+// dynamic team colors and Tailwind utilities), which are blocked by the default
+// CSP; disabling CSP keeps those working while every other hardening header
+// stays on. If you want a CSP, define it explicitly via helmet({ contentSecurityPolicy: {...} }).
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
+
+// Same-origin deployment (Express serves dist/, Vercel CDN serves dist/ too), so
+// browsers never make cross-origin requests. To be safe against cross-origin
+// callers we keep a strict allowlist: only origins listed in CORS_ORIGINS
+// (comma-separated) are echoed back. When none are configured, cross-origin
+// requests carry no Access-Control-Allow-Origin header (default-deny), but the
+// same-origin UI (no Origin header) is unaffected.
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter((o) => o.length > 0);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Undefined origin = same-origin / non-browser request: never blocked.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0) return callback(null, false);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+  })
+);
+
 app.use(express.json());
 // pusher-js POSTs auth requests as application/x-www-form-urlencoded (it is not
 // a JSON client), so both parsers must be mounted for /api/pusher/auth to work.
@@ -30,13 +67,40 @@ app.use(express.urlencoded({ extended: true }));
 const IS_VERCEL = process.env.VERCEL === '1';
 
 // Pusher Channels instance.
+//
+// All Pusher credentials MUST come from the environment. There are no
+// hardcoded fallbacks: a hardcoded secret would be the same value on every
+// deploy and, if it ever leaked into git history, would let anyone act as this
+// application on Pusher. If any credential is missing the app fails fast at
+// boot with a clear message instead of silently running with a broken/missing
+// value.
+//
 // PUSHER_HOST/PUSHER_PORT/PUSHER_TIMEOUT are optional overrides (self-hosted
 // Channels-compatible servers, or fast-fail local testing).
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `PUSHER "${name}" env o'zgaruvchisi topilmadi. Iltimos, .env faylni tekshiring ` +
+        `va Pusher Channels ma'lumotlarini to'g'ri kiriting.`
+    );
+  }
+  return value;
+}
+
+// Pusher only needs the app/key/secret/cluster set at boot. We call requireEnv
+// for each required credential so a missing one surfaces instantly, even when
+// the app runs in a context where other keys (e.g. KV) are optional.
+requireEnv('PUSHER_APP_ID');
+requireEnv('PUSHER_KEY');
+requireEnv('PUSHER_SECRET');
+requireEnv('PUSHER_CLUSTER');
+
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID || '2185025',
-  key: process.env.PUSHER_KEY || '307958d4cd4d6d38e210',
-  secret: process.env.PUSHER_SECRET || '4427b2ff1430ab587020',
-  cluster: process.env.PUSHER_CLUSTER || 'ap2',
+  appId: process.env.PUSHER_APP_ID as string,
+  key: process.env.PUSHER_KEY as string,
+  secret: process.env.PUSHER_SECRET as string,
+  cluster: process.env.PUSHER_CLUSTER as string,
   ...(process.env.PUSHER_HOST ? { host: process.env.PUSHER_HOST } : {}),
   ...(process.env.PUSHER_PORT ? { port: Number(process.env.PUSHER_PORT) } : {}),
   ...(process.env.PUSHER_TIMEOUT ? { timeout: Number(process.env.PUSHER_TIMEOUT) } : {}),
@@ -154,6 +218,7 @@ function newGameDefaults(game: GameSession): GameSession {
   game.questionsPerRound = questionsPerRound();
   game.questionsPlayedInRound = 0;
   game.teacherLastSeenAt = Date.now();
+  game.reconnectWhitelist = [];
   return game;
 }
 
@@ -202,6 +267,23 @@ const SESSION_TOKEN_REGEX = /^[0-9a-f]{64}$/;
 const CHAT_RATE_LIMIT_MAX = Number(process.env.CHAT_RATE_LIMIT_MAX ?? 20);
 const CHAT_RATE_LIMIT_WINDOW_MS = (Number(process.env.CHAT_RATE_LIMIT_WINDOW_SECONDS) || 60) * 1000;
 
+// Join rate limit: how many failed PIN join attempts a single IP may make per
+// window before further attempts are temporarily blocked (429). Guards against
+// brute-forcing the 6-digit PIN. Env-overridable like the chat limit.
+const JOIN_ATTEMPT_LIMIT = Number(process.env.JOIN_ATTEMPT_LIMIT ?? 10);
+const JOIN_ATTEMPT_WINDOW_MS = (Number(process.env.JOIN_ATTEMPT_WINDOW_SECONDS) || 60) * 1000;
+
+// Best-effort client IP. On Vercel req.ip is populated by the platform; behind
+// the local Vite dev proxy we fall back to the X-Forwarded-For header, then to
+// a fixed key so local requests still share (and are throttled by) one bucket.
+function clientIp(req: Request): string {
+  const xff = req.headers['x-forwarded-for'];
+  if (Array.isArray(xff)) return xff[0];
+  if (typeof xff === 'string' && xff.length > 0) return xff.split(',')[0].trim();
+  if (typeof req.ip === 'string' && req.ip.length > 0) return req.ip;
+  return 'local';
+}
+
 function extractSessionToken(req: Request): string | null {
   const auth = req.headers['authorization'];
   if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
@@ -241,6 +323,27 @@ async function verifyChatClient(req: Request, clientId: string): Promise<ChatAut
     return { status: verdict.status, body: { success: false, message: verdict.message } };
   }
   return null;
+}
+
+// Gate for teacher-only endpoints. The caller must present a valid session
+// token so a stolen teacher clientId cannot alone act on a game. (The "this
+// client owns the requested game" identity check is a separate concern handled
+// by getTeacherGame at each call site.)
+async function requireTeacherAuth(
+  req: Request,
+  clientId: string
+): Promise<ChatAuthError> {
+  return verifyChatClient(req, clientId);
+}
+
+// Respond with the rejection produced by verifyChatClient/requireTeacherAuth,
+// and return whether the caller must abort the request.
+function respondAuthError(res: Response, error: ChatAuthError): boolean {
+  if (error) {
+    res.status(error.status).json(error.body);
+    return true;
+  }
+  return false;
 }
 
 // Helper: Generate a unique 6-digit PIN (checks the shared store)
@@ -394,6 +497,33 @@ app.post('/api/join-game', ah(async (req, res) => {
     return;
   }
 
+  // Brute-force guard on the 6-digit PIN. A failed join (the PIN does not
+  // resolve to a live game) counts against the calling IP; once the per-IP
+  // budget of failed attempts in the window is spent, further attempts are
+  // blocked for the rest of the window. A *successful* join is not counted.
+  const gameExists = await store.getGame(pin);
+  if (!gameExists) {
+    const rl = await store.checkRateLimit(
+      `join:${clientIp(req)}`,
+      JOIN_ATTEMPT_LIMIT,
+      JOIN_ATTEMPT_WINDOW_MS
+    );
+    if (!rl.allowed) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rl.retryAfterMs / 1000))));
+      res.status(429).json({
+        success: false,
+        message: 'Juda ko\'p noto\'g\'ri urinishlar, biroz kuting!',
+        retryAfterMs: rl.retryAfterMs,
+      });
+      return;
+    }
+    res.json({
+      success: false,
+      message: `Bunday PIN-kodli faol o'yin topilmadi! Iltimos, o'qituvchidan PIN-kodni qayta surishtiring.`,
+    });
+    return;
+  }
+
   const r = await store.withGameLock(pin, async (game) => {
     // Check name collision in game
     const existingStudent = Object.values(game.students).find(
@@ -401,15 +531,39 @@ app.post('/api/join-game', ah(async (req, res) => {
     );
 
     if (existingStudent) {
-      // Reconnect student: remove the stale entry under the old client id
-      // so the same student is NOT duplicated in the game.
-      const oldId = existingStudent.id;
-      if (oldId && oldId !== clientId) {
+      // Identity hijack guard: a "reconnect" is only legitimate from the SAME
+      // browser (the same clientId), OR when the teacher has explicitly cleared
+      // this name for re-claim (phone/browser switch). Otherwise a different
+      // clientId claiming an existing student's name would silently steal their
+      // identity (team membership, chat, scores).
+      if (existingStudent.id !== clientId) {
+        const whitelist = game.reconnectWhitelist ?? [];
+        const reclaimable = whitelist.includes(name.toLowerCase());
+
+        if (!reclaimable) {
+          return {
+            ok: false,
+            message: `"${existingStudent.name}" ismi allaqachon band (boshqa qurilmada ulangan). Iltimos, o'z ismingizni tanlang yoki o'qituvchidan yordam so'rang.`,
+          };
+        }
+
+        // Teacher-approved reclaim: the new device takes over the seat, keeping
+        // the existing record (and thus the team membership / score / chat).
+        // The old device's session token is revoked so it can no longer act.
+        const oldId = existingStudent.id;
+        if (oldId && oldId !== clientId) {
+          await store.deleteSessionToken(oldId);
+        }
+        existingStudent.id = clientId;
+        existingStudent.connected = true;
+        existingStudent.lastSeenAt = Date.now();
+        game.students[clientId] = existingStudent;
         delete game.students[oldId];
-        // The abandoned clientId must not remain able to act on this game.
-        await store.deleteSessionToken(oldId);
+        // This reclaim opportunity was consumed by this join.
+        game.reconnectWhitelist = whitelist.filter((w) => w !== name.toLowerCase());
+        return { ok: true, game };
       }
-      existingStudent.id = clientId;
+      // True reconnect from the same browser: refresh presence timestamps.
       existingStudent.connected = true;
       existingStudent.lastSeenAt = Date.now();
       game.students[clientId] = existingStudent;
@@ -430,11 +584,19 @@ app.post('/api/join-game', ah(async (req, res) => {
     return { ok: true, game };
   });
 
-  if (!r || !r.game) {
+  if (!r) {
     res.json({
       success: false,
       message: `Bunday PIN-kodli faol o'yin topilmadi! Iltimos, o'qituvchidan PIN-kodni qayta surishtiring.`,
     });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message || 'Qo\'shilishda xatolik yuz berdi' });
+    return;
+  }
+  if (!r.game) {
+    res.json({ success: false });
     return;
   }
 
@@ -463,6 +625,8 @@ app.post('/api/join-game', ah(async (req, res) => {
 // 3. TEACHER: Create a Team
 app.post('/api/create-team', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
@@ -503,6 +667,8 @@ app.post('/api/create-team', ah(async (req, res) => {
 // 4. TEACHER: Delete a Team
 app.post('/api/delete-team', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -535,6 +701,8 @@ app.post('/api/delete-team', ah(async (req, res) => {
 // 5. TEACHER: Assign Student to Team
 app.post('/api/assign-student', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -587,6 +755,8 @@ app.post('/api/assign-student', ah(async (req, res) => {
 // 5b. TEACHER: Bulk Assign Students to Team
 app.post('/api/bulk-assign-students', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -638,6 +808,8 @@ app.post('/api/bulk-assign-students', ah(async (req, res) => {
 // 5c. TEACHER: Kick / Remove student from game
 app.post('/api/kick-student', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -673,9 +845,61 @@ app.post('/api/kick-student', ah(async (req, res) => {
   res.json({ success: true });
 }));
 
+// 5d. TEACHER: Allow a student to reclaim their name from a new device/phone.
+//
+// When a student switches to a new browser (fresh clientId) they can no longer
+// reuse their old name — the identity-hijack guard rejects it. This endpoint
+// lets the teacher explicitly clear that name for re-claim (recorded on the
+// game's reconnectWhitelist). The next join with that name takes over the seat,
+// keeping the student's team membership / score / chat intact, and the old
+// device's session token is revoked.
+app.post('/api/reconnect-student', ah(async (req, res) => {
+  const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
+  const context = await getTeacherGame(clientId);
+  if (!context) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+
+  const studentId = (req.body?.studentId || '').toString();
+  const r = await store.withGameLock(context.pin, (game) => {
+    const student = game.students[studentId];
+    if (!student) {
+      return { ok: false, message: 'O\'quvchi topilmadi!', game };
+    }
+    game.reconnectWhitelist = Array.from(
+      new Set([...(game.reconnectWhitelist ?? []), student.name.toLowerCase()])
+    );
+    return { ok: true, game, data: { studentName: student.name } };
+  });
+
+  if (!r) {
+    res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
+    return;
+  }
+  if (!r.ok) {
+    res.json({ success: false, message: r.message || 'Xatolik yuz berdi' });
+    return;
+  }
+  if (!r.game) {
+    res.json({ success: false });
+    return;
+  }
+  await broadcastGameState(context.pin, r.game);
+  emitToGame(context.pin, 'notification', {
+    type: 'info',
+    text: `"${r.data?.studentName}" qayta ulanish uchun ruxsat berildi (yangi qurilmadan kirsin).`,
+  });
+  res.json({ success: true, message: `"${r.data?.studentName}" qayta ulanishi mumkin` });
+}));
+
 // 6. TEACHER: Set explicit Team Leader
 app.post('/api/set-team-leader', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -712,6 +936,8 @@ app.post('/api/set-team-leader', ah(async (req, res) => {
 // 6b. TEACHER: Penalize Team (-5 points for noise/disruption)
 app.post('/api/penalize-team', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -780,6 +1006,8 @@ app.post('/api/penalize-team', ah(async (req, res) => {
 // 7. TEACHER: Set Question Database
 app.post('/api/set-questions', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -806,6 +1034,8 @@ app.post('/api/set-questions', ah(async (req, res) => {
 // 8. TEACHER: Start Betting Phase for a Question
 app.post('/api/start-betting-phase', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -915,6 +1145,8 @@ app.post('/api/place-bet', ah(async (req, res) => {
 // server-side setInterval would be killed when the lambda returns.
 app.post('/api/start-answering-phase', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -966,6 +1198,8 @@ app.post('/api/start-answering-phase', ah(async (req, res) => {
 // to GRADING when the countdown reaches 0.
 app.post('/api/timer-tick', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const pin = await store.getTeacherPin(clientId);
   if (!pin) {
     res.json({ success: false });
@@ -1011,6 +1245,8 @@ app.post('/api/timer-tick', ah(async (req, res) => {
 // 11. TEACHER: Manually Stop Answering Phase
 app.post('/api/stop-answering-phase', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1089,6 +1325,8 @@ app.post('/api/submit-answer', ah(async (req, res) => {
 // 13. TEACHER: Grade/Evaluate Team Answer
 app.post('/api/grade-team-answer', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1157,6 +1395,8 @@ app.post('/api/grade-team-answer', ah(async (req, res) => {
 // 14. TEACHER: Finish Round & Show Round Standings
 app.post('/api/finish-round', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1241,6 +1481,8 @@ app.post('/api/finish-round', ah(async (req, res) => {
 // 15. TEACHER: Next Question
 app.post('/api/next-question', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1280,6 +1522,8 @@ app.post('/api/next-question', ah(async (req, res) => {
 // 16. TEACHER: Change Game Phase directly
 app.post('/api/set-game-phase', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1308,6 +1552,8 @@ app.post('/api/set-game-phase', ah(async (req, res) => {
 // 17. TEACHER: Reset/Start New Game (Regenerate PIN)
 app.post('/api/reset-game', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const oldPin = await store.getTeacherPin(clientId);
 
   if (oldPin) {
@@ -1350,6 +1596,8 @@ app.post('/api/reset-game', ah(async (req, res) => {
 // 17b. TEACHER: Stop Game but KEEP Teams & Students
 app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false });
@@ -1392,6 +1640,8 @@ app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
 // 18. TEACHER: Update PIN code / password manually
 app.post('/api/update-pin', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const cleanPin = (req.body?.newPin || '').toString().trim().toUpperCase();
   if (!cleanPin || cleanPin.length !== 6) {
     res.json({ success: false, message: `O'yin PIN-kodi (paroli) rosa 6 xonali bo'lishi shart!` });
@@ -1451,6 +1701,8 @@ app.post('/api/update-pin', ah(async (req, res) => {
 // keeps working without a reload.
 app.post('/api/regenerate-pin', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const context = await getTeacherGame(clientId);
   if (!context) {
     res.json({ success: false, message: `Avval o'yin yaratish kerak!` });
@@ -1498,6 +1750,8 @@ app.post('/api/regenerate-pin', ah(async (req, res) => {
 // The heartbeat itself also lazily sweeps stale students.
 app.post('/api/teacher-heartbeat', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
+  const authError = await requireTeacherAuth(req, clientId);
+  if (respondAuthError(res, authError)) return;
   const pin = await store.getTeacherPin(clientId);
   if (!pin) {
     res.json({ success: false, message: "Siz o'yinga ulanmagansiz!" });

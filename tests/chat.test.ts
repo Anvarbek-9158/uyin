@@ -582,12 +582,13 @@ test('BACKWARD COMPAT: legacy clientId without token is allowed only during grac
 async function createTeam(
   base: string,
   teacherClientId: string,
+  teacherSessionToken: string,
   pin: string,
   name: string
 ): Promise<string> {
   const res = await fetch(`${base}/api/create-team`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(teacherSessionToken) },
     body: JSON.stringify({ clientId: teacherClientId, name }),
   });
   assert.equal(((await res.json()) as { success: boolean }).success, true, 'create-team must work');
@@ -602,12 +603,13 @@ async function createTeam(
 async function assignToTeam(
   base: string,
   teacherClientId: string,
+  teacherSessionToken: string,
   studentId: string,
   teamId: string
 ): Promise<void> {
   const res = await fetch(`${base}/api/assign-student`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(teacherSessionToken) },
     body: JSON.stringify({ clientId: teacherClientId, studentId, teamId }),
   });
   assert.equal(((await res.json()) as { success: boolean }).success, true, 'assign-student must work');
@@ -621,9 +623,9 @@ test('GROUP: members of the same group can chat and each member + the teacher ca
   const created = await createGame(base, 'gteacher-p1');
   const studentA = await joinGame(base, 'gstudent-p1a', created.pin, 'Ali');
   const studentB = await joinGame(base, 'gstudent-p1b', created.pin, 'Bob');
-  const teamId = await createTeam(base, 'gteacher-p1', created.pin, 'Lochinlar');
-  await assignToTeam(base, 'gteacher-p1', 'gstudent-p1a', teamId);
-  await assignToTeam(base, 'gteacher-p1', 'gstudent-p1b', teamId);
+  const teamId = await createTeam(base, 'gteacher-p1', created.sessionToken, created.pin, 'Lochinlar');
+  await assignToTeam(base, 'gteacher-p1', created.sessionToken, 'gstudent-p1a', teamId);
+  await assignToTeam(base, 'gteacher-p1', created.sessionToken, 'gstudent-p1b', teamId);
 
   // Student A posts into the group room.
   const sent = await sendChat(
@@ -670,10 +672,10 @@ test('SECURITY: a student cannot write into another group room', async (t) => {
   const created = await createGame(base, 'gteacher-p2');
   const studentA = await joinGame(base, 'gstudent-p2a', created.pin, 'Ali');
   await joinGame(base, 'gstudent-p2b', created.pin, 'Bob');
-  const team1 = await createTeam(base, 'gteacher-p2', created.pin, 'Lochinlar');
-  const team2 = await createTeam(base, 'gteacher-p2', created.pin, 'Zukkolar');
-  await assignToTeam(base, 'gteacher-p2', 'gstudent-p2a', team1);
-  await assignToTeam(base, 'gteacher-p2', 'gstudent-p2b', team2);
+  const team1 = await createTeam(base, 'gteacher-p2', created.sessionToken, created.pin, 'Lochinlar');
+  const team2 = await createTeam(base, 'gteacher-p2', created.sessionToken, created.pin, 'Zukkolar');
+  await assignToTeam(base, 'gteacher-p2', created.sessionToken, 'gstudent-p2a', team1);
+  await assignToTeam(base, 'gteacher-p2', created.sessionToken, 'gstudent-p2b', team2);
 
   const res = await sendChat(
     base,
@@ -699,10 +701,10 @@ test('SECURITY: a student cannot read another group room history', async (t) => 
   const created = await createGame(base, 'gteacher-p3');
   const studentA = await joinGame(base, 'gstudent-p3a', created.pin, 'Ali');
   const studentB = await joinGame(base, 'gstudent-p3b', created.pin, 'Bob');
-  const team1 = await createTeam(base, 'gteacher-p3', created.pin, 'Lochinlar');
-  const team2 = await createTeam(base, 'gteacher-p3', created.pin, 'Zukkolar');
-  await assignToTeam(base, 'gteacher-p3', 'gstudent-p3a', team1);
-  await assignToTeam(base, 'gteacher-p3', 'gstudent-p3b', team2);
+  const team1 = await createTeam(base, 'gteacher-p3', created.sessionToken, created.pin, 'Lochinlar');
+  const team2 = await createTeam(base, 'gteacher-p3', created.sessionToken, created.pin, 'Zukkolar');
+  await assignToTeam(base, 'gteacher-p3', created.sessionToken, 'gstudent-p3a', team1);
+  await assignToTeam(base, 'gteacher-p3', created.sessionToken, 'gstudent-p3b', team2);
 
   await sendChat(
     base,
@@ -725,7 +727,7 @@ test('SECURITY: an unassigned student cannot write to or read any group room', a
 
   const created = await createGame(base, 'gteacher-p4');
   const unassigned = await joinGame(base, 'gstudent-p4c', created.pin, 'Qobil');
-  const team1 = await createTeam(base, 'gteacher-p4', created.pin, 'Lochinlar');
+  const team1 = await createTeam(base, 'gteacher-p4', created.sessionToken, created.pin, 'Lochinlar');
 
   const write = await sendChat(
     base,
@@ -748,8 +750,8 @@ test('GROUP: teacher can read and write every group room (bypass)', async (t) =>
   t.after(close);
 
   const created = await createGame(base, 'gteacher-p5');
-  const team1 = await createTeam(base, 'gteacher-p5', created.pin, 'Lochinlar');
-  const team2 = await createTeam(base, 'gteacher-p5', created.pin, 'Zukkolar');
+  const team1 = await createTeam(base, 'gteacher-p5', created.sessionToken, created.pin, 'Lochinlar');
+  const team2 = await createTeam(base, 'gteacher-p5', created.sessionToken, created.pin, 'Zukkolar');
 
   const to1 = await sendChat(
     base,
@@ -790,10 +792,10 @@ test('SECURITY: student can only subscribe to their own group channel via pusher
   const created = await createGame(base, 'gteacher-p6');
   const studentA = await joinGame(base, 'gstudent-p6a', created.pin, 'Ali');
   const studentB = await joinGame(base, 'gstudent-p6b', created.pin, 'Bob');
-  const team1 = await createTeam(base, 'gteacher-p6', created.pin, 'Lochinlar');
-  const team2 = await createTeam(base, 'gteacher-p6', created.pin, 'Zukkolar');
-  await assignToTeam(base, 'gteacher-p6', 'gstudent-p6a', team1);
-  await assignToTeam(base, 'gteacher-p6', 'gstudent-p6b', team2);
+  const team1 = await createTeam(base, 'gteacher-p6', created.sessionToken, created.pin, 'Lochinlar');
+  const team2 = await createTeam(base, 'gteacher-p6', created.sessionToken, created.pin, 'Zukkolar');
+  await assignToTeam(base, 'gteacher-p6', created.sessionToken, 'gstudent-p6a', team1);
+  await assignToTeam(base, 'gteacher-p6', created.sessionToken, 'gstudent-p6b', team2);
 
   const channelOwn = `private-chat-${created.pin}-g-${team1}`;
   const channelOther = `private-chat-${created.pin}-g-${team2}`;

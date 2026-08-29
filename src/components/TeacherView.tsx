@@ -162,6 +162,22 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     setNewTeamName('');
   };
 
+  // Allow a student (whose name is currently "taken" by another device) to
+  // reclaim their name from a new browser. The server records the name and the
+  // next join with that name takes over the seat, keeping the team membership.
+  const handleReconnectStudent = (studentId: string) => {
+    const student = gameState?.students?.[studentId];
+    if (!student) return;
+    if (
+      !window.confirm(
+        `"${student.name}" uchun qayta ulanishni ruxsat berasizmi (yangi qurilmadan)? Eski qurilma sessiyasi bekor qilinadi.`
+      )
+    ) {
+      return;
+    }
+    apiPost('/api/reconnect-student', { clientId, studentId });
+  };
+
   const handleUpdatePin = async (e: React.FormEvent) => {
     e.preventDefault();
     setPinChangeError('');
@@ -521,6 +537,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleReconnectStudent(st.id)}
+                          className="p-1 px-2 rounded bg-sky-500/10 hover:bg-sky-500/30 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
+                          title="Yangi qurilmadan qayta ulanishga ruxsat berish"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Qayta ulash
+                        </button>
                         <button
                           onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
                           className="p-1 px-2 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"

@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# The project is npm-based (all scripts use npm). Remove the stale bun.lock and
+# keep package-lock.json as the single source of truth for dependencies.
+bun.lock

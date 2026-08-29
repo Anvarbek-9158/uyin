@@ -157,16 +157,17 @@ async function startServer(): Promise<ServerCtx> {
   return { base, close };
 }
 
-async function createGame(base: string, clientId: string): Promise<{ pin: string }> {
+async function createGame(base: string, clientId: string): Promise<{ pin: string; sessionToken: string }> {
   const res = await fetch(`${base}/api/create-game`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ clientId }),
   });
-  const body = (await res.json()) as { success: boolean; pin?: string };
+  const body = (await res.json()) as { success: boolean; pin?: string; sessionToken?: string };
   assert.equal(body.success, true);
   assert.ok(body.pin);
-  return { pin: body.pin as string };
+  assert.ok(body.sessionToken);
+  return { pin: body.pin as string, sessionToken: body.sessionToken as string };
 }
 
 async function joinGame(base: string, clientId: string, pin: string, name: string): Promise<void> {
@@ -179,10 +180,13 @@ async function joinGame(base: string, clientId: string, pin: string, name: strin
   assert.equal(body.success, true);
 }
 
-function post(base: string, path: string, body: Record<string, unknown>) {
+function post(base: string, path: string, body: Record<string, unknown>, token?: string | null) {
   return fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(body),
   });
 }
@@ -192,10 +196,10 @@ test('integration: heartbeats stamp lastSeen; teacher-leave ends the game', asyn
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await createGame(base, 'teacher-i1');
+  const { pin, sessionToken } = await createGame(base, 'teacher-i1');
   await joinGame(base, 'student-i1', pin, 'Ali');
 
-  const hb = await post(base, '/api/teacher-heartbeat', { clientId: 'teacher-i1' });
+  const hb = await post(base, '/api/teacher-heartbeat', { clientId: 'teacher-i1' }, sessionToken);
   assert.equal(((await hb.json()) as { success: boolean }).success, true);
 
   const shb = await post(base, '/api/student-heartbeat', { clientId: 'student-i1' });
@@ -241,7 +245,7 @@ test('integration: stale student removed on next heartbeat, leader transfers', a
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await createGame(base, 'teacher-i3');
+  const { pin, sessionToken: teacherToken } = await createGame(base, 'teacher-i3');
   await joinGame(base, 'student-a', pin, 'Ali');
   await joinGame(base, 'student-b', pin, 'Bilol');
 
@@ -249,13 +253,13 @@ test('integration: stale student removed on next heartbeat, leader transfers', a
     clientId: 'teacher-i3',
     pin,
     name: 'Alpha',
-  });
+  }, teacherToken);
   assert.equal(((await teamRes.json()) as { success: boolean }).success, true);
   const gameAfterTeam = await store.getGame(pin);
   assert.ok(gameAfterTeam);
   const teamId = Object.keys(gameAfterTeam.teams).at(-1) as string;
-  await post(base, '/api/assign-student', { clientId: 'teacher-i3', studentId: 'student-a', teamId });
-  await post(base, '/api/assign-student', { clientId: 'teacher-i3', studentId: 'student-b', teamId });
+  await post(base, '/api/assign-student', { clientId: 'teacher-i3', studentId: 'student-a', teamId }, teacherToken);
+  await post(base, '/api/assign-student', { clientId: 'teacher-i3', studentId: 'student-b', teamId }, teacherToken);
 
   // student-a heartbeats once, then goes silent for longer than the student grace.
   await post(base, '/api/student-heartbeat', { clientId: 'student-a' });
@@ -282,7 +286,7 @@ test('integration: regenerate-pin preserves teams+scores, clears students, new P
   t.after(close);
   const store = await import('../src/server/state.js');
 
-  const { pin } = await createGame(base, 'teacher-i4');
+  const { pin, sessionToken: teacherToken } = await createGame(base, 'teacher-i4');
   await joinGame(base, 'student-c1', pin, 'Ali');
   await joinGame(base, 'student-c2', pin, 'Bilol');
 
@@ -290,19 +294,19 @@ test('integration: regenerate-pin preserves teams+scores, clears students, new P
     clientId: 'teacher-i4',
     pin,
     name: 'Alpha',
-  });
+  }, teacherToken);
   assert.equal(((await teamRes.json()) as { success: boolean }).success, true);
   const gameAfterTeam = await store.getGame(pin);
   assert.ok(gameAfterTeam);
   const teamId = Object.keys(gameAfterTeam.teams).at(-1) as string;
-  await post(base, '/api/assign-student', { clientId: 'teacher-i4', studentId: 'student-c1', teamId });
+  await post(base, '/api/assign-student', { clientId: 'teacher-i4', studentId: 'student-c1', teamId }, teacherToken);
 
   const seeded = await store.getGame(pin);
   assert.ok(seeded);
   seeded.teams[teamId].score = 250;
   await store.setGame(pin, seeded);
 
-  const reg = await post(base, '/api/regenerate-pin', { clientId: 'teacher-i4' });
+  const reg = await post(base, '/api/regenerate-pin', { clientId: 'teacher-i4' }, teacherToken);
   const regBody = (await reg.json()) as { success: boolean; pin?: string; game?: GameSession };
   assert.equal(regBody.success, true);
   const newPin = regBody.pin as string;
