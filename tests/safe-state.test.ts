@@ -131,3 +131,43 @@ test('student game-state in ANSWERING hides correctAnswer but keeps the question
   assert.equal(q?.options?.length, 3, 'options stay visible in ANSWERING');
   assert.equal(q?.correctAnswer, '', 'correctAnswer must still be stripped in ANSWERING');
 });
+
+test('teacher can reveal the question (start-answering-phase) even before all teams bet', async (t) => {
+  const { base, close } = await startServer();
+  t.after(close);
+  const store = await import('../src/server/state.js');
+
+  // BETTING game with two teams, neither of which has bet yet.
+  const betting = makeGame();
+  betting.teams = {
+    t1: { id: 't1', name: 'A', color: '#000', score: 100, leaderClientId: null, memberIds: [], currentBet: null, currentAnswer: null, answerSubmittedAt: null, isEliminated: false, lastResult: null },
+    t2: { id: 't2', name: 'B', color: '#000', score: 100, leaderClientId: null, memberIds: [], currentBet: null, currentAnswer: null, answerSubmittedAt: null, isEliminated: false, lastResult: null },
+  };
+  betting.students = {
+    'student-1': { id: 'student-1', name: 'Ali', pin: PIN, teamId: 't1', isLeader: true, connected: true },
+  };
+  await store.setGame(PIN, betting);
+  await store.setTeacherPin('teacher-1', PIN);
+  await store.setStudentPin('student-1', PIN);
+  const teacherToken = await store.createSessionToken('teacher-1');
+
+  // Teacher reveals the question.
+  const reveal = await fetch(`${base}/api/start-answering-phase`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${teacherToken}` },
+    body: JSON.stringify({ clientId: 'teacher-1' }),
+  });
+  const revealBody = (await reveal.json()) as { success: boolean };
+  assert.equal(revealBody.success, true, 'reveal must succeed even though no team bet');
+
+  const persisted = await store.getGame(PIN);
+  assert.equal(persisted?.phase, 'ANSWERING', 'phase must move to ANSWERING on reveal');
+
+  // Students can now see the question text/options (but not the answer).
+  const res = await fetch(`${base}/api/game-state?clientId=student-1`);
+  const body = (await res.json()) as { success: boolean; game?: GameSession };
+  const q = body.game?.questions[0];
+  assert.equal(q?.text, QUESTION.text, 'after reveal students see the question text');
+  assert.equal(q?.options?.length, 3, 'after reveal students see the options');
+  assert.equal(q?.correctAnswer, '', 'but the correct answer stays hidden in ANSWERING');
+});

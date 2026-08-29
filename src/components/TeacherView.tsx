@@ -796,16 +796,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     {phase === 'BETTING' && (
                       <button
                         onClick={() => apiPost('/api/start-answering-phase', { clientId })}
-                        disabled={!allBetPlaced}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${
                           allBetPlaced
                             ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.5)] scale-105'
-                            : 'bg-slate-800 text-slate-500 border border-white/10 cursor-not-allowed opacity-60'
+                            : 'bg-amber-600/80 hover:bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                         }`}
-                        title={!allBetPlaced ? "Barcha guruhlar ball tikmaguncha boshlab bo'lmaydi!" : "Taymerni va javob berishni boshlash"}
+                        title={
+                          allBetPlaced
+                            ? "Taymerni va javob berishni boshlash (savolni ochish)"
+                            : "Hamma tikmagan bo'lsa ham savolni ochib, taymerni boshlash mumkin (tikmagan guruhlar 0 ball)"
+                        }
                       >
                         <Play className="w-4 h-4 fill-current" />
-                        BOSHLASH (Taymer va Javobni Ochish)
+                        {allBetPlaced ? 'BOSHLASH (Savolni Ochish)' : 'SAVOLNI OCHISH (Baribir Davom)'}
                       </button>
                     )}
 

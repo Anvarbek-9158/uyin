@@ -1221,16 +1221,11 @@ app.post('/api/start-answering-phase', ah(async (req, res) => {
   }
 
   const r = await store.withGameLock(context.pin, (game) => {
-    const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
-    const unbetTeams = activeTeams.filter((t) => t.currentBet === null);
-
-    if (activeTeams.length > 0 && unbetTeams.length > 0) {
-      return {
-        ok: false,
-        message: `Hali barcha guruhlar ball tikmadi! (${activeTeams.length - unbetTeams.length}/${activeTeams.length} guruh tikdi)`,
-      };
-    }
-
+    // The teacher is authoritative: they may reveal the question and start the
+    // answering timer even if some teams have not bet yet. Un-bet teams simply
+    // score 0 for this question (their currentBet stays null and finish-round
+    // ignores them for auto-grading). The BETTING banner already surfaces who
+    // has/hasn't bet, so the teacher can decide.
     const currentQ = game.questions[game.currentQuestionIndex];
     game.timerSeconds = currentQ?.timeLimit || 30;
     game.phase = 'ANSWERING';
