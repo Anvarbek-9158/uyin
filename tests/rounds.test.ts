@@ -109,17 +109,17 @@ async function playAndFinishRound(base: string, teacherId: string, sessionToken:
 
 // --- Unit tests: questionsPerRound ------------------------------------------
 
-test('unit: questionsPerRound honours env override and falls back to 5', () => {
+test('unit: questionsPerRound honours env override and falls back to 1', () => {
   const prev = process.env.QUESTIONS_PER_ROUND;
   try {
     process.env.QUESTIONS_PER_ROUND = '3';
     assert.equal(questionsPerRound(), 3);
     process.env.QUESTIONS_PER_ROUND = '0';
-    assert.equal(questionsPerRound(), 5);
+    assert.equal(questionsPerRound(), 1);
     process.env.QUESTIONS_PER_ROUND = 'abc';
-    assert.equal(questionsPerRound(), 5);
+    assert.equal(questionsPerRound(), 1);
     delete process.env.QUESTIONS_PER_ROUND;
-    assert.equal(questionsPerRound(), 5);
+    assert.equal(questionsPerRound(), 1);
   } finally {
     process.env.QUESTIONS_PER_ROUND = prev;
   }
@@ -201,6 +201,64 @@ test('integration: finish-round at the budget advances the round and resets the 
   // Scores stay cumulative across rounds.
   for (const teamId of teamIds) {
     assert.equal(game.teams[teamId]?.score, 100);
+  }
+});
+
+test('integration: student game-state in BETTING hides the current question text/options/correctAnswer', async (t) => {
+  const { base, close } = await startServer();
+  t.after(close);
+  const store = await import('../src/server/state.js');
+
+  const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r8', 2);
+
+  const start = await post(base, '/api/start-betting-phase', { clientId: 'teacher-r8', questionIndex: 0 }, sessionToken);
+  assert.equal(((await start.json()) as { success: boolean }).success, true);
+  const state = await store.getGame(pin);
+  assert.ok(state);
+  assert.equal(state.phase, 'BETTING');
+  const currentIndex = state.currentQuestionIndex;
+  assert.ok(state.questions[currentIndex]?.text, 'teacher-authoritative state keeps the question');
+
+  // The student (public) view must strip the current question's text/options
+  // and every correctAnswer while we are still in BETTING.
+  const res = await fetch(`${base}/api/game-state?clientId=teacher-r8-s0`);
+  const body = (await res.json()) as { success: boolean; game?: GameSession };
+  assert.equal(body.success, true);
+  const q = body.game?.questions[currentIndex];
+  assert.ok(q, 'student still sees the question index so the UI can number it');
+  assert.equal(q?.text, '', 'current question text must be hidden during BETTING');
+  assert.equal(q?.options?.length ?? 0, 0, 'current question options must be hidden during BETTING');
+  assert.equal(q?.correctAnswer, '', 'correctAnswer must never leak during BETTING');
+});
+
+test('integration: with default 1 question per round, finishing one question advances the round and resets the counter', async (t) => {
+  const prev = process.env.QUESTIONS_PER_ROUND;
+  process.env.QUESTIONS_PER_ROUND = '1';
+  const { base, close } = await startServer();
+  t.after(close);
+  const store = await import('../src/server/state.js');
+
+  try {
+    const { pin, sessionToken } = await gameWithTeams(base, 'teacher-r7', 2);
+    let game = await store.getGame(pin);
+    assert.ok(game);
+    assert.equal(game.questionsPerRound, 1, 'game adopts the default 1 question per round');
+    assert.equal(game.currentRound, 1);
+    assert.equal(game.questionsPlayedInRound, 0);
+
+    // Play a single question and finish it.
+    await post(base, '/api/start-betting-phase', { clientId: 'teacher-r7' }, sessionToken);
+    await post(base, '/api/set-game-phase', { clientId: 'teacher-r7', phase: 'GRADING' }, sessionToken);
+    const finish = await post(base, '/api/finish-round', { clientId: 'teacher-r7' }, sessionToken);
+    assert.equal(((await finish.json()) as { success: boolean }).success, true);
+
+    game = await store.getGame(pin);
+    assert.ok(game);
+    assert.equal(game.currentRound, 2, 'round advances after a single question');
+    assert.equal(game.questionsPlayedInRound, 0, 'counter resets when the round advances');
+    assert.equal(game.phase, 'ROUND_RESULT');
+  } finally {
+    process.env.QUESTIONS_PER_ROUND = prev;
   }
 });
 

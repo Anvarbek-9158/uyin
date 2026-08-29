@@ -910,16 +910,21 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="relative flex items-center gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/40 transition-all uppercase tracking-wider cursor-pointer"
+        className="fixed top-4 right-4 sm:top-5 sm:right-5 z-50 group flex items-center gap-2.5 pl-4 pr-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(99,102,241,0.6)] hover:scale-105 active:scale-95 transition-all border border-white/20 cursor-pointer"
         title="O'quvchilar bilan chat qilish"
         aria-label="Chatni ochish"
       >
-        <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
-        <span>Chat ({studentCount})</span>
+        <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/15 group-hover:bg-white/25 transition-colors">
+          <MessageSquare className="w-4 h-4 text-white" />
+        </span>
+        <span>Chat</span>
+        <span className="min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.6)]">
+          {studentCount}
+        </span>
       </button>
 
       {open && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[780px] shadow-2xl animate-fade-in">
+        <div className="fixed inset-y-0 right-0 z-[60] w-full sm:w-[780px] shadow-2xl animate-fade-in">
           <ChatSection
             clientId={clientId}
             pin={pin}

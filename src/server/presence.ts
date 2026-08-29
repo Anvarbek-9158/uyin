@@ -25,10 +25,11 @@ export function studentPresenceGraceMs(): number {
 }
 
 // Number of questions that make up one "raund" (QISM H). Scores stay
-// cumulative across rounds; only the round counter advances.
+// cumulative across rounds; only the round counter advances. The default is a
+// single question per round (each question = one raund); overridable via env.
 export function questionsPerRound(): number {
   const n = Number(process.env.QUESTIONS_PER_ROUND);
-  return Number.isInteger(n) && n > 0 ? n : 5;
+  return Number.isInteger(n) && n > 0 ? n : 1;
 }
 
 export interface RemovedStudent {

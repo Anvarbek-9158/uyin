@@ -19,7 +19,6 @@ import {
   ArrowRight,
   Check,
   RefreshCw,
-  Edit3,
   VolumeX,
   UserX,
   AlertTriangle,
@@ -27,6 +26,7 @@ import {
   MessageSquare,
   ArrowLeft,
   Trophy,
+  Flag,
 } from 'lucide-react';
 
 interface TeacherViewProps {
@@ -61,11 +61,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [activeDbDifficultyTab, setActiveDbDifficultyTab] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
   const [isQuestionSelectModalOpen, setIsQuestionSelectModalOpen] = useState(false);
   const [modalDifficultyTab, setModalDifficultyTab] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
-
-  // Custom PIN edit state
-  const [isEditingPin, setIsEditingPin] = useState(false);
-  const [customPinInput, setCustomPinInput] = useState('');
-  const [pinChangeError, setPinChangeError] = useState('');
 
   // Deletion confirm states
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
@@ -178,28 +173,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     apiPost('/api/reconnect-student', { clientId, studentId });
   };
 
-  const handleUpdatePin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPinChangeError('');
-    const cleanPin = customPinInput.trim();
-    if (cleanPin.length !== 6) {
-      setPinChangeError("O'yin PIN-kodi (paroli) rosa 6 xonali bo'lishi shart! (Kam ham, ko'p ham bo'lishi mumkin emas)");
-      return;
-    }
-
-    const res = await apiPost<{ success: boolean; pin?: string; message?: string; game?: GameSession }>(
-      '/api/update-pin',
-      { clientId, newPin: cleanPin }
-    );
-    if (res?.success && res.game) {
-      setIsEditingPin(false);
-      setCustomPinInput('');
-      onPinUpdated(res.game);
-    } else {
-      setPinChangeError(res?.message || 'PIN xatosi yuz berdi');
-    }
-  };
-
   // Regenerate the game PIN with one click: every student is kicked out and
   // must re-join with the fresh PIN, while teams and their scores are kept
   // (QISM E).
@@ -305,24 +278,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 )}
               </button>
 
-              <TeacherChatLauncher
-                clientId={clientId}
-                pin={pin}
-                students={students}
-                teams={teams}
-              />
-
-              <button
-                onClick={() => {
-                  setCustomPinInput(pin);
-                  setIsEditingPin(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] sm:text-xs font-extrabold border border-indigo-400/40 transition-all uppercase tracking-wider cursor-pointer"
-              >
-                <Edit3 className="w-4 h-4 shrink-0" />
-                Parolni O'zgartirish
-              </button>
-
               <button
                 onClick={handleRegeneratePin}
                 className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
@@ -332,97 +287,28 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 PIN'ni Yangilash
               </button>
 
-              <button
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Yangi o'yin boshlanadi: yangi PIN-kod yaratiladi va barcha o'quvchilar hamda guruhlar o'chiriladi. Davom etasizmi?"
-                    )
-                  ) {
-                    onResetGame();
-                  }
-                }}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] sm:text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
-                title="Yangi PIN-kod bilan mutlaqo yangi o'yin boshlash (barcha o'quvchilar va guruhlar o'chiriladi)"
-              >
-                <ArrowLeft className="w-4 h-4 text-rose-400 shrink-0" />
-                Yangi O'yin Boshlash
-              </button>
+              {phase === 'LOBBY' || phase === 'TEAMS_SETUP' || phase === 'GAME_OVER' ? (
+                <button
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Yangi o'yin boshlanadi: yangi PIN-kod yaratiladi va barcha o'quvchilar hamda guruhlar o'chiriladi. Davom etasizmi?"
+                      )
+                    ) {
+                      onResetGame();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] sm:text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
+                  title="Yangi PIN-kod bilan mutlaqo yangi o'yin boshlash (barcha o'quvchilar va guruhlar o'chiriladi)"
+                >
+                  <ArrowLeft className="w-4 h-4 text-rose-400 shrink-0" />
+                  Yangi O'yin Boshlash
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
       </div>
-
-      {/* CUSTOM PIN EDIT MODAL */}
-      {isEditingPin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]">
-                <Edit3 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white uppercase tracking-tight">
-                  Parol (PIN-kod)ni O'zgartirish
-                </h3>
-                <p className="text-xs text-slate-400 font-mono">
-                  O'quvchilar doskaga qarab oson kirishi uchun o'zingiz xohlagan kodni yozing
-                </p>
-              </div>
-            </div>
-
-            {pinChangeError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-                {pinChangeError}
-              </div>
-            )}
-
-            <form onSubmit={handleUpdatePin} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                  Yangi Parol / PIN-kod (Masalan: 849201 yoki 123456)
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  autoComplete="one-time-code"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  enterKeyHint="done"
-                  required
-                  maxLength={6}
-                  value={customPinInput}
-                  onChange={(e) => {
-                    setPinChangeError('');
-                    setCustomPinInput(e.target.value.replace(/\D/g, '').slice(0, 6));
-                  }}
-                  placeholder="Masalan: 849201"
-                  className="w-full text-center tracking-widest font-mono font-bold text-xl sm:text-2xl px-4 py-3 rounded-xl bg-slate-950 border border-white/10 text-indigo-400 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingPin(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider"
-                >
-                  Bekor qilish
-                </button>
-                <button
-                  type="submit"
-                  disabled={customPinInput.trim().length !== 6}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 transition-all cursor-pointer"
-                >
-                  Saqlash
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* 2. GAME SETUP & TEAM DISTRIBUTION PHASE */}
       {(phase === 'LOBBY' || phase === 'TEAMS_SETUP') && (
@@ -852,8 +738,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold text-xs uppercase tracking-wider transition-all"
                         title="O'yinni yakunlash va eng yuqori ball to'plagan guruh(lar)ni g'olib deb e'lon qilish"
                       >
-                        <Trophy className="w-3.5 h-3.5 text-rose-400" />
-                        Yakunlash & G'olib
+                        <Flag className="w-3.5 h-3.5 text-rose-400" />
+                        Uyinni Yakunlash
                       </button>
                     )}
 
@@ -1538,6 +1424,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         feedbacks={feedbacks}
+      />
+
+      {/* Floating chat launcher pinned to the top-right corner */}
+      <TeacherChatLauncher
+        clientId={clientId}
+        pin={pin}
+        students={students}
+        teams={teams}
       />
     </div>
   );
