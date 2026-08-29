@@ -247,6 +247,19 @@ test('integration: reset-game-keep-teams resets round counters but keeps teams',
 
   const { pin, teamIds, sessionToken } = await gameWithTeams(base, 'teacher-r6', 2);
 
+  // Give the game a larger bank so the unlimited-round flow below (which starts
+  // several questions, each one being marked "used") does not exhaust the
+  // 3-question default bank before we reach the reset step.
+  const bigBank = [
+    { id: 'q_a', text: 'A1?', options: ['A', 'B'], correctAnswer: 'A', timeLimit: 20, category: 'T', difficulty: 'Oson' },
+    { id: 'q_b', text: 'B1?', options: ['A', 'B'], correctAnswer: 'B', timeLimit: 20, category: 'T', difficulty: 'Oson' },
+    { id: 'q_c', text: 'C1?', options: ['A', 'B'], correctAnswer: 'A', timeLimit: 20, category: 'T', difficulty: 'Oson' },
+    { id: 'q_d', text: 'D1?', options: ['A', 'B'], correctAnswer: 'B', timeLimit: 20, category: 'T', difficulty: 'Oson' },
+    { id: 'q_e', text: 'E1?', options: ['A', 'B'], correctAnswer: 'A', timeLimit: 20, category: 'T', difficulty: 'Oson' },
+  ];
+  const sq = await post(base, '/api/set-questions', { clientId: 'teacher-r6', questions: bigBank }, sessionToken);
+  assert.equal(((await sq.json()) as { success: boolean }).success, true);
+
   // Drive the game into round 2 with one question started inside it.
   await playAndFinishRound(base, 'teacher-r6', sessionToken); // question 1, round 1
   const nq = await post(base, '/api/next-question', { clientId: 'teacher-r6' }, sessionToken);

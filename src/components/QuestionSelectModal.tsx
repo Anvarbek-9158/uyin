@@ -7,6 +7,7 @@ interface QuestionSelectModalProps {
   onClose: () => void;
   questions: Question[];
   onSelectQuestion: (originalIndex: number) => void;
+  usedQuestionIds?: string[];
 }
 
 export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
@@ -14,6 +15,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
   onClose,
   questions,
   onSelectQuestion,
+  usedQuestionIds = [],
 }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
 
@@ -109,73 +111,107 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
         {/* Questions list */}
         <div className="overflow-y-auto pr-1 space-y-3 flex-1">
-          {filteredQuestions.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
-              Ushbu bo'limda savollar mavjud emas.
-            </div>
-          ) : (
-            filteredQuestions.map(({ q, originalIndex }) => {
-              const diff = q.difficulty || "O'rta";
-              const diffBadgeClass =
-                diff === 'Oson'
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                  : diff === 'Qiyin'
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+          {(() => {
+            const usedSet = new Set(usedQuestionIds);
+            const remainingCount = questions.filter((q) => !usedSet.has(q.id)).length;
 
+            if (questions.length === 0) {
               return (
-                <div
-                  key={q.id || originalIndex}
-                  className="p-4 rounded-xl bg-slate-950 border border-white/10 hover:border-emerald-500/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
-                >
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-indigo-400">
-                        SAVOL #{originalIndex + 1}
-                      </span>
-
-                      <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadgeClass}`}>
-                        {diff === 'Oson' && '🟢 Oson'}
-                        {diff === "O'rta" && "🟡 O'rta"}
-                        {diff === 'Qiyin' && '🔴 Qiyin'}
-                      </span>
-
-                      {q.category && (
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
-                          <Tag className="w-3 h-3 text-slate-500" />
-                          {q.category}
-                        </span>
-                      )}
-
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
-                        <Clock className="w-3 h-3 text-slate-500" />
-                        {q.timeLimit} soniya
-                      </span>
-                    </div>
-
-                    <p className="text-sm font-semibold text-white leading-relaxed">
-                      {q.text}
-                    </p>
-
-                    <div className="text-[11px] text-slate-500 font-mono italic">
-                      🔒 Javob va variantlar maxfiylik uchun yashirilgan
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      onSelectQuestion(originalIndex);
-                      onClose();
-                    }}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 group-hover:scale-105"
-                  >
-                    <Play className="w-4 h-4 fill-slate-950" />
-                    Tanlash & Boshlash
-                  </button>
+                <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
+                  Hali hech qanday savol mavjud emas. Avval savol qo'shing.
                 </div>
               );
-            })
-          )}
+            }
+
+            if (filteredQuestions.length === 0) {
+              return (
+                <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
+                  Ushbu bo'limda savollar mavjud emas.
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {remainingCount === 0 && (
+                  <div className="p-4 text-center rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm font-bold">
+                    Barcha savollar ishlatilgan — yangi savollarni qo'shing yoki o'yinni yakunlang.
+                  </div>
+                )}
+
+                {filteredQuestions.map(({ q, originalIndex }) => {
+                  const diff = q.difficulty || "O'rta";
+                  const used = usedSet.has(q.id);
+                  const diffBadgeClass =
+                    diff === 'Oson'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : diff === 'Qiyin'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+
+                  return (
+                    <div
+                      key={q.id || originalIndex}
+                      className={`p-4 rounded-xl bg-slate-950 border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group ${
+                        used ? 'border-white/5 opacity-50' : 'border-white/10 hover:border-emerald-500/40'
+                      }`}
+                    >
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-indigo-400">
+                            SAVOL #{originalIndex + 1}
+                          </span>
+
+                          <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadgeClass}`}>
+                            {diff === 'Oson' && '🟢 Oson'}
+                            {diff === "O'rta" && "🟡 O'rta"}
+                            {diff === 'Qiyin' && '🔴 Qiyin'}
+                          </span>
+
+                          {q.category && (
+                            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                              <Tag className="w-3 h-3 text-slate-500" />
+                              {q.category}
+                            </span>
+                          )}
+
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            {q.timeLimit} soniya
+                          </span>
+                        </div>
+
+                        <p className="text-sm font-semibold text-white leading-relaxed">
+                          {q.text}
+                        </p>
+
+                        <div className="text-[11px] text-slate-500 font-mono italic">
+                          🔒 Javob va variantlar maxfiylik uchun yashirilgan
+                        </div>
+                      </div>
+
+                      {used ? (
+                        <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-wider shrink-0 text-center">
+                          ✓ Ishlatilgan
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            onSelectQuestion(originalIndex);
+                            onClose();
+                          }}
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 group-hover:scale-105"
+                        >
+                          <Play className="w-4 h-4 fill-slate-950" />
+                          Tanlash & Boshlash
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
 
         {/* Modal Footer */}

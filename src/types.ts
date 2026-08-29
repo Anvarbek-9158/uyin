@@ -93,6 +93,11 @@ export interface GameSession {
   currentRound?: number;
   questionsPerRound?: number;
   questionsPlayedInRound?: number;
+  // --- Non-repeating questions (QISM I) ---
+  // Ids of all questions already used across the whole game. With unlimited
+  // rounds the teacher can keep playing freely but a question is never picked
+  // twice; when every question has been used the game is declared over.
+  usedQuestionIds?: string[];
   // --- Identity re-claim (teacher-assisted reconnect) ---
   // A student who switches to a new device/browser has a fresh clientId, so
   // reusing their old name would normally be rejected as a hijack. The teacher

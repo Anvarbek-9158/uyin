@@ -1484,6 +1484,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         isOpen={isQuestionSelectModalOpen}
         onClose={() => setIsQuestionSelectModalOpen(false)}
         questions={questions}
+        usedQuestionIds={gameState?.usedQuestionIds}
         onSelectQuestion={(originalIndex) => {
           apiPost('/api/start-betting-phase', { clientId, questionIndex: originalIndex });
         }}

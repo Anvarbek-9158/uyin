@@ -282,9 +282,20 @@ function newGameDefaults(game: GameSession): GameSession {
   game.currentRound = 1;
   game.questionsPerRound = questionsPerRound();
   game.questionsPlayedInRound = 0;
+  game.usedQuestionIds = [];
   game.teacherLastSeenAt = Date.now();
   game.reconnectWhitelist = [];
   return game;
+}
+
+// Index of the first question that has not yet been used, or -1 when every
+// question in the bank has been played (QISM I — non-repeating questions).
+function findFirstUnusedIndex(game: GameSession): number {
+  const used = new Set(game.usedQuestionIds ?? []);
+  for (let i = 0; i < game.questions.length; i++) {
+    if (!used.has(game.questions[i].id)) return i;
+  }
+  return -1;
 }
 
 // Chat channel naming:
@@ -1110,10 +1121,28 @@ app.post('/api/start-betting-phase', ah(async (req, res) => {
   }
 
   const r = await store.withGameLock(context.pin, (game) => {
-    const questionIndex = req.body?.questionIndex;
-    const qIndex = typeof questionIndex === 'number' && questionIndex >= 0 && questionIndex < game.questions.length
-      ? questionIndex
-      : (game.currentQuestionIndex || 0);
+    const used = new Set(game.usedQuestionIds ?? []);
+
+    // The teacher either picks a specific unused question (from the modal) or
+    // falls back to the currentQuestionIndex. A question may never re-appear
+    // (QISM I): if the supplied index is already used we reject the request.
+    // When no explicit index is given, auto-select the first unused question.
+    let qIndex: number;
+    const requestIndex = req.body?.questionIndex;
+    if (typeof requestIndex === 'number' && requestIndex >= 0 && requestIndex < game.questions.length) {
+      const picked = game.questions[requestIndex];
+      if (used.has(picked.id)) {
+        return { ok: false, message: 'Bu savol allaqachon ishlatilgan, boshqa savol tanlang!', game };
+      }
+      qIndex = requestIndex;
+    } else {
+      qIndex = findFirstUnusedIndex(game);
+      if (qIndex === -1) {
+        game.phase = 'GAME_OVER';
+        game.isTimerRunning = false;
+        return { ok: false, message: 'Barcha savollar ishlatildi! O\'yin yakunlandi.', game };
+      }
+    }
 
     game.currentQuestionIndex = qIndex;
     const currentQ = game.questions[qIndex];
@@ -1121,9 +1150,9 @@ app.post('/api/start-betting-phase', ah(async (req, res) => {
     game.phase = 'BETTING';
     game.isTimerRunning = false;
     // Count questions started inside the current round (QISM H). The round
-    // advances in /api/finish-round once questionsPlayedInRound reaches the
-    // questionsPerRound boundary.
+    // counter is cosmetic (the game is unlimited); it just rolls forever.
     game.questionsPlayedInRound = (game.questionsPlayedInRound ?? 0) + 1;
+    game.usedQuestionIds = [...used, currentQ.id];
 
     // Reset current bets and answers for all non-eliminated teams
     Object.values(game.teams).forEach((team) => {
@@ -1138,6 +1167,13 @@ app.post('/api/start-betting-phase', ah(async (req, res) => {
 
   if (!r || !r.game) {
     res.json({ success: false });
+    return;
+  }
+  if (!r.ok) {
+    if (r.game.phase === 'GAME_OVER') {
+      await broadcastGameState(context.pin, r.game);
+    }
+    res.json({ success: false, message: r.message });
     return;
   }
   await broadcastGameState(context.pin, r.game);
@@ -1502,16 +1538,18 @@ app.post('/api/finish-round', ah(async (req, res) => {
       });
     }
 
-    // Check if game is over (only 1 non-eliminated team left or all questions completed)
+    // Check if game is over: only when at most one non-eliminated team remains.
+    // With unlimited rounds (QISM I) running out of sequential question indexes
+    // no longer ends the game — the bank-exhaust case is handled instead by
+    // /api/next-question and /api/start-betting-phase, which declare GAME_OVER
+    // once every question has been used.
     const activeTeams = Object.values(game.teams).filter((t) => !t.isEliminated);
-    if (
-      activeTeams.length <= 1 ||
-      game.currentQuestionIndex >= game.questions.length - 1
-    ) {
+    if (activeTeams.length <= 1) {
       game.phase = 'GAME_OVER';
     } else {
       // Advance the round once the current round's question budget is spent
-      // (QISM H). Scores stay cumulative; only the round counter moves.
+      // (QISM H). Scores stay cumulative; only the round counter moves. This is
+      // purely cosmetic now — rounds continue forever.
       const played = game.questionsPlayedInRound ?? 0;
       const perRound = game.questionsPerRound ?? questionsPerRound();
       if (played >= perRound) {
@@ -1553,12 +1591,21 @@ app.post('/api/next-question', ah(async (req, res) => {
   }
 
   const r = await store.withGameLock(context.pin, (game) => {
-    if (game.currentQuestionIndex < game.questions.length - 1) {
-      const nextIdx = game.currentQuestionIndex + 1;
+    const used = new Set(game.usedQuestionIds ?? []);
+    // Advance to the next UNUSED question (QISM I — non-repeat). The game has
+    // unlimited rounds; it only ends when the whole bank has been used.
+    const nextIdx = findFirstUnusedIndex(game);
+    if (nextIdx === -1) {
+      game.phase = 'GAME_OVER';
+      game.isTimerRunning = false;
+    } else {
+      const q = game.questions[nextIdx];
       game.currentQuestionIndex = nextIdx;
-      game.timerSeconds = game.questions[nextIdx]?.timeLimit || 30;
+      game.timerSeconds = q?.timeLimit || 30;
       game.phase = 'BETTING';
       game.isTimerRunning = false;
+      game.usedQuestionIds = [...used, q.id];
+      game.questionsPlayedInRound = (game.questionsPlayedInRound ?? 0) + 1;
 
       Object.values(game.teams).forEach((team) => {
         team.currentBet = null;
@@ -1566,9 +1613,6 @@ app.post('/api/next-question', ah(async (req, res) => {
         team.answerSubmittedAt = null;
         team.lastResult = null;
       });
-    } else {
-      game.phase = 'GAME_OVER';
-      game.isTimerRunning = false;
     }
 
     return { ok: true, game };
@@ -1675,6 +1719,7 @@ app.post('/api/reset-game-keep-teams', ah(async (req, res) => {
     game.currentRound = 1;
     game.questionsPlayedInRound = 0;
     game.questionsPerRound = questionsPerRound();
+    game.usedQuestionIds = [];
     game.teacherLastSeenAt = Date.now();
 
     Object.values(game.teams).forEach((team) => {
