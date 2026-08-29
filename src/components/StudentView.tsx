@@ -643,23 +643,46 @@ export const StudentView: React.FC<StudentViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {/* Question Card */}
-            {currentQ && (
-              <QuestionCard
-                question={currentQ}
-                questionIndex={gameState.currentQuestionIndex}
-                totalQuestions={gameState.questions.length}
-                timerSeconds={gameState.timerSeconds}
-                isAnsweringUnlocked={gameState.phase === 'ANSWERING'}
-                selectedOption={answerInput}
-                onSelectOption={(opt) => {
-                  setAnswerInput(opt);
-                  if (isLeader) {
-                    handleAnswerSubmit(opt);
-                  }
-                }}
-                isLeader={isLeader}
-              />
+            {/* Question Card. During BETTING the question is intentionally
+                hidden (the server strips text/options from student state), so
+                show a waiting placeholder instead of the card. */}
+            {gameState.phase === 'BETTING' ? (
+              <div className="bg-slate-900/60 border border-indigo-500/30 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden text-center backdrop-blur-xl">
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
+                <div className="relative z-10 space-y-3">
+                  <div className="text-[11px] font-mono font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
+                    Savol {gameState.currentQuestionIndex + 1} / {gameState.questions.length}
+                  </div>
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center animate-pulse">
+                    <Clock className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">
+                    Savol tez orada...
+                  </h3>
+                  <p className="text-sm text-slate-400 font-mono max-w-md mx-auto">
+                    Ballar tiklanishi o'qituvchi savolni ochgunicha kuting. Savol
+                    ochilgach avtomatik ko'rsatiladi.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              currentQ && (
+                <QuestionCard
+                  question={currentQ}
+                  questionIndex={gameState.currentQuestionIndex}
+                  totalQuestions={gameState.questions.length}
+                  timerSeconds={gameState.timerSeconds}
+                  isAnsweringUnlocked={gameState.phase === 'ANSWERING'}
+                  selectedOption={answerInput}
+                  onSelectOption={(opt) => {
+                    setAnswerInput(opt);
+                    if (isLeader) {
+                      handleAnswerSubmit(opt);
+                    }
+                  }}
+                  isLeader={isLeader}
+                />
+              )
             )}
 
             {/* ERROR NOTIFICATION */}

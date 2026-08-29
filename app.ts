@@ -144,11 +144,76 @@ function emitToGame(pin: string, event: string, data: unknown): Promise<void> {
     });
 }
 
-// Helper: Broadcast the full game state to a game channel. Awaited at every call
-// site so the state is persisted AND the event is actually sent before the
-// response goes out.
+// Build a STUDENT-SAFE copy of the game state that can safely leave the server
+// and be broadcast to (or pulled by) a student's browser.
+//
+// Security: hiding the question/answer with CSS alone is not enough — a student
+// could read the raw game_state payload in devtools. The sensitive fields are
+// physically removed here:
+//   - `correctAnswer` is ALWAYS stripped from every question (the whole question
+//     bank with answers must never cross the wire to a student), EXCEPT it is
+//     revealed for the CURRENT question once grading has started so students can
+//     see the correct answer alongside their result.
+//   - In BETTING the CURRENT question's text and options are hidden too (a
+//     placeholder keeps index/length so the UI still numbers the question), so a
+//     student who is still betting cannot learn the question before it is
+//     officially revealed in ANSWERING.
+// Teachers are served the FULL state (via the teacher-private channel and the
+// role-filtered REST endpoints), never this helper.
+function buildStudentSafeGameState(game: GameSession): GameSession {
+  const qi = game.currentQuestionIndex || 0;
+  const revealed =
+    game.phase === 'GRADING' ||
+    game.phase === 'ROUND_RESULT' ||
+    game.phase === 'GAME_OVER';
+
+  const safeQuestions = game.questions.map((q, idx) => {
+    const revealAnswer = revealed && idx === qi;
+    return { ...q, correctAnswer: revealAnswer ? q.correctAnswer : '' };
+  });
+
+  const safe: GameSession = { ...game, questions: safeQuestions };
+
+  if (game.phase === 'BETTING' && safe.questions[qi]) {
+    safe.questions[qi] = { ...safe.questions[qi], text: '', options: [] };
+  }
+  return safe;
+}
+
+// Helper: Trigger the full game state on the teacher-private channel for this
+// game. The teacher subscribes to `private-teacher-<pin>` and receives the FULL
+// (unsanitized) state so they always see the question, the correct answer and
+// every team's answer — unlike students, who only ever get the sanitized state
+// on the shared `game-<pin>` channel.
+function emitToTeacherGame(pin: string, game: GameSession): Promise<void> {
+  return pusher
+    .trigger(`private-teacher-${pin}`, 'game_state', game)
+    .then(() => undefined)
+    .catch((err) => {
+      console.error(`Pusher trigger error (teacher state -> ${pin}):`, err);
+    });
+}
+
+// Relay the countdown second to the teacher-private channel so the teacher's
+// live countdown display (which mirrors gameState.timerSeconds) stays in sync,
+// now that the teacher no longer receives timer_tick from the shared student
+// channel.
+function emitToTeacherGameTick(pin: string, seconds: number): Promise<void> {
+  return pusher
+    .trigger(`private-teacher-${pin}`, 'timer_tick', seconds)
+    .then(() => undefined)
+    .catch((err) => {
+      console.error(`Pusher trigger error (teacher tick -> ${pin}):`, err);
+    });
+}
+
+// Helper: Broadcast the game state. Students (shared `game-<pin>` channel) get
+// the student-safe sanitized copy; the teacher (private channel) gets the full
+// authoritative state. Awaited at every call site so the state is persisted AND
+// the event is actually sent before the response goes out.
 async function broadcastGameState(pin: string, game: GameSession): Promise<void> {
-  await emitToGame(pin, 'game_state', game);
+  await emitToGame(pin, 'game_state', buildStudentSafeGameState(game));
+  await emitToTeacherGame(pin, game);
 }
 
 // ============================================================
@@ -428,7 +493,9 @@ app.get('/api/game-state', ah(async (req, res) => {
         await broadcastGameState(studentPin, r.game);
         notifyPresenceSweep(studentPin, r.data);
       }
-      res.json({ success: true, game: r.game });
+      // Students only ever receive the sanitized state (question/answer hidden
+      // per phase); the teacher branch above returns the full state.
+      res.json({ success: true, game: buildStudentSafeGameState(r.game) });
       return;
     }
   }
@@ -619,7 +686,7 @@ app.post('/api/join-game', ah(async (req, res) => {
   }
 
   await broadcastGameState(pin, r.game);
-  res.json({ success: true, studentId: clientId, game: r.game, sessionToken });
+  res.json({ success: true, studentId: clientId, game: buildStudentSafeGameState(r.game), sessionToken });
 }));
 
 // 3. TEACHER: Create a Team
@@ -1238,6 +1305,7 @@ app.post('/api/timer-tick', ah(async (req, res) => {
     });
   } else {
     emitToGame(pin, 'timer_tick', r.game.timerSeconds);
+    emitToTeacherGameTick(pin, r.game.timerSeconds);
   }
   res.json({ success: true });
 }));
@@ -1927,6 +1995,23 @@ app.post('/api/pusher/auth', ah(async (req, res) => {
   }
 
   const match = channelName.match(/^private-chat-([A-Za-z0-9]+)-(.+)$/);
+  const teacherMatch = channelName.match(/^private-teacher-([A-Za-z0-9]+)$/);
+
+  // Teacher-private channel: only the teacher who owns this game may subscribe.
+  // It carries the full (unsanitized) state, so authorization must be strict —
+  // a student must never be able to join it.
+  if (teacherMatch) {
+    const pin = teacherMatch[1];
+    const teacherPin = await store.getTeacherPin(clientId);
+    const isTeacher = teacherPin === pin;
+    if (!isTeacher) {
+      res.status(403).json({ error: 'Ushbu kanalga kirish ruxsati yo\'q!' });
+      return;
+    }
+    res.send(pusher.authorizeChannel(socketId, channelName));
+    return;
+  }
+
   if (!match) {
     res.status(400).json({ error: 'Noto\'g\'ri kanal nomi!' });
     return;

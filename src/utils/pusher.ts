@@ -28,3 +28,9 @@ export const chatChannelName = (pin: string, studentId: string) =>
 // group room from a private student room in /api/pusher/auth.
 export const groupChatChannelName = (pin: string, teamId: string) =>
   `private-chat-${pin}-g-${teamId}`;
+
+// Teacher-private channel: carries the FULL (unsanitized) game state so the
+// teacher always sees the question, the correct answer and every team's answer.
+// Students subscribe to the shared public `game-<pin>` channel, which only ever
+// receives the sanitized state (see buildStudentSafeGameState on the server).
+export const teacherGameChannelName = (pin: string) => `private-teacher-${pin}`;

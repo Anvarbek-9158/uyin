@@ -6,7 +6,7 @@ import { TeacherView } from './components/TeacherView';
 import { StudentView } from './components/StudentView';
 import { sounds } from './utils/soundEffects';
 import { apiPost, apiGet, getClientId, setSessionToken } from './utils/api';
-import { pusher } from './utils/pusher';
+import { pusher, teacherGameChannelName } from './utils/pusher';
 import { useHeartbeat } from './utils/useHeartbeat';
 import {
   Sparkles,
@@ -58,13 +58,22 @@ export default function App() {
   const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
   const [changePasswordSuccess, setChangePasswordSuccess] = useState<string | null>(null);
 
-  // Subscribe to the game channel via Pusher whenever the game PIN changes
+  // Subscribe to the game channel via Pusher whenever the game PIN changes.
+  //
+  // A teacher and a student must NOT receive the same payload: the teacher gets
+  // the full state (question, correct answer, every team's answer) on the
+  // teacher-private channel, while students only get the sanitized state on the
+  // shared game channel. Which channel we join depends on the current view mode,
+  // so we re-subscribe whenever the pin OR the mode changes. The reconcile pull
+  // (/api/game-state) is role-filtered too.
   useEffect(() => {
     const pin = gameState?.pin;
     if (!pin) return;
 
-    const gameChannel = pusher.subscribe(`game-${pin}`);
-    setChannel(gameChannel);
+    const isTeacherMode = viewMode === 'TEACHER' && isTeacherAuth;
+    const channelName = isTeacherMode ? teacherGameChannelName(pin) : `game-${pin}`;
+    const gameChannel = pusher.subscribe(channelName);
+    setChannel(isTeacherMode ? null : gameChannel);
 
     const onGameState = (state: GameSession) => {
       setGameState(state);
@@ -88,10 +97,9 @@ export default function App() {
 
     // Reconcile authoritative state once the channel subscription is live.
     // Pusher does not replay events that were broadcast before this client was
-    // actually subscribed, so a game_state event for the very first student
-    // login is silently dropped if it races the subscription. Pulling the
-    // current state on subscription success (and again after every reconnect,
-    // which re-triggers subscription_succeeded) recovers any missed event.
+    // actually subscribed. Pulling the current state on subscription success
+    // (and again after every reconnect) recovers any missed event. The pull is
+    // role-filtered server-side, so it matches the channel we are on.
     let cancelled = false;
     const reconcile = async () => {
       if (cancelled) return;
@@ -125,9 +133,9 @@ export default function App() {
       gameChannel.unbind('bet_placed', onBetPlaced);
       gameChannel.unbind('pusher:subscription_succeeded', reconcile);
       setChannel(null);
-      pusher.unsubscribe(`game-${pin}`);
+      pusher.unsubscribe(channelName);
     };
-  }, [clientId, gameState?.pin]);
+  }, [clientId, gameState?.pin, viewMode, isTeacherAuth]);
 
   // URL route detection (/student, /teacher)
   useEffect(() => {
