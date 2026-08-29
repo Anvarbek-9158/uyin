@@ -843,9 +843,16 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <h4 className="font-bold text-indigo-400 text-xs uppercase tracking-wider">
                     Raund Baholash Bosqichi
                   </h4>
-                  <p className="text-xs text-slate-300 font-mono">
-                    O'qituvchi javoblarni va ballarni tekshirmoqda...
-                  </p>
+                  {gameState.phase === 'ROUND_RESULT' && currentQ?.correctAnswer ? (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm">
+                      <span className="text-emerald-300 font-bold uppercase text-xs tracking-wider">To'g'ri javob: </span>
+                      <span className="font-mono font-black text-white">{currentQ.correctAnswer}</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-300 font-mono">
+                      O'qituvchi javoblarni va ballarni tekshirmoqda...
+                    </p>
+                  )}
                   {myTeam.lastResult && (
                     <div
                       className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between uppercase tracking-wider ${
