@@ -961,9 +961,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     <h3 className="text-xl font-serif text-white">
                       {currentQ.text}
                     </h3>
-                    <div className="text-xs text-emerald-400 font-medium pt-2 border-t border-white/10">
-                      To'g'ri javob: <span className="font-bold text-white">{currentQ.correctAnswer}</span>
-                    </div>
+                    {/* The correct answer is revealed to the teacher only once
+                        grading begins — it stays hidden during BETTING (before
+                        students bet) and ANSWERING (while students answer) so
+                        the teacher cannot accidentally spoil it. */}
+                    {phase === 'GRADING' || phase === 'ROUND_RESULT' || phase === 'GAME_OVER' ? (
+                      <div className="text-xs text-emerald-400 font-medium pt-2 border-t border-white/10">
+                        To'g'ri javob: <span className="font-bold text-white">{currentQ.correctAnswer}</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 italic pt-2 border-t border-white/10">
+                        To'g'ri javob baholash boshlanganda ochiladi.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1019,9 +1029,15 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                           <div className="mt-1 text-sm font-semibold text-white">
                             Javob:{' '}
-                            <span className="text-indigo-200">
-                              {team.currentAnswer || '(Hali javob berilmadi)'}
-                            </span>
+                            {phase === 'ANSWERING' ? (
+                              team.currentAnswer
+                                ? <span className="text-emerald-300">Yuborildi ✓</span>
+                                : <span className="text-slate-400">(Hali javob bermadi)</span>
+                            ) : (
+                              <span className="text-indigo-200">
+                                {team.currentAnswer || '(Hali javob berilmadi)'}
+                              </span>
+                            )}
                           </div>
                         </div>
 
