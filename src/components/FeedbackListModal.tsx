@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StudentFeedback } from '../types';
 import { MessageSquare, X } from 'lucide-react';
+import { useLang } from '../i18n';
 
 interface FeedbackListModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
   onClose,
   feedbacks = [],
 }) => {
+  const { t } = useLang();
   const [filterRating, setFilterRating] = useState<'Barchasi' | 'Yaxshi' | 'Yomon' | "A'lo">('Barchasi');
 
   if (!isOpen) return null;
@@ -26,6 +28,9 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
   const yaxshiCount = feedbacks.filter((f) => f.rating === 'Yaxshi').length;
   const yomonCount = feedbacks.filter((f) => f.rating === 'Yomon').length;
 
+  const rateText = (r: string) =>
+    r === "A'lo" ? t('sv_rate_excellent') : r === 'Yaxshi' ? t('sv_rate_good') : t('sv_rate_bad');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
       <div className="bg-slate-900 border border-white/10 rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
@@ -37,10 +42,10 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
-                O'quvchilar Fikrlari va Baholari ({feedbacks.length})
+                {t('flm_title')} ({feedbacks.length})
               </h3>
               <p className="text-xs text-slate-400 font-mono">
-                O'yin yakunida barcha guruhlar va o'quvchilar bildirgan taassurotlar
+                {t('flm_sub')}
               </p>
             </div>
           </div>
@@ -64,7 +69,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            Barchasi ({feedbacks.length})
+            {t('qsm_all')} ({feedbacks.length})
           </button>
 
           <button
@@ -76,7 +81,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🟢 A'lo ({aloCount})
+            🟢 {t('sv_rate_excellent')} ({aloCount})
           </button>
 
           <button
@@ -88,7 +93,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🟡 Yaxshi ({yaxshiCount})
+            🟡 {t('sv_rate_good')} ({yaxshiCount})
           </button>
 
           <button
@@ -100,7 +105,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🔴 Yomon ({yomonCount})
+            🔴 {t('sv_rate_bad')} ({yomonCount})
           </button>
         </div>
 
@@ -108,7 +113,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
         <div className="overflow-y-auto pr-1 space-y-3 flex-1">
           {filteredFeedbacks.length === 0 ? (
             <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
-              Hali bu toifada hech qaysi o'quvchi fikr bildirmadi.
+              {t('flm_none')}
             </div>
           ) : (
             filteredFeedbacks.map((fb) => {
@@ -136,9 +141,9 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
 
                     <div className="flex items-center gap-2">
                       <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider ${ratingBadge}`}>
-                        {fb.rating === "A'lo" && "🟢 A'lo"}
-                        {fb.rating === 'Yaxshi' && "🟡 Yaxshi"}
-                        {fb.rating === 'Yomon' && "🔴 Yomon"}
+                        {fb.rating === "A'lo" && `🟢 ${t('sv_rate_excellent')}`}
+                        {fb.rating === 'Yaxshi' && `🟡 ${t('sv_rate_good')}`}
+                        {fb.rating === 'Yomon' && `🔴 ${t('sv_rate_bad')}`}
                       </span>
                       <span className="text-[11px] text-slate-500 font-mono">
                         {new Date(fb.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -152,7 +157,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                     </p>
                   ) : (
                     <p className="text-[11px] text-slate-500 italic">
-                      (Matnli fikr kiritilmadi, faqat baho berildi)
+                      {t('flm_no_comment')}
                     </p>
                   )}
                 </div>
@@ -167,7 +172,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
           >
-            Yopish
+            {t('flm_close')}
           </button>
         </div>
       </div>

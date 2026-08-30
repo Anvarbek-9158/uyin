@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Trophy,
 } from 'lucide-react';
+import { useLang, getQuestionInLanguage } from '../i18n';
 
 interface StudentViewProps {
   clientId: string;
@@ -41,6 +42,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   onTeacherClick,
   onGameStateChange,
 }) => {
+  const { lang, t } = useLang();
   const [pinInput, setPinInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [joined, setJoined] = useState(false);
@@ -109,7 +111,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     const onKicked = (reason: string) => {
       setJoined(false);
       setStudentId(null);
-      setErrorMsg(reason || 'Parolni xato kiritdingiz!');
+      setErrorMsg(reason || t('sv_wrong_pin'));
       setLoading(false);
     };
 
@@ -169,9 +171,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   // back to the login screen with an explanation instead of a broken panel.
   useEffect(() => {
     if (joined && studentId && gameState && !gameState.students[studentId]) {
-      setErrorMsg(
-        "Siz o'yindan chiqarildingiz (ulanish uzilgani yoki o'qituvchi tomonidan o'chirilgani sababli). Qayta ulanish uchun PIN-kod va ismingizni kiriting."
-      );
+      setErrorMsg(t('sv_kicked_notice'));
       setJoined(false);
       setStudentId(null);
     }
@@ -182,7 +182,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     e.preventDefault();
     const cleanPin = pinInput.trim();
     if (cleanPin.length !== 6) {
-      setErrorMsg("O'yin PIN-kodi rosa 6 xonali bo'lishi shart! (Kam ham, ko'p ham bo'lishi mumkin emas)");
+      setErrorMsg(t('sv_pin_6'));
       return;
     }
 
@@ -206,7 +206,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
       setStudentId(res.studentId);
       onGameStateChange(res.game);
     } else {
-      setErrorMsg(res.message || 'O\'yinga ulanishda xatolik yuz berdi!');
+      setErrorMsg(res.message || t('sv_join_error'));
     }
   };
 
@@ -225,7 +225,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   const handlePlaceBet = async () => {
     if (!isLeader || !myTeam) return;
     if (betAmount < 1 || betAmount > myTeam.score) {
-      setErrorMsg(`Tikiladigan ball 1 va ${myTeam.score} oralig'ida bo'lishi lozim!`);
+      setErrorMsg(t('sv_bet_range_error').replace('{max}', String(myTeam.score)));
       return;
     }
     setErrorMsg(null);
@@ -236,7 +236,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     if (res.success) {
       setBetSubmitted(true);
     } else {
-      setErrorMsg(res.message || 'Ball tikishda xatolik yuz berdi!');
+      setErrorMsg(res.message || t('sv_bet_error'));
     }
   };
 
@@ -253,7 +253,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     if (res.success) {
       setAnswerSubmitted(true);
     } else {
-      setErrorMsg(res.message || 'Javob yuborishda xatolik yuz berdi!');
+      setErrorMsg(res.message || t('sv_answer_error'));
     }
   };
 
@@ -268,7 +268,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5 relative z-20">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-white/5 text-[11px] font-bold uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>O'quvchi Tizimi</span>
+              <span>{t('sv_student_system')}</span>
             </div>
 
             {onTeacherClick && (
@@ -278,7 +278,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer hover:border-indigo-400 shadow-sm"
               >
                 <Shield className="w-3.5 h-3.5 text-indigo-400" />
-                <span>O'qituvchi bo'lib kirish</span>
+                <span>{t('sv_login_as_teacher')}</span>
               </button>
             )}
           </div>
@@ -290,10 +290,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
             </div>
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight uppercase">
-                O'quvchilar Kirishi
+                {t('sv_students_login')}
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                O'qituvchi ko'rsatgan PIN-kod va ismingizni kiriting
+                {t('sv_students_login_sub')}
               </p>
             </div>
           </div>
@@ -308,7 +308,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
           <form onSubmit={handleJoin} className="space-y-5 relative z-10">
             <div>
               <label className="block text-xs font-extrabold uppercase tracking-widest text-slate-300 mb-1.5">
-                1) O'yin PIN-Kodi (6 xonali)
+                {t('sv_pin_label')}
               </label>
               <input
                 type="text"
@@ -326,14 +326,14 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   setErrorMsg(null);
                   setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6));
                 }}
-                placeholder="Masalan: 849201"
+                placeholder={t('sv_pin_placeholder')}
                 className="w-full text-center tracking-widest font-mono font-black text-2xl sm:text-3xl px-4 py-4 rounded-2xl bg-slate-950 border-2 border-indigo-500/50 text-indigo-400 focus:outline-none focus:border-indigo-400 shadow-inner"
               />
             </div>
 
             <div>
               <label className="block text-xs font-extrabold uppercase tracking-widest text-slate-300 mb-1.5">
-                2) Ismingiz (Student Name)
+                {t('sv_name_label')}
               </label>
               <input
                 type="text"
@@ -347,7 +347,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   setErrorMsg(null);
                   setNameInput(e.target.value);
                 }}
-                placeholder="Ism va familiyangiz..."
+                placeholder={t('sv_name_placeholder')}
                 className="w-full px-5 py-4 rounded-2xl bg-slate-950 border-2 border-white/10 text-white font-bold text-base sm:text-lg focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -359,10 +359,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-6 h-6 animate-spin" /> Ulaninmoqda...
+                  <Loader2 className="w-6 h-6 animate-spin" /> {t('sv_connecting')}
                 </>
               ) : (
-                'O\'yinga Kirish (Join)'
+                t('sv_join')
               )}
             </button>
           </form>
@@ -383,13 +383,13 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
           <div className="space-y-2">
             <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-              Kutish Zali
+              {t('sv_waiting_room')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
-              Salom, {myStudent.name}!
+              {t('sv_hello')}{myStudent.name}!
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto font-mono">
-              O'qituvchi sizni guruhga taqsimlashini kuting...
+              {t('sv_waiting_sub')}
             </p>
           </div>
 
@@ -398,10 +398,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs text-center space-y-1 animate-pulse">
               <div className="font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5">
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
-                O'yin Allaqachon Boshlangan!
+                {t('sv_game_started')}
               </div>
               <p className="text-[11px] text-amber-200/90 font-mono">
-                Siz hozir kutish zalidasiz. O'qituvchi o'yin vaqtida ham sizni guruhga biriktira oladi. Kuting...
+                {t('sv_game_started_sub')}
               </p>
             </div>
           )}
@@ -411,17 +411,17 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-center gap-3">
               <span className="w-4 h-4 rounded-full" style={{ backgroundColor: myTeam.color }} />
               <span className="font-bold text-white text-base">
-                Siz "{myTeam.name}" guruhiga qo'shildingiz!
+                {t('sv_joined_team')}{myTeam.name}{t('sv_joined_team_suffix')}
               </span>
               {isLeader && (
                 <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/20">
-                  <Crown className="w-3.5 h-3.5" /> Guruh Boshlig'i
+                  <Crown className="w-3.5 h-3.5" /> {t('sv_team_leader')}
                 </span>
               )}
             </div>
           ) : (
             <div className="text-xs text-slate-500 italic">
-              O'qituvchi ekranida ismingiz ko'rinmoqda. Taqsimot kutilmoqda.
+              {t('sv_pending_assign')}
             </div>
           )}
         </div>
@@ -460,16 +460,16 @@ export const StudentView: React.FC<StudentViewProps> = ({
               </h2>
               {isLeader ? (
                 <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                  <Crown className="w-3.5 h-3.5" /> Siz Guruh Boshlig'isiz (Sardor)
+                  <Crown className="w-3.5 h-3.5" /> {t('sv_leader_badge')}
                 </span>
               ) : (
                 <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                  Oddiy A'zo
+                  {t('sv_member_label')}
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              O'quvchi: <span className="text-white font-semibold">{myStudent.name}</span>
+              {t('sv_student_label')} <span className="text-white font-semibold">{myStudent.name}</span>
             </p>
           </div>
         </div>
@@ -479,7 +479,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
           <Award className="w-6 h-6 text-indigo-400" />
           <div>
             <div className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">
-              Jamoa Bali
+              {t('sv_team_score')}
             </div>
             <div className="font-mono font-black text-2xl text-indigo-300 leading-none mt-0.5">
               {myTeam.score}
@@ -500,10 +500,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 </div>
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-                    O'yin Yakunlandi!
+                    {t('sv_game_over')}
                   </h2>
                   <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto font-mono mt-1">
-                    Ushbu viktorina o'yini o'z nihoyasiga yetdi. Barcha guruhlar natijalari bilan tanishing!
+                    {t('sv_game_over_sub')}
                   </p>
                 </div>
               </>
@@ -511,10 +511,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
               <>
                 <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto animate-bounce" />
                 <h2 className="text-2xl font-bold text-white uppercase tracking-wider">
-                  Jamoangiz Bali 0 ga tushib qoldi!
+                  {t('sv_team_zero')}
                 </h2>
                 <p className="text-rose-200 text-xs sm:text-sm max-w-md mx-auto font-mono">
-                  Afsuski, {myTeam.name} jamoasi ushbu viktorina o'yinidan avtomatik ravishda chetlatildi.
+                  {t('sv_team_zero_sub')}{myTeam.name}{t('sv_team_zero_sub2')}
                 </p>
               </>
             )}
@@ -527,7 +527,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <Crown className="w-7 h-7" />
               </div>
               <h3 className="mt-3 text-lg sm:text-xl font-black uppercase tracking-tight text-amber-200">
-                {(gameState.winners ?? []).length > 1 ? 'G\'olib Guruhlar!' : 'G\'olib Guruh!'}
+                {(gameState.winners ?? []).length > 1 ? t('sv_winners') : t('sv_winner')}
               </h3>
               <p className="mt-1 font-mono font-black text-white text-base sm:text-lg">
                 {(gameState.winners ?? [])
@@ -536,7 +536,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   .join('  🏆  ')}
               </p>
               <p className="mt-2 text-xs text-slate-300 font-mono">
-                Eng yuqori ball to'plagan guruh o'yin g'olibi bo'ldi. Tabriklaymiz! 🎉
+                {t('sv_winners_sub')} 🎉
               </p>
             </div>
           )}
@@ -552,10 +552,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white uppercase tracking-tight">
-                        O'yin va Dars Haqida Fikringiz
+                        {t('sv_feedback_title')}
                       </h3>
                       <p className="text-xs text-slate-400 font-mono">
-                        Taassurotlaringiz va takliflaringizni o'qituvchiga yuboring
+                        {t('sv_feedback_sub')}
                       </p>
                     </div>
                   </div>
@@ -565,7 +565,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer hover:border-indigo-500/50"
                   >
                     <ArrowLeft className="w-4 h-4 text-indigo-400" />
-                    Bosh Sahifaga Qaytish
+                    {t('sv_back_home')}
                   </button>
                 </div>
 
@@ -573,20 +573,20 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <div className="p-5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
-                      <span>Rahmat! Fikringiz va bahongiz o'qituvchiga muvaffaqiyatli yetkazildi.</span>
+                      <span>{t('sv_feedback_sent')}</span>
                     </div>
                     <button
                       onClick={() => setFeedbackSubmitted(false)}
                       className="text-xs text-emerald-400 underline hover:text-emerald-200 font-mono cursor-pointer"
                     >
-                      Qayta tahrirlash
+                      {t('sv_re_edit')}
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                        O'yin va topshiriqlarni baholang:
+                        {t('sv_rate_label')}
                       </label>
                       <div className="grid grid-cols-3 gap-3">
                         <button
@@ -598,7 +598,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🔴 Yomon
+                          🔴 {t('sv_rate_bad')}
                         </button>
 
                         <button
@@ -610,7 +610,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🟡 Yaxshi
+                          🟡 {t('sv_rate_good')}
                         </button>
 
                         <button
@@ -622,20 +622,20 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🟢 A'lo
+                          🟢 {t('sv_rate_excellent')}
                         </button>
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                        O'z fikringiz / Taklif va mulohazalaringiz:
+                        {t('sv_comment_label')}
                       </label>
                       <textarea
                         rows={3}
                         value={feedbackComment}
                         onChange={(e) => setFeedbackComment(e.target.value)}
-                        placeholder="Dars va viktorina juda zo'r bo'ldi / Qaysi savollar yoqqanligi haqida..."
+                        placeholder={t('sv_comment_placeholder')}
                         className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-white/10 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 resize-none"
                       />
                     </div>
@@ -644,7 +644,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       type="submit"
                       className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <Send className="w-4 h-4" /> Fikrimni Yuborish
+                      <Send className="w-4 h-4" /> {t('sv_submit_feedback')}
                     </button>
                   </form>
                 )}
@@ -672,17 +672,16 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
                 <div className="relative z-10 space-y-3">
                   <div className="text-[11px] font-mono font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
-                    Savol {gameState.currentQuestionIndex + 1} / {gameState.questions.length}
+                    {t('sv_question')}{gameState.currentQuestionIndex + 1} / {gameState.questions.length}
                   </div>
                   <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center animate-pulse">
                     <Clock className="w-8 h-8 text-indigo-400" />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-white">
-                    Savol tez orada...
+                    {t('sv_question_waiting')}
                   </h3>
                   <p className="text-sm text-slate-400 font-mono max-w-md mx-auto">
-                    Ballar tiklanishi o'qituvchi savolni ochgunicha kuting. Savol
-                    ochilgach avtomatik ko'rsatiladi.
+                    {t('sv_question_waiting_sub')}
                   </p>
                 </div>
               </div>
@@ -722,10 +721,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <div className="flex items-center justify-between pb-3 border-b border-white/10">
                     <h3 className="font-bold text-white text-base uppercase tracking-wider flex items-center gap-2">
                       <Flame className="w-5 h-5 text-indigo-400" />
-                      1-Bosqich: Ball Tikish (Betting)
+                      {t('sv_phase1')}
                     </h3>
                     <span className="text-xs font-mono font-bold text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-                      Mavjud: {myTeam.score} ball
+                      {t('sv_available')}{myTeam.score} {t('sv_pts')}
                     </span>
                   </div>
 
@@ -733,12 +732,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     betSubmitted ? (
                       <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        Siz guruh nomidan {myTeam.currentBet} ball tikdingiz! O'qituvchi 'Boshlash' tugmasini bosishini kuting...
+                        {t('sv_bet_submitted')}{myTeam.currentBet}{t('sv_bet_submitted2')}
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <p className="text-xs text-slate-300">
-                          Jamoangiz uchun ushbu savolga qancha ball tikasiz? (1 va {myTeam.score} oralig'ida)
+                          {t('sv_bet_prompt')}{myTeam.score})
                         </p>
 
                         <div className="flex items-center gap-4">
@@ -764,7 +763,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                                 onClick={() => setBetAmount(Math.min(myTeam.score, preset))}
                                 className="px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 hover:bg-slate-800 text-[11px] font-bold text-slate-300 uppercase tracking-wider"
                               >
-                                {preset === myTeam.score ? 'ALL IN!' : `${preset} ball`}
+                                {preset === myTeam.score ? t('sv_all_in') : `${preset} ${t('sv_pts')}`}
                               </button>
                             )
                           )}
@@ -774,19 +773,19 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={handlePlaceBet}
                           className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all"
                         >
-                          🔥 {betAmount} Ball Tikishni Tasdiqlash
+                          🔥 {betAmount} {t('sv_confirm_bet')}
                         </button>
                       </div>
                     )
                   ) : (
                     <div className="p-4 rounded-xl bg-slate-950/80 border border-white/5 text-xs text-slate-300 space-y-1">
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
-                        Siz oddiy guruh a'zosisiz!
+                        {t('sv_member_only')}
                       </div>
                       <p className="font-mono text-[11px]">
-                        Guruh sardori ball tikmoqda. Tikilgan ball:{' '}
+                        {t('sv_leader_betting')}
                         <span className="font-bold text-white">
-                          {myTeam.currentBet !== null ? `${myTeam.currentBet} ball` : 'Kutilmoqda...'}
+                          {myTeam.currentBet !== null ? `${myTeam.currentBet} ${t('sv_pts')}` : t('sv_waiting_bet')}
                         </span>
                       </p>
                     </div>
@@ -800,7 +799,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <div className="flex items-center justify-between pb-3 border-b border-white/10">
                     <h3 className="font-bold text-white text-base uppercase tracking-wider flex items-center gap-2">
                       <Clock className="w-5 h-5 text-indigo-400" />
-                      2-Bosqich: Javob Yozish (Taymer Ishlamoqda)
+                      {t('sv_phase2')}
                     </h3>
                   </div>
 
@@ -809,13 +808,13 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-start gap-2">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                         <span className="break-words leading-snug">
-                          Javob muvaffaqiyatli yuborildi: "{myTeam.currentAnswer}". Vaqt tugashini kuting!
+                          {t('sv_answer_submitted')}{myTeam.currentAnswer}{t('sv_answer_submitted2')}
                         </span>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         <p className="text-xs text-slate-300">
-                          O'qituvchi 'Boshlash' tugmasini bosdi! Javobingizni quyida kiritib yuboring:
+                          {t('sv_answer_go')}
                         </p>
 
                         {!currentQ?.options || currentQ.options.length === 0 ? (
@@ -824,7 +823,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               type="text"
                               value={answerInput}
                               onChange={(e) => setAnswerInput(e.target.value)}
-                              placeholder="Javobingizni yozing..."
+                              placeholder={t('sv_answer_placeholder')}
                               className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-white/10 text-white font-semibold text-sm focus:outline-none focus:border-indigo-500 w-full"
                             />
                             <button
@@ -832,12 +831,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               disabled={!answerInput.trim()}
                               className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(79,70,229,0.4)] disabled:opacity-50 shrink-0"
                             >
-                              <Send className="w-4 h-4" /> Yuborish
+                              <Send className="w-4 h-4" /> {t('sv_submit')}
                             </button>
                           </div>
                         ) : (
                           <div className="text-xs text-slate-400 italic font-mono">
-                            Yuqoridagi javob variantlaridan birini bosing.
+                            {t('sv_pick_option')}
                           </div>
                         )}
                       </div>
@@ -845,12 +844,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   ) : (
                     <div className="p-4 rounded-xl bg-slate-950/80 border border-white/5 text-xs text-slate-300 space-y-1">
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
-                        Siz oddiy guruh a'zosisiz!
+                        {t('sv_member_only')}
                       </div>
                       <p className="font-mono text-[11px]">
-                        Guruh sardori javob bermoqda. Yuborilgan javob:{' '}
+                        {t('sv_leader_answering')}
                         <span className="font-bold text-white">
-                          {myTeam.currentAnswer ? myTeam.currentAnswer : 'O\'ylamoqda...'}
+                          {myTeam.currentAnswer ? myTeam.currentAnswer : t('sv_thinking')}
                         </span>
                       </p>
                     </div>
@@ -862,16 +861,16 @@ export const StudentView: React.FC<StudentViewProps> = ({
               {(gameState.phase === 'GRADING' || gameState.phase === 'ROUND_RESULT') && (
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-white/10 space-y-2">
                   <h4 className="font-bold text-indigo-400 text-xs uppercase tracking-wider">
-                    Raund Baholash Bosqichi
+                    {t('sv_round_grading')}
                   </h4>
                   {gameState.phase === 'ROUND_RESULT' && currentQ?.correctAnswer ? (
                     <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm">
-                      <span className="text-emerald-300 font-bold uppercase text-xs tracking-wider">To'g'ri javob: </span>
-                      <span className="font-mono font-black text-white">{currentQ.correctAnswer}</span>
+                      <span className="text-emerald-300 font-bold uppercase text-xs tracking-wider">{t('sv_correct_answer')}</span>
+                      <span className="font-mono font-black text-white">{getQuestionInLanguage(currentQ, lang).correctAnswer}</span>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-300 font-mono">
-                      O'qituvchi javoblarni va ballarni tekshirmoqda...
+                      {t('sv_teacher_grading')}
                     </p>
                   )}
                   {myTeam.lastResult && (
@@ -884,12 +883,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     >
                       <span>
                         {myTeam.lastResult.isCorrect
-                          ? '🎉 Tabriklaymiz! Javobingiz to\'g\'ri!'
-                          : '❌ Javobingiz xato bo\'ldi!'}
+                          ? `🎉 ${t('sv_congrats')}`
+                          : `❌ ${t('sv_wrong_answer')}`}
                       </span>
                       <span className="font-mono text-sm">
                         {myTeam.lastResult.isCorrect ? '+' : ''}
-                        {myTeam.lastResult.pointsDelta} ball
+                        {myTeam.lastResult.pointsDelta} {t('sv_pts')}
                       </span>
                     </div>
                   )}
@@ -903,7 +902,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 onClick={handleExitGame}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Bosh Sahifaga Qaytish
+                <ArrowLeft className="w-3.5 h-3.5" /> {t('sv_back_home_2')}
               </button>
             </div>
           </div>

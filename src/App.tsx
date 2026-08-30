@@ -8,6 +8,7 @@ import { sounds } from './utils/soundEffects';
 import { apiPost, apiGet, getClientId, setSessionToken } from './utils/api';
 import { pusher, teacherGameChannelName } from './utils/pusher';
 import { useHeartbeat } from './utils/useHeartbeat';
+import { useLang } from './i18n';
 import {
   Sparkles,
   ArrowLeft,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  const { t } = useLang();
   const [clientId] = useState<string>(() => getClientId());
   const [channel, setChannel] = useState<Channel | null>(null);
   const [viewMode, setViewMode] = useState<'LANDING' | 'TEACHER' | 'STUDENT'>('STUDENT');
@@ -213,7 +215,7 @@ export default function App() {
       setViewMode('TEACHER');
       window.history.pushState({}, '', '/teacher');
     } else {
-      setTeacherPasswordError("Xato parol! O'qituvchi paroli noto'g'ri.");
+      setTeacherPasswordError(t('wrong_password'));
     }
   };
 
@@ -223,30 +225,30 @@ export default function App() {
     setChangePasswordSuccess(null);
 
     if (oldPasswordInput !== teacherPassword) {
-      setChangePasswordError("Eski parol noto'g'ri kiritildi!");
+      setChangePasswordError(t('err_old_wrong'));
       return;
     }
     if (newPasswordInput.trim().length < 4) {
-      setChangePasswordError("Yangi parol kamida 4 ta belgidan iborat bo'lishi shart!");
+      setChangePasswordError(t('err_new_short'));
       return;
     }
     if (newPasswordInput.trim().length > 20) {
-      setChangePasswordError("Yangi parol ko'pi bilan 20 ta belgidan iborat bo'lishi mumkin!");
+      setChangePasswordError(t('err_new_long'));
       return;
     }
     if (newPasswordInput !== confirmPasswordInput) {
-      setChangePasswordError("Yangi parol va takroriy parol bir-biriga mos kelmadi!");
+      setChangePasswordError(t('err_new_mismatch'));
       return;
     }
     if (newPasswordInput === oldPasswordInput) {
-      setChangePasswordError("Yangi parol eski parol bilan bir xil bo'la olmaydi!");
+      setChangePasswordError(t('err_new_same'));
       return;
     }
 
     // Save new teacher password persistently in localStorage
     localStorage.setItem('teacher_app_password', newPasswordInput.trim());
     setTeacherPassword(newPasswordInput.trim());
-    setChangePasswordSuccess("O'qituvchi paroli muvaffaqiyatli o'zgartirildi!");
+    setChangePasswordSuccess(t('success_password'));
     setOldPasswordInput('');
     setNewPasswordInput('');
     setConfirmPasswordInput('');
@@ -352,10 +354,10 @@ export default function App() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-bold text-[#F8FAFC] uppercase tracking-tight">
-                    Parolni O'zgartirish
+                    {t('change_password_title')}
                   </h3>
                   <p className="text-[11px] text-[#94A3B8]">
-                    O'qituvchi parolini yangilash
+                    {t('change_password_sub')}
                   </p>
                 </div>
               </div>
@@ -393,7 +395,7 @@ export default function App() {
               {/* 1. Eski Parol */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1">
-                  1) Eski Parol
+                  {t('old_password')}
                 </label>
                 <div className="relative">
                   <input
@@ -405,14 +407,14 @@ export default function App() {
                       setOldPasswordInput(e.target.value);
                       setChangePasswordError(null);
                     }}
-                    placeholder="Amaldagi eski parolni kiriting..."
+                    placeholder={t('old_password_placeholder')}
                     className="w-full px-4 py-3 pr-11 rounded-xl bg-black/40 border border-white/10 text-[#F8FAFC] placeholder:text-[#94A3B8] font-mono text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowOldPassword(!showOldPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors p-1"
-                    title={showOldPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+                    title={showOldPassword ? t('hide') : t('show')}
                   >
                     {showOldPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -422,7 +424,7 @@ export default function App() {
               {/* 2. Yangi Parol */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1">
-                  2) Yangi Parol (kamida 4 belgi)
+                  {t('new_password')}
                 </label>
                 <div className="relative">
                   <input
@@ -435,14 +437,14 @@ export default function App() {
                       setNewPasswordInput(e.target.value);
                       setChangePasswordError(null);
                     }}
-                    placeholder="Yangi parolni kiriting..."
+                    placeholder={t('new_password_placeholder')}
                     className="w-full px-4 py-3 pr-11 rounded-xl bg-black/40 border border-white/10 text-[#F8FAFC] placeholder:text-[#94A3B8] font-mono text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors p-1"
-                    title={showNewPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+                    title={showNewPassword ? t('hide') : t('show')}
                   >
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -452,7 +454,7 @@ export default function App() {
               {/* 3. Yangi Parolni Takrorlash */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1">
-                  3) Yangi Parolni Takrorlang
+                  {t('confirm_password')}
                 </label>
                 <div className="relative">
                   <input
@@ -465,14 +467,14 @@ export default function App() {
                       setConfirmPasswordInput(e.target.value);
                       setChangePasswordError(null);
                     }}
-                    placeholder="Yangi parolni qayta kiriting..."
+                    placeholder={t('confirm_password_placeholder')}
                     className="w-full px-4 py-3 pr-11 rounded-xl bg-black/40 border border-white/10 text-[#F8FAFC] placeholder:text-[#94A3B8] font-mono text-sm focus:outline-none focus:border-[#FBBF24] transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors p-1"
-                    title={showConfirmPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+                    title={showConfirmPassword ? t('hide') : t('show')}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -493,7 +495,7 @@ export default function App() {
                   }}
                   className="flex-1 py-3 rounded-xl bg-[#0EA5E9]/10 hover:bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-[#94A3B8] hover:text-[#F8FAFC] font-bold text-xs uppercase tracking-wider transition-all"
                 >
-                  Bekor qilish
+                  {t('cancel')}
                 </button>
 
                 <button
@@ -501,7 +503,7 @@ export default function App() {
                   className="flex-1 py-3 rounded-xl bg-[#FBBF24] hover:bg-[#FCD34D] text-[#0B1121] font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all flex items-center justify-center gap-1.5"
                 >
                   <KeyRound className="w-4 h-4" />
-                  Saqlash
+                  {t('save')}
                 </button>
               </div>
             </form>
@@ -530,7 +532,7 @@ export default function App() {
                   className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0EA5E9]/10 hover:bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-[#94A3B8] hover:text-[#F8FAFC] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                 >
                   <ArrowLeft className="w-4 h-4 text-[#0EA5E9]" />
-                  <span>Orqaga (O'quvchi Tizimi)</span>
+                  <span>{t('back_student')}</span>
                 </button>
               </div>
 
@@ -540,10 +542,10 @@ export default function App() {
                   <Lock className="w-8 h-8 text-[#0EA5E9]" />
                 </div>
                 <h2 className="text-2xl font-bold text-[#F8FAFC] tracking-tight uppercase">
-                  O'qituvchi Paroli
+                  {t('teacher_password')}
                 </h2>
                 <p className="text-xs text-[#94A3B8]">
-                  O'qituvchi boshqaruv paneliga kirish uchun parolni kiriting
+                  {t('teacher_password_sub')}
                 </p>
               </div>
 
@@ -558,7 +560,7 @@ export default function App() {
               <form onSubmit={handleTeacherPasswordSubmit} className="space-y-4 relative z-10">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-widest text-[#94A3B8] mb-1.5">
-                    O'qituvchi Paroli
+                    {t('teacher_password')}
                   </label>
                   <div className="relative">
                     <input
@@ -571,14 +573,14 @@ export default function App() {
                         setTeacherPasswordInput(e.target.value);
                         setTeacherPasswordError(null);
                       }}
-                      placeholder="Parolni kiriting..."
+                      placeholder={t('enter_password')}
                       className="w-full px-4 py-3.5 pr-11 rounded-2xl bg-black/40 border border-white/10 text-[#F8FAFC] placeholder:text-[#94A3B8] font-mono font-bold text-base focus:outline-none focus:border-[#0EA5E9] shadow-inner"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswordText(!showPasswordText)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors p-1"
-                      title={showPasswordText ? "Yashirish" : "Ko'rsatish"}
+                      title={showPasswordText ? t('hide') : t('show')}
                     >
                       {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -597,7 +599,7 @@ export default function App() {
                     className="flex-1 py-3.5 rounded-2xl bg-[#0EA5E9]/10 hover:bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-[#94A3B8] hover:text-[#F8FAFC] font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    Orqaga
+                    {t('back')}
                   </button>
 
                   <button
@@ -605,7 +607,7 @@ export default function App() {
                     className="flex-1 py-3.5 rounded-2xl bg-[#FBBF24] hover:bg-[#FCD34D] text-[#0B1121] font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all flex items-center justify-center gap-2"
                   >
                     <KeyRound className="w-4 h-4" />
-                    Kirish
+                    {t('login')}
                   </button>
                 </div>
               </form>
@@ -642,7 +644,7 @@ export default function App() {
       {/* Modern Footer */}
       <footer className="bg-[#0B1121]/80 border-t border-white/5 py-6 text-center text-xs text-[#94A3B8] backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
-          <p className="break-words">© 2026 EduPlay — Real-Time O'quv va Chempionat Platformasi</p>
+          <p className="break-words">{t('footer_tag')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-[11px]">
             <span>Node.js</span>
             <span>Pusher Channels</span>

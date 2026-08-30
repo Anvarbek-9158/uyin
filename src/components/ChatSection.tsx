@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLang } from '../i18n';
 import type { Channel } from 'pusher-js';
 import { ChatMessage, Student, Team } from '../types';
 import { apiPost, apiGet } from '../utils/api';
@@ -47,10 +48,10 @@ const roomChannelName = (pin: string, room: ChatRoom) =>
 const formatTime = (ts: number) =>
   new Date(ts).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
 
-const lastMessagePreview = (msgs: ChatMessage[] | undefined): string | null => {
+const lastMessagePreview = (msgs: ChatMessage[] | undefined, t: (k: string) => string): string | null => {
   const last = msgs && msgs.length > 0 ? msgs[msgs.length - 1] : null;
   if (!last) return null;
-  const prefix = last.role === 'teacher' ? "O'qituvchi: " : `${last.senderName}: `;
+  const prefix = last.role === 'teacher' ? `${t('chat_teacher_role')}: ` : `${last.senderName}: `;
   return prefix + last.text;
 };
 
@@ -58,7 +59,9 @@ const MessageBubble: React.FC<{
   msg: ChatMessage;
   mine: boolean;
   showSender: boolean;
-}> = ({ msg, mine, showSender }) => (
+}> = ({ msg, mine, showSender }) => {
+  const { t } = useLang();
+  return (
   <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
     <div
       className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm break-words leading-snug shadow-lg ${
@@ -71,7 +74,7 @@ const MessageBubble: React.FC<{
         (msg.role === 'teacher' ? (
           <div className="flex items-center gap-1.5 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">
-              O'qituvchi
+              {t('chat_teacher_role')}
             </span>
             <Crown className="w-3 h-3 text-amber-400" />
           </div>
@@ -92,7 +95,8 @@ const MessageBubble: React.FC<{
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export const ChatSection: React.FC<ChatSectionProps> = ({
   clientId,
@@ -103,6 +107,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
   groupId = null,
   onClose,
 }) => {
+  const { t } = useLang();
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -175,7 +180,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
 
       ch.bind('chat_message', handler);
       ch.bind('pusher:subscription_error', () => {
-        setErrorMsg('Chatga ulanishda ruxsat xatosi yuz berdi!');
+        setErrorMsg(t('chat_error_connect'));
       });
     },
     [pin, clientId]
@@ -244,7 +249,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             return { ...prev, [room.roomKey]: merged };
           });
         } else {
-          setErrorMsg((res as { message?: string }).message || 'Xabarlarni yuklashda xatolik!');
+          setErrorMsg((res as { message?: string }).message || t('chat_error_load'));
         }
       } finally {
         setLoadingHistory(false);
@@ -286,7 +291,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
     const result: StudentGroup[] = [];
     const unassigned = studentList.filter((s) => !s.teamId);
     if (unassigned.length > 0) {
-      result.push({ key: 'unassigned', label: 'Guruhsiz', color: '#94a3b8', students: unassigned });
+      result.push({ key: 'unassigned', label: t('chat_no_group'), color: '#94a3b8', students: unassigned });
     }
     teamList.forEach((t) => {
       const members = t.memberIds
@@ -351,7 +356,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       });
       setInputText('');
     } else {
-      setErrorMsg((res as { message?: string }).message || 'Xabar yuborishda xatolik yuz berdi!');
+      setErrorMsg((res as { message?: string }).message || t('chat_error_send'));
       const retryAfterMs = (res as { retryAfterMs?: number }).retryAfterMs;
       if (retryAfterMs) startCooldown(retryAfterMs);
     }
@@ -424,13 +429,13 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
     const privateUnread = unread[privateRoom.roomKey] || 0;
     const groupUnread = groupRoom ? unread[groupRoom.roomKey] || 0 : 0;
 
-    const title = onGroupTab ? 'Guruh Chati' : "O'qituvchi bilan Chat";
+    const title = onGroupTab ? t('chat_group_subtitle') : t('chat_student_title');
     const subtitle = onGroupTab
-      ? `Bu guruh ichidagi barcha o'quvchilar ko'ra oladi`
-      : "Xabarlaringiz faqat siz va o'qituvchingizga ko'rinadi";
+      ? t('chat_student_group_sub')
+      : t('chat_student_private_sub');
     const emptyText = onGroupTab
-      ? 'Guruhdagi do\'stlaringizga xabar yozishingiz mumkin'
-      : "O'qituvchingizga savol yoki murojaat yozishingiz mumkin. Bu xabar faqat ikkingizga ko'rinadi.";
+      ? t('chat_group_empty_text')
+      : t('chat_private_empty_text');
 
     return (
       <div className="flex flex-col h-full bg-slate-900/95 backdrop-blur-xl">
@@ -500,7 +505,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              Guruh chati{groupMemberCount > 0 ? ` (${groupMemberCount})` : ''}
+              {t('chat_group_subtitle')}{groupMemberCount > 0 ? ` (${groupMemberCount})` : ''}
               {groupUnread > 0 && (
                 <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
                   {groupUnread > 99 ? '99+' : groupUnread}
@@ -514,7 +519,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
           {loadingHistory && ownMessages.length === 0 && (
             <div className="flex items-center justify-center py-8 text-slate-500 text-xs font-mono">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Xabarlar yuklanmoqda...
+              <Loader2 className="w-4 h-4 animate-spin mr-2" /> {t('chat_loading')}
             </div>
           )}
 
@@ -524,7 +529,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 {onGroupTab ? <Users className="w-7 h-7" /> : <MessageSquare className="w-7 h-7" />}
               </div>
               <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">
-                Hali xabarlar yo'q
+                {t('chat_no_messages')}
               </p>
               <p className="text-xs text-slate-500 font-mono max-w-xs mx-auto">{emptyText}</p>
             </div>
@@ -545,7 +550,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
 
         {renderError()}
 
-        {renderInput(onGroupTab ? 'Guruhga xabar yozing...' : "O'qituvchiga xabar yozing...")}
+        {renderInput(onGroupTab ? t('chat_group_placeholder') : t('chat_student_input'))}
       </div>
     );
   }
@@ -568,10 +573,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           </div>
           <div className="min-w-0">
             <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
-              O'quvchi Chatlari
+              {t('chat_teacher_chats')}
             </h3>
             <p className="text-[11px] text-slate-400 font-mono">
-              Shaxsiy va guruh chatlari вЂ” barcha guruhlar bilan aloqa
+              {t('chat_teacher_sub')}
             </p>
           </div>
         </div>
@@ -591,10 +596,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           <div className="text-center space-y-2">
             <Users className="w-10 h-10 text-slate-600 mx-auto" />
             <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-              Hali hech qanday o'quvchi qo'shilmagan
+              {t('chat_no_students')}
             </p>
             <p className="text-xs text-slate-600 font-mono">
-              O'quvchilar o'yinga kirgach chatlari shu yerda paydo bo'ladi
+              {t('chat_no_students_sub')}
             </p>
           </div>
         </div>
@@ -608,9 +613,8 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 <div className="px-4 py-1.5 flex items-center gap-2">
                   <Users className="w-3 h-3 text-emerald-400" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/90 truncate">
-                    Guruh chatlari
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-600">
+                    {t('chat_group_section')}
+                  </span>                  <span className="text-[10px] font-mono text-slate-600">
                     ({groupRooms.length})
                   </span>
                 </div>
@@ -622,7 +626,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                   const memberCount = (team.memberIds || []).filter((id) =>
                     Boolean(students[id])
                   ).length;
-                  const preview = lastMessagePreview(messages[gr.roomKey]);
+                  const preview = lastMessagePreview(messages[gr.roomKey], t);
                   return (
                     <button
                       key={gr.roomKey}
@@ -643,11 +647,11 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                         <span className="block text-xs font-bold truncate">
                           {team.name}
                           <span className="ml-1 text-[9px] font-mono text-slate-500">
-                            {memberCount} a'zo
+                            {memberCount} {t('chat_member')}
                           </span>
                         </span>
                         <span className="block text-[10px] text-slate-500 font-mono truncate">
-                          {preview || 'Guruh chat'}
+                          {preview || t('chat_group_preview')}
                         </span>
                       </span>
                       {unreadCount > 0 && (
@@ -681,7 +685,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                   const roomKey = `s:${st.id}`;
                   const active = selectedKey === roomKey;
                   const unreadCount = unread[roomKey] || 0;
-                  const preview = lastMessagePreview(messages[roomKey]);
+                  const preview = lastMessagePreview(messages[roomKey], t);
                   return (
                     <button
                       key={st.id}
@@ -705,7 +709,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                         <span className="block text-xs font-bold truncate">{st.name}</span>
                         <span className="flex items-center gap-1 text-[10px] text-slate-500 font-mono truncate">
                           {st.isLeader && <Crown className="w-2.5 h-2.5 text-amber-400" />}
-                          {preview || (st.isLeader ? 'Sardor' : 'O\'quvchi')}
+                          {preview || (st.isLeader ? t('chat_captain_role') : t('chat_student_role'))}
                         </span>
                       </span>
                       {unreadCount > 0 && (
@@ -740,7 +744,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       {selectedTeam.name}
                     </span>
                     <p className="text-[11px] text-slate-500 font-mono truncate">
-                      {selectedTeamMemberCount} a'zo В· Bu guruh ichida hamma ko'ra oladi
+                      {selectedTeamMemberCount} {t('chat_member')} · {t('chat_student_group_sub')}
                     </p>
                   </div>
                 </div>
@@ -751,10 +755,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     <div className="text-center py-10 space-y-1">
                       <Users className="w-8 h-8 text-emerald-400/60 mx-auto" />
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        Guruh suhbatini boshlang
+                        {t('chat_group_empty')}
                       </p>
                       <p className="text-[11px] text-slate-600 font-mono">
-                        Bu xabarlar faqat guruh a'zolariga ko'rinadi
+                        {t('chat_group_empty_sub')}
                       </p>
                     </div>
                   )}
@@ -768,7 +772,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 </div>
 
                 {renderError()}
-                {renderInput('Guruhga xabar yozing...')}
+                {renderInput(t('chat_group_placeholder'))}
               </>
             ) : currentStudent ? (
               <>
@@ -793,7 +797,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500 font-mono truncate">
-                      {currentTeam ? currentTeam.name : 'Guruhsiz'}
+                      {currentTeam ? currentTeam.name : t('chat_no_group')}
                     </p>
                   </div>
                 </div>
@@ -804,10 +808,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     <div className="text-center py-10 space-y-1">
                       <CheckCircle2 className="w-8 h-8 text-emerald-400/60 mx-auto" />
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        Suhbat boshlang
+                        {t('chat_start')}
                       </p>
                       <p className="text-[11px] text-slate-600 font-mono">
-                        Bu chat faqat siz va {currentStudent.name}ga ko'rinadi
+                        {t('chat_private_hint')}
                       </p>
                     </div>
                   )}
@@ -827,12 +831,12 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 </div>
 
                 {renderError()}
-                {renderInput(`${currentStudent.name}ga xabar yozing...`)}
+                {renderInput(t('chat_teacher_placeholder_name').replace('{name}', currentStudent.name))}
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center p-8">
                 <p className="text-xs text-slate-500 font-mono text-center">
-                  Chapdagi ro'yxatdan chatni tanlang
+                  {t('chat_no_room')}
                 </p>
               </div>
             )}
@@ -858,6 +862,7 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
   teams = {},
   groupId = null,
 }) => {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
 
   return (
@@ -866,8 +871,8 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all cursor-pointer border border-indigo-400/40 group"
-          title="Chat qilish"
-          aria-label="Chatni ochish"
+          title={t('chat_launcher_title')}
+          aria-label={t('chat_launcher_open')}
         >
           <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950" />
@@ -904,6 +909,7 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
   students,
   teams,
 }) => {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const studentCount = Object.keys(students || {}).length;
 
@@ -912,8 +918,8 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
-        title="O'quvchilar bilan chat qilish"
-        aria-label="Chatni ochish"
+        title={t('chat_launcher_students')}
+        aria-label={t('chat_launcher_open')}
       >
         <MessagesSquare className="w-7 h-7 group-hover:scale-110 transition-transform" strokeWidth={2.2} />
         <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black flex items-center justify-center border-2 border-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.6)]">

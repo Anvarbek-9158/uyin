@@ -43,6 +43,17 @@ export interface Question {
   category?: string;
   explanation?: string;
   difficulty?: 'Oson' | "O'rta" | 'Qiyin';
+  // Optional ru/en variants. The base fields are treated as the source (Uzbek)
+  // truth. When a language is active a Question is shown using these translated
+  // variants instead. Imported from i18n to avoid a circular dependency.
+  translations?: Record<string, {
+    text: string;
+    options?: string[];
+    correctAnswer: string;
+    category?: string;
+    difficulty?: string;
+    explanation?: string;
+  }>;
 }
 
 export type GamePhase =

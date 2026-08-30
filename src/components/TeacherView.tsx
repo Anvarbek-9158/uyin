@@ -5,6 +5,7 @@ import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
+import { useLang, getQuestionInLanguage, translateDiplicity, translateCategory, Language } from '../i18n';
 import {
   Users,
   Shield,
@@ -44,6 +45,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onCreateGame,
   onPinUpdated,
 }) => {
+  const { lang, t } = useLang();
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [newQuestionText, setNewQuestionText] = useState('');
@@ -117,16 +119,16 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <Shield className="w-8 h-8" />
         </div>
         <h2 className="text-2xl font-black text-white mb-2">
-          O'qituvchi Boshqaruv Paneli
+          {t('nav_teacher_console')}
         </h2>
         <p className="text-slate-400 text-sm max-w-md mb-6">
-          O'quvchilar uchun yangi real-time viktorina va chempionat seansini yarating.
+          {t('tv_empty_create_sub')}
         </p>
         <button
           onClick={onCreateGame}
           className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
         >
-          🎮 Yangi O'yin Yaratish (PIN Generatsiya)
+          🎮 {t('tv_create_game')}
         </button>
       </div>
     );
@@ -143,6 +145,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   } = gameState;
 
   const currentQ = questions[currentQuestionIndex];
+  const displayQ = currentQ ? getQuestionInLanguage(currentQ, lang) : null;
 
   // Connected students list
   const studentList = Object.values(students || {}) as Student[];
@@ -165,7 +168,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (!student) return;
     if (
       !window.confirm(
-        `"${student.name}" uchun qayta ulanishni ruxsat berasizmi (yangi qurilmadan)? Eski qurilma sessiyasi bekor qilinadi.`
+        `"${student.name}" ${t('tv_conn_reason_prefix')}`
       )
     ) {
       return;
@@ -178,9 +181,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // (QISM E).
   const handleRegeneratePin = async () => {
     if (
-      !window.confirm(
-        "Yangi PIN-kod yaratiladi va barcha o'quvchilar chiqariladi (ular yangi PIN-kod bilan qayta ulanadi). Guruhlar va to'plangan ballar SAQLANADI. Davom etasizmi?"
-      )
+      !window.confirm(t('tv_pin_regenerate_confirm'))
     ) {
       return;
     }
@@ -191,7 +192,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (res?.success && res.game) {
       onPinUpdated(res.game);
     } else {
-      window.alert(res?.message || 'PIN-kodni yangilashda xatolik yuz berdi');
+      window.alert(res?.message || t('tv_pin_error'));
     }
   };
 
@@ -244,10 +245,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         <div className="flex flex-col lg:flex-row items-center justify-between gap-5 relative z-10">
           <div className="space-y-1.5 text-center lg:text-left">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
-              O'quvchilar Ulanish Paroli (PIN)
+              {t('tv_pin_title')}
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm font-mono font-medium tracking-wide">
-              O'quvchilar ushbu PIN-kod orqali guruhlariga va o'yinga ulanishadi.
+              {t('tv_pin_sub')}
             </p>
           </div>
 
@@ -255,7 +256,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-4 sm:px-7 sm:py-4 rounded-3xl border-2 border-indigo-500/60 shadow-[0_0_30px_rgba(79,70,229,0.3)] w-full max-w-full sm:w-auto">
             <div className="text-center sm:text-left min-w-0">
               <div className="text-[11px] sm:text-xs uppercase font-extrabold text-slate-400 tracking-widest">
-                O'YIN PAROLI (PIN)
+                {t('tv_pin_label')}
               </div>
               <div className="font-mono font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1">
                 {pin}
@@ -269,10 +270,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <button
                 onClick={() => setIsFeedbackModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-200 text-[11px] sm:text-xs font-extrabold border border-indigo-500/50 transition-all uppercase tracking-wider relative cursor-pointer"
-                title="O'quvchilar bildirgan barcha fikrlar va baholarni ko'rish"
               >
                 <MessageSquare className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>Fikrlar ({feedbacks.length})</span>
+                <span>{t('tv_feedback')} ({feedbacks.length})</span>
                 {feedbacks.length > 0 && (
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 )}
@@ -281,10 +281,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <button
                 onClick={handleRegeneratePin}
                 className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
-                title="Yangi tasodifiy PIN-kod yaratish va barcha o'quvchilarni chiqarish (guruhlar va ballar saqlanadi)"
               >
                 <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
-                PIN'ni Yangilash
+                {t('tv_regenerate_pin')}
               </button>
 
               {phase === 'LOBBY' || phase === 'TEAMS_SETUP' || phase === 'GAME_OVER' ? (
@@ -292,17 +291,16 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   onClick={() => {
                     if (
                       window.confirm(
-                        "Yangi o'yin boshlanadi: yangi PIN-kod yaratiladi va barcha o'quvchilar hamda guruhlar o'chiriladi. Davom etasizmi?"
+                        t('tv_new_game_confirm')
                       )
                     ) {
                       onResetGame();
                     }
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] sm:text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
-                  title="Yangi PIN-kod bilan mutlaqo yangi o'yin boshlash (barcha o'quvchilar va guruhlar o'chiriladi)"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-400 shrink-0" />
-                  Yangi O'yin Boshlash
+                  {t('tv_new_game')}
                 </button>
               ) : null}
             </div>
@@ -319,7 +317,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-indigo-400" />
                 <h3 className="font-bold text-white text-base uppercase tracking-wider">
-                  Kutish Zali
+                  {t('tv_waiting_room')}
                 </h3>
               </div>
               <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
@@ -347,7 +345,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       }}
                       className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-white/20 cursor-pointer"
                     />
-                    <span>Barchasini belgilash ({selectedStudentIds.length})</span>
+                    <span>{t('tv_select_all_teams')} ({selectedStudentIds.length})</span>
                   </label>
 
                   {selectedStudentIds.length > 0 && (
@@ -355,14 +353,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       onClick={() => setSelectedStudentIds([])}
                       className="text-[11px] text-slate-400 hover:text-white uppercase font-bold"
                     >
-                      Tozalash
+                      {t('tv_clear')}
                     </button>
                   )}
                 </div>
 
                 {selectedStudentIds.length > 0 && teamList.length > 0 && (
                   <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                    <span className="text-[11px] text-indigo-300 font-bold uppercase">Guruhga biriktirish:</span>
+                    <span className="text-[11px] text-indigo-300 font-bold uppercase">{t('tv_assign_group')}</span>
                     <select
                       onChange={(e) => {
                         if (e.target.value) {
@@ -377,7 +375,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       }}
                       className="flex-1 px-2 py-1 rounded bg-indigo-600 text-white font-bold text-xs focus:outline-none cursor-pointer"
                     >
-                      <option value="">Guruhni tanlang...</option>
+                      <option value="">{t('tv_select_team')}</option>
                       {teamList.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.name}
@@ -391,7 +389,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
             {unassignedStudents.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-6 font-mono uppercase tracking-widest">
-                Barcha o'quvchilar guruhlarga taqsimlandi yoki hali hech kim ulanmadi.
+                {t('tv_all_assigned')}
               </p>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
@@ -426,18 +424,16 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         <button
                           onClick={() => handleReconnectStudent(st.id)}
                           className="p-1 px-2 rounded bg-sky-500/10 hover:bg-sky-500/30 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
-                          title="Yangi qurilmadan qayta ulanishga ruxsat berish"
                         >
                           <RefreshCw className="w-3 h-3" />
-                          Qayta ulash
+                          {t('tv_reconnect')}
                         </button>
                         <button
                           onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
                           className="p-1 px-2 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
-                          title="Tizimdan/o'yindan chiqarib yuborish"
                         >
                           <UserX className="w-3 h-3" />
-                          Chiqarish
+                          {t('tv_kick')}
                         </button>
                       </div>
                     </div>
@@ -453,10 +449,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0">
                   <h3 className="font-bold text-white text-xl uppercase tracking-tight">
-                    Guruhlarni Shakllantirish va Sardor Tayinlash
+                    {t('tv_team_setup_title')}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    O'quvchilarni guruhlarga bir nechta ketma-ket kiritishingiz va adashib kirganlarni o'yindan chiqarishingiz mumkin.
+                    {t('tv_team_setup_sub')}
                   </p>
                 </div>
 
@@ -466,7 +462,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all scale-105 cursor-pointer"
                   >
                     <Play className="w-4 h-4 fill-slate-950" />
-                    Viktorinani Boshlash (Savol Tanlash)
+                    {t('tv_start_quiz')}
                   </button>
                 )}
               </div>
@@ -477,14 +473,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="Yangi guruh nomi (Masalan: Algoritmlar...)"
+                  placeholder={t('tv_new_team_placeholder')}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500 w-full"
                 />
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
                 >
-                  <Plus className="w-4 h-4" /> Guruh Qo'shish
+                  <Plus className="w-4 h-4" /> {t('tv_add_team')}
                 </button>
               </form>
 
@@ -522,7 +518,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             title="Shovqin qilgani uchun 5 ball ayirish"
                           >
                             <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                            -5 Ball (Shovqin)
+                            {t('tv_penalize_noise')}
                           </button>
 
                           <button
@@ -538,11 +534,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       {/* Members & Leader Selector */}
                       <div className="space-y-2 pl-2">
                         <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                          Guruh a'zolari va Sardor:
+                          {t('tv_members_leader')}
                         </div>
                         {team.memberIds.length === 0 ? (
                           <p className="text-xs text-slate-500 italic">
-                            A'zolar yo'q. Quyidan o'quvchi biriktiring.
+                            {t('tv_no_members')}
                           </p>
                         ) : (
                           <div className="space-y-1.5">
@@ -579,7 +575,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                         }
                                         className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-[11px] font-bold uppercase"
                                       >
-                                        Sardor qilish
+                                        {t('tv_make_leader')}
                                       </button>
                                     )}
                                     <button
@@ -594,7 +590,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                       title="Guruhdan chiqarib, kutish zaliga qaytarish"
                                     >
                                       <LogOut className="w-3 h-3 text-amber-400" />
-                                      <span>Kutish zaliga</span>
+                                      <span>{t('tv_to_waiting')}</span>
                                     </button>
                                     <button
                                       onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
@@ -627,7 +623,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             }}
                             className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-xs text-slate-300 focus:outline-none"
                           >
-                            <option value="">+ O'quvchini guruhga qo'shish...</option>
+                            <option value="">{t('tv_add_student_team')}</option>
                             {unassignedStudents.map((st) => (
                               <option key={st.id} value={st.id}>
                                 {st.name}
@@ -660,19 +656,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
                   <div className="flex items-center gap-3">
                     <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
-                      Raund {gameState.currentRound ?? 1}
+                      {t('tv_round')} {gameState.currentRound ?? 1}
                     </span>
                     <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
-                      Savol {currentQuestionIndex + 1} / {questions.length}
+                      {t('tv_question')} {currentQuestionIndex + 1} / {questions.length}
                     </span>
                     <div className="text-xs text-slate-400 font-mono uppercase">
-                      Bosqich:{' '}
+                      {t('tv_phase_label')}{' '}
                       <span className="font-bold text-indigo-400">
-                        {phase === 'BETTING' && '1. Ball Tikish Bosqichi'}
-                        {phase === 'ANSWERING' && '2. Javob Berish (Taymer Ishlamoqda)'}
-                        {phase === 'GRADING' && '3. Javoblarni Baholash'}
-                        {phase === 'ROUND_RESULT' && `4. Raund ${gameState.currentRound ?? 1} Yakunlandi`}
-                        {phase === 'GAME_OVER' && '5. O\'yin Yakunlandi 🏆'}
+                        {phase === 'BETTING' && t('tv_phase1')}
+                        {phase === 'ANSWERING' && t('tv_phase2_answering')}
+                        {phase === 'GRADING' && t('tv_phase3')}
+                        {phase === 'ROUND_RESULT' && `${t('tv_phase4_prefix')}${gameState.currentRound ?? 1}${t('tv_phase4_suffix')}`}
+                        {phase === 'GAME_OVER' && t('tv_phase5')}
                       </span>
                     </div>
                   </div>
@@ -689,12 +685,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         }`}
                         title={
                           allBetPlaced
-                            ? "Taymerni va javob berishni boshlash (savolni ochish)"
-                            : "Hamma tikmagan bo'lsa ham savolni ochib, taymerni boshlash mumkin (tikmagan guruhlar 0 ball)"
+                            ? t('tv_start_reveal')
+                            : t('tv_reveal_anyway')
                         }
                       >
                         <Play className="w-4 h-4 fill-current" />
-                        {allBetPlaced ? 'BOSHLASH (Savolni Ochish)' : 'SAVOLNI OCHISH (Baribir Davom)'}
+                        {allBetPlaced ? t('tv_start_reveal') : t('tv_reveal_anyway')}
                       </button>
                     )}
 
@@ -704,7 +700,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.4)]"
                       >
                         <Clock className="w-4 h-4" />
-                        Taymerni To'xtatish va Baholash
+                        {t('tv_stop_timer')}
                       </button>
                     )}
 
@@ -714,7 +710,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.4)]"
                       >
                         <Check className="w-4 h-4" />
-                        Raund Natijalarini E'lon Qilish
+                        {t('tv_publish_round')}
                       </button>
                     )}
 
@@ -723,7 +719,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         onClick={() => setIsQuestionSelectModalOpen(true)}
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.5)] cursor-pointer"
                       >
-                        Keyingi Savol (Tanlash) <ArrowRight className="w-4 h-4" />
+                        {t('tv_next_question')} <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
 
@@ -731,30 +727,28 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     {phase !== 'GAME_OVER' && phase !== 'LOBBY' && phase !== 'TEAMS_SETUP' && (
                       <button
                         onClick={() => {
-                          if (window.confirm("O'yinni yakunlash va g'olib guruh(lar)ni e'lon qilmoqchimisiz? Bu qaytarib bo'lmaydi.")) {
+                          if (window.confirm(t('tv_end_game_confirm'))) {
                             apiPost('/api/end-game-and-announce-winners', { clientId });
                           }
                         }}
                         className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold text-xs uppercase tracking-wider transition-all"
-                        title="O'yinni yakunlash va eng yuqori ball to'plagan guruh(lar)ni g'olib deb e'lon qilish"
                       >
                         <Flag className="w-3.5 h-3.5 text-rose-400" />
-                        Uyinni Yakunlash
+                        {t('tv_end_game')}
                       </button>
                     )}
 
                     {/* Reset/Stop game but keep teams button */}
                     <button
                       onClick={() => {
-                        if (window.confirm("O'yinni to'xtatmoqchimisiz? Barcha guruhlar va o'quvchilar saqlanib qoladi!")) {
+                        if (window.confirm(t('tv_stop_keep_teams_confirm'))) {
                           apiPost('/api/reset-game-keep-teams', { clientId });
                         }
                       }}
                       className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs uppercase tracking-wider transition-all"
-                      title="O'yinni to'xtatish va guruhlar bo'limiga qaytish (Guruhlar va o'quvchilar saqlanadi)"
                     >
                       <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-                      O'yinni Tugatish (Guruhlar Saqlanadi)
+                      {t('tv_stop_keep_teams')}
                     </button>
                   </div>
                 </div>
@@ -766,20 +760,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)] animate-pulse">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>BALLAR 100% TIKILDI! ({teamsWithBets.length}/{activeTeams.length} guruh ball tikdi). Endi Boshlash tugmasini bosishingiz mumkin!</span>
+                          <span>{t('tv_bets_100')}{t('tv_bets_100_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_100_sub_suffix')}</span>
                         </div>
                         <span className="text-[11px] uppercase tracking-wider font-mono bg-emerald-500/30 px-2.5 py-1 rounded text-emerald-200 shrink-0 font-extrabold">
-                          100% TIKILDI
+                          {t('tv_bets_100_badge')}
                         </span>
                       </div>
                     ) : (
                       <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span>BALLAR TIKILMADI! Hali barcha guruhlar ball tikib bo'lmadi ({teamsWithBets.length}/{activeTeams.length} guruh tikdi).</span>
+                          <span>{t('tv_bets_pending')}{t('tv_bets_pending_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_pending_sub_suffix')}</span>
                         </div>
                         <span className="text-[11px] uppercase tracking-wider font-mono bg-amber-500/30 px-2.5 py-1 rounded text-amber-200 shrink-0 font-extrabold">
-                          TIKILMOQDA...
+                          {t('tv_bets_pending_badge')}
                         </span>
                       </div>
                     )}
@@ -801,11 +795,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       </div>
                       <div>
                         <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                          ⏱️ Taymer Ishlamoqda (Vaqt Sanalmoqda)
+                          ⏱️ {t('tv_timer_running')}
                         </div>
                         <div className="text-3xl font-black font-mono tracking-tight flex items-baseline gap-2">
                           <span>{timerSeconds}</span>
-                          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">soniya qoldi</span>
+                          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('tv_seconds_left')}</span>
                         </div>
                       </div>
                     </div>
@@ -816,7 +810,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.4)]' 
                           : 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/50 shadow-[0_0_12px_rgba(79,70,229,0.3)]'
                       }`}>
-                        {timerSeconds <= 5 ? "⚠️ SHOSHILING! VAQT TUGAMOQDA" : "⏳ JAVOB BERISH VAQTI"}
+                        {timerSeconds <= 5 ? `⚠️ ${t('tv_hurry')}` : `⏳ ${t('tv_answer_time')}`}
                       </span>
                     </div>
                   </div>
@@ -830,10 +824,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         <Trophy className="w-7 h-7 text-amber-400 shrink-0" />
                         <div>
                           <h4 className="font-black text-white text-lg uppercase tracking-tight">
-                            O'yin Yakunlandi! 🏆
+                            {t('tv_game_over_banner')}
                           </h4>
                           <p className="text-[11px] text-slate-300 font-mono">
-                            Yakuniy turnir jadvali o'ng panelda.
+                            {t('tv_final_table')}
                           </p>
                         </div>
                       </div>
@@ -845,7 +839,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       if (w.length === 0) {
                         return (
                           <p className="text-sm font-bold text-slate-300">
-                            G'olib e'lon qilinmadi.
+                            {t('tv_no_winner')}
                           </p>
                         );
                       }
@@ -856,7 +850,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-400/50 flex flex-wrap items-center gap-2">
                           <Crown className="w-5 h-5 text-amber-300 shrink-0" />
                           <span className="text-xs font-black uppercase tracking-widest text-amber-300">
-                            {names.length > 1 ? 'G\'oliblar:' : 'G\'olib:'}
+                            {names.length > 1 ? t('tv_winners') : t('tv_winner_singular')}
                           </span>
                           <span className="font-mono font-black text-white text-base">
                             {names.join(', ') || '—'}
@@ -870,7 +864,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         onClick={() => apiPost('/api/reset-game-keep-teams', { clientId })}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer"
                       >
-                        <RefreshCw className="w-4 h-4" /> Yangi Raund (Guruhlar Saqlanadi)
+                        <RefreshCw className="w-4 h-4" /> {t('tv_new_round')}
                       </button>
                     </div>
                   </div>
@@ -880,7 +874,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 {currentQ && (
                   <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2 relative overflow-hidden">
                     <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase tracking-widest text-indigo-400">
-                      <span>{currentQ.category} • Vaqt: {currentQ.timeLimit}s</span>
+                      <span>{translateCategory(displayQ?.category, lang)} • {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
                       {phase === 'ANSWERING' && (
                         <span className="text-amber-400 font-black animate-pulse">
                           ⏱️ {timerSeconds}s
@@ -888,7 +882,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       )}
                     </div>
                     <h3 className="text-xl font-serif text-white">
-                      {currentQ.text}
+                      {displayQ?.text}
                     </h3>
                     {/* The correct answer is revealed to the teacher only once
                         grading begins — it stays hidden during BETTING (before
@@ -896,11 +890,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         the teacher cannot accidentally spoil it. */}
                     {phase === 'GRADING' || phase === 'ROUND_RESULT' || phase === 'GAME_OVER' ? (
                       <div className="text-xs text-emerald-400 font-medium pt-2 border-t border-white/10">
-                        To'g'ri javob: <span className="font-bold text-white">{currentQ.correctAnswer}</span>
+                        {t('tv_correct_answer')}: <span className="font-bold text-white">{displayQ?.correctAnswer}</span>
                       </div>
                     ) : (
                       <div className="text-xs text-slate-500 italic pt-2 border-t border-white/10">
-                        To'g'ri javob baholash boshlanganda ochiladi.
+                        {t('tv_correct_revealed_later')}
                       </div>
                     )}
                   </div>
@@ -911,7 +905,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
                 <h3 className="font-bold text-white text-lg uppercase tracking-tight flex items-center gap-2">
                   <Award className="w-5 h-5 text-indigo-400" />
-                  Jamoalar Tikkan Ballari va Javoblari
+                  {t('tv_teams_bets_answers')}
                 </h3>
 
                 <div className="space-y-3">
@@ -936,35 +930,34 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               {team.name}
                             </h4>
                             <span className="text-xs text-indigo-300 font-mono">
-                              ({team.score} ball)
+                              ({team.score} {t('lb_points')})
                             </span>
 
                             <button
                               onClick={() => apiPost('/api/penalize-team', { clientId, teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
                               className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
-                              title="Shovqin va intizomsizlik uchun 5 ball ayirish"
                             >
-                              <VolumeX className="w-3 h-3 text-rose-400" />
-                              -5 Ball (Shovqin)
-                            </button>
+                          <VolumeX className="w-3 h-3 text-rose-400" />
+                          {t('tv_penalize_noise')}
+                        </button>
                           </div>
 
                           <div className="mt-1 text-xs text-slate-300">
-                            Tikilgan Ball:{' '}
+                            {t('tv_bet_placed')}{' '}
                             <span className="font-mono font-bold text-amber-400">
-                              {team.currentBet !== null ? `${team.currentBet} ball` : 'Kiritilmadi'}
+                              {team.currentBet !== null ? `${team.currentBet} ${t('lb_points')}` : t('tv_not_inserted')}
                             </span>
                           </div>
 
                           <div className="mt-1 text-sm font-semibold text-white">
-                            Javob:{' '}
+                            {t('tv_answer')}{' '}
                             {phase === 'ANSWERING' ? (
                               team.currentAnswer
-                                ? <span className="text-emerald-300">Yuborildi ✓</span>
-                                : <span className="text-slate-400">(Hali javob bermadi)</span>
+                                ? <span className="text-emerald-300">{t('tv_submitted')}</span>
+                                : <span className="text-slate-400">{t('tv_not_answer')}</span>
                             ) : (
                               <span className="text-indigo-200">
-                                {team.currentAnswer || '(Hali javob berilmadi)'}
+                                {team.currentAnswer || t('tv_not_answer2')}
                               </span>
                             )}
                           </div>
@@ -986,7 +979,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                 ) : (
                                   <XCircle className="w-4 h-4" />
                                 )}
-                                Baholandi ✓ ({team.lastResult.isCorrect ? '+' : ''}
+                                {t('tv_graded')} ({team.lastResult.isCorrect ? '+' : ''}
                                 {team.lastResult.pointsDelta})
                               </span>
                             ) : (
@@ -1001,7 +994,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                   }
                                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
                                 >
-                                  <CheckCircle2 className="w-4 h-4" /> To'g'ri (+{team.currentBet})
+                                  <CheckCircle2 className="w-4 h-4" /> {t('tv_correct_graded')} (+{team.currentBet})
                                 </button>
 
                                 <button
@@ -1014,7 +1007,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                   }
                                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30"
                                 >
-                                  <XCircle className="w-4 h-4" /> Xato (-{team.currentBet})
+                                  <XCircle className="w-4 h-4" /> {t('tv_wrong_graded')} (-{team.currentBet})
                                 </button>
                               </>
                             )}
@@ -1040,10 +1033,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <h3 className="font-bold text-white text-lg uppercase tracking-tight">
-              Savollar Baza To'plami
+              {t('tv_questions_bank')}
             </h3>
             <p className="text-xs text-slate-400 font-mono">
-              Jami {questions.length} ta savol tayyorlangan
+              {t('tv_total_questions_prefix')}{questions.length}{t('tv_total_questions_suffix')}
             </p>
           </div>
 
@@ -1055,7 +1048,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 title="Barcha savollarni bazadan o'chirish"
               >
                 <Trash2 className="w-4 h-4 text-rose-400" />
-                Hammasini O'chirish
+                {t('tv_delete_all')}
               </button>
             )}
 
@@ -1063,7 +1056,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               onClick={() => setShowAddQuestion(!showAddQuestion)}
               className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
             >
-              <Plus className="w-4 h-4" /> Savol Qo'shish
+              <Plus className="w-4 h-4" /> {t('tv_add_question')}
             </button>
           </div>
         </div>
@@ -1073,14 +1066,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <form onSubmit={handleAddQuestion} className="p-5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-4">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                Savol Matni
+                {t('tv_question_text')}
               </label>
               <input
                 type="text"
                 required
                 value={newQuestionText}
                 onChange={(e) => setNewQuestionText(e.target.value)}
-                placeholder="Savolni kiriting..."
+                placeholder={t('tv_question_placeholder')}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -1095,7 +1088,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-950 border-white/20 cursor-pointer"
               />
               <label htmlFor="isOptionless" className="text-xs font-bold text-indigo-200 cursor-pointer select-none">
-                ✍️ Variantsiz ochiq savol (Variantlar bo'lmaydi, o'quvchilar javobni o'zlari yozishadi)
+                {t('tv_optionless')}
               </label>
             </div>
 
@@ -1104,28 +1097,28 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
-                  placeholder="A variant"
+                  placeholder={t('tv_variant_a')}
                   value={newOptA}
                   onChange={(e) => setNewOptA(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
                 />
                 <input
                   type="text"
-                  placeholder="B variant"
+                  placeholder={t('tv_variant_b')}
                   value={newOptB}
                   onChange={(e) => setNewOptB(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
                 />
                 <input
                   type="text"
-                  placeholder="C variant"
+                  placeholder={t('tv_variant_c')}
                   value={newOptC}
                   onChange={(e) => setNewOptC(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
                 />
                 <input
                   type="text"
-                  placeholder="D variant"
+                  placeholder={t('tv_variant_d')}
                   value={newOptD}
                   onChange={(e) => setNewOptD(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
@@ -1136,12 +1129,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                  To'g'ri Javob / Namuna (Matn ko'rinishida)
+                  {t('tv_correct_answer_label')}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="To'g'ri javob yoki kalit so'zni kiriting"
+                  placeholder={t('tv_correct_placeholder')}
                   value={newCorrect}
                   onChange={(e) => setNewCorrect(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
@@ -1150,7 +1143,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                  Vaqt Limiti (Soniya)
+                  {t('tv_time_limit')}
                 </label>
                 <input
                   type="number"
@@ -1166,7 +1159,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             {/* Difficulty Level Input */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                Qiyinlik Darajasi (Savol toifasi)
+                {t('tv_difficulty')}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -1178,7 +1171,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🟢 Oson
+                  🟢 {translateDiplicity('Oson', lang)}
                 </button>
                 <button
                   type="button"
@@ -1189,7 +1182,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🟡 O'rta
+                  🟡 {translateDiplicity("O'rta", lang)}
                 </button>
                 <button
                   type="button"
@@ -1200,7 +1193,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🔴 Qiyin
+                  🔴 {translateDiplicity('Qiyin', lang)}
                 </button>
               </div>
             </div>
@@ -1211,13 +1204,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 onClick={() => setShowAddQuestion(false)}
                 className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs uppercase font-bold"
               >
-                Bekor qilish
+                {t('cancel')}
               </button>
               <button
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)]"
               >
-                Saqlash
+                {t('save')}
               </button>
             </div>
           </form>
@@ -1226,7 +1219,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {/* Database Difficulty Category Tabs */}
         {questions.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
-            <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">Filtr:</span>
+            <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">{t('tv_filter')}</span>
             <button
               onClick={() => setActiveDbDifficultyTab('Barchasi')}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -1235,7 +1228,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              Barchasi ({questions.length})
+              {t('qsm_all')} ({questions.length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Oson')}
@@ -1245,7 +1238,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🟢 Oson ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
+              🟢 {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab("O'rta")}
@@ -1255,7 +1248,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🟡 O'rta ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
+              🟡 {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Qiyin')}
@@ -1265,7 +1258,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🔴 Qiyin ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
+              🔴 {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
             </button>
           </div>
         )}
@@ -1273,8 +1266,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {/* Questions list preview */}
         {questions.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400 space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Savollar bazasi bo'sh</p>
-            <p className="text-[11px] text-slate-500 font-mono">Yuqoridagi tugmalar orqali yangi savollar qo'shing yoki AI bilan generatsiya qiling</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-300">{t('tv_bank_empty')}</p>
+            <p className="text-[11px] text-slate-500 font-mono">{t('tv_bank_empty_sub')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
@@ -1285,6 +1278,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 return (q.difficulty || "O'rta") === activeDbDifficultyTab;
               })
               .map(({ q, originalIndex: idx }) => {
+                const displayQItem = getQuestionInLanguage(q, lang);
                 const isNoOpt = !q.options || q.options.length === 0;
                 const diff = q.difficulty || "O'rta";
                 const diffBadge =
@@ -1305,37 +1299,37 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   >
                     <div className="flex items-center justify-between font-mono font-bold gap-2">
                       <span className="text-indigo-400">
-                        {idx < 9 ? `0${idx + 1}` : idx + 1}-SAVOL ({q.timeLimit}s)
+                        {idx < 9 ? `0${idx + 1}` : idx + 1}-{t('tv_question_num')} ({q.timeLimit}{t('tv_time_unit')})
                       </span>
 
                       <div className="flex items-center gap-1.5">
                         <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadge}`}>
-                          {diff === 'Oson' && '🟢 Oson'}
-                          {diff === "O'rta" && "🟡 O'rta"}
-                          {diff === 'Qiyin' && '🔴 Qiyin'}
+                          {diff === 'Oson' && `🟢 ${translateDiplicity('Oson', lang)}`}
+                          {diff === "O'rta" && `🟡 ${translateDiplicity("O'rta", lang)}`}
+                          {diff === 'Qiyin' && `🔴 ${translateDiplicity('Qiyin', lang)}`}
                         </span>
 
                         {isNoOpt ? (
                           <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold uppercase">
-                            Variantsiz
+                            {t('tv_variantless')}
                           </span>
                         ) : (
                           <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
-                            Test ({q.options.length}v)
+                            {t('tv_test_label')} ({q.options.length}{t('tv_variant_unit')})
                           </span>
                         )}
 
                         {/* Delete single question button */}
                         {confirmDeleteIndex === idx ? (
                           <div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 rounded-lg">
-                            <span className="text-[11px] text-rose-300 font-bold uppercase">O'chirilsinmi?</span>
+                            <span className="text-[11px] text-rose-300 font-bold uppercase">{t('tv_delete_confirm')}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteQuestion(idx);
                               }}
                               className="p-1 rounded bg-rose-600 text-white hover:bg-rose-500"
-                              title="Ha, o'chirilsin"
+                              title={t('tv_yes')}
                             >
                               <Check className="w-3 h-3" />
                             </button>
@@ -1345,7 +1339,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                 setConfirmDeleteIndex(null);
                               }}
                               className="p-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
-                              title="Bekor qilish"
+                              title={t('cancel')}
                             >
                               <XCircle className="w-3 h-3" />
                             </button>
@@ -1364,7 +1358,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         )}
                       </div>
                     </div>
-                    <p className="line-clamp-2 pr-1">{q.text}</p>
+                    <p className="line-clamp-2 pr-1">{displayQItem.text}</p>
                   </div>
                 );
               })}
@@ -1382,10 +1376,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </div>
               <div>
                 <h3 className="font-bold text-white text-base uppercase tracking-tight">
-                  Barcha Savollarni O'chirish
+                  {t('tv_delete_all_title')}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Haqiqatan ham {questions.length} ta savolning barchasini o'chirib tashlamoqchimisiz?
+                  {t('tv_delete_all_confirm_prefix')}{questions.length}{t('tv_delete_all_confirm_suffix')}
                 </p>
               </div>
             </div>
@@ -1395,13 +1389,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 onClick={() => setConfirmDeleteAll(false)}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition-all"
               >
-                Bekor qilish
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDeleteAllQuestions}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)]"
               >
-                Ha, Barchasini O'chirish
+                {t('tv_delete_confirm_btn')}
               </button>
             </div>
           </div>

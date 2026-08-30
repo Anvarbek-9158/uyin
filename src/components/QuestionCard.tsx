@@ -1,6 +1,7 @@
 import React from 'react';
 import { Question } from '../types';
 import { Clock, HelpCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useLang, getQuestionInLanguage, translateCategory } from '../i18n';
 
 interface QuestionCardProps {
   question: Question;
@@ -23,7 +24,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onSelectOption,
   isLeader = false,
 }) => {
-  const percentLeft = Math.max(0, Math.min(100, (timerSeconds / question.timeLimit) * 100));
+  const { lang, t } = useLang();
+  const q = getQuestionInLanguage(question, lang) as Question;
+  const percentLeft = Math.max(0, Math.min(100, (timerSeconds / q.timeLimit) * 100));
 
   return (
     <div className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-10 shadow-[0_0_40px_rgba(79,70,229,0.25)] relative overflow-hidden backdrop-blur-xl">
@@ -35,10 +38,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-5 border-b-2 border-white/10 relative z-10">
         <div className="flex items-center gap-3">
           <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)] border border-indigo-400/40">
-            {question.category || 'Aktiv Savol'}
+            {q.category ? translateCategory(q.category, lang) : t('qc_category')}
           </span>
           <span className="text-xs sm:text-sm font-mono uppercase font-extrabold text-indigo-300 tracking-wider">
-            Savollar Navbati ({questionIndex + 1}/{totalQuestions})
+            {t('qc_order')} ({questionIndex + 1}/{totalQuestions})
           </span>
         </div>
 
@@ -76,15 +79,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <HelpCircle className="w-7 h-7 sm:w-9 sm:h-9" />
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold leading-snug tracking-tight text-white">
-            {question.text}
+            {q.text}
           </h2>
         </div>
       </div>
 
       {/* Multiple Choice Options if present */}
-      {question.options && question.options.length > 0 ? (
+      {q.options && q.options.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-2 relative z-10">
-          {question.options.map((opt, idx) => {
+          {q.options.map((opt, idx) => {
             const letters = ['A', 'B', 'C', 'D'];
             const isSelected = selectedOption === opt;
 
@@ -119,7 +122,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       ) : (
         <div className="p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-200 text-sm sm:text-base font-bold flex items-center gap-3 mb-2 relative z-10 shadow-lg">
           <Sparkles className="w-6 h-6 text-amber-400 shrink-0" />
-          <span>Ushbu savol ochiq javobli (variantsiz). Guruh sardori o'z javobini quyida matn ko'rinishida yozib yuboradi, o'qituvchi o'qib tekshiradi.</span>
+          <span>{t('qc_open_answer')}</span>
         </div>
       )}
     </div>

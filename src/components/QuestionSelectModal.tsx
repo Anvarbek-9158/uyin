@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Play, X, HelpCircle, Clock, Tag } from 'lucide-react';
 import { Question } from '../types';
+import { useLang, getQuestionInLanguage, translateDiplicity, translateCategory } from '../i18n';
 
 interface QuestionSelectModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
   onSelectQuestion,
   usedQuestionIds = [],
 }) => {
+  const { lang, t } = useLang();
   const [selectedDifficulty, setSelectedDifficulty] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
 
   if (!isOpen) return null;
@@ -42,10 +44,10 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
-                Viktorina Savolini Tanlash
+                {t('qsm_title')}
               </h3>
               <p className="text-xs text-slate-400 font-mono">
-                Qiyinlik bo'limini tanlang va o'yinni boshlash uchun savolni tanlang
+                {t('qsm_sub')}
               </p>
             </div>
           </div>
@@ -69,7 +71,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            Barchasi ({questions.length})
+            {t('qsm_all')} ({questions.length})
           </button>
 
           <button
@@ -81,7 +83,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🟢 Oson ({osonCount})
+            🟢 {translateDiplicity('Oson', lang)} ({osonCount})
           </button>
 
           <button
@@ -93,7 +95,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🟡 O'rta ({ortaCount})
+            🟡 {translateDiplicity("O'rta", lang)} ({ortaCount})
           </button>
 
           <button
@@ -105,7 +107,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🔴 Qiyin ({qiyinCount})
+            🔴 {translateDiplicity('Qiyin', lang)} ({qiyinCount})
           </button>
         </div>
 
@@ -118,7 +120,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             if (questions.length === 0) {
               return (
                 <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
-                  Hali hech qanday savol mavjud emas. Avval savol qo'shing.
+                  {t('qsm_empty_bank')}
                 </div>
               );
             }
@@ -126,7 +128,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             if (filteredQuestions.length === 0) {
               return (
                 <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
-                  Ushbu bo'limda savollar mavjud emas.
+                  {t('qsm_empty_section')}
                 </div>
               );
             }
@@ -135,13 +137,14 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
               <>
                 {remainingCount === 0 && (
                   <div className="p-4 text-center rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm font-bold">
-                    Barcha savollar ishlatilgan — yangi savollarni qo'shing yoki o'yinni yakunlang.
+                    {t('qsm_all_used')}
                   </div>
                 )}
 
                 {filteredQuestions.map(({ q, originalIndex }) => {
                   const diff = q.difficulty || "O'rta";
                   const used = usedSet.has(q.id);
+                  const qq = getQuestionInLanguage(q, lang);
                   const diffBadgeClass =
                     diff === 'Oson'
                       ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
@@ -159,40 +162,38 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs font-bold text-indigo-400">
-                            SAVOL #{originalIndex + 1}
+                            {t('qsm_question')}{originalIndex + 1}
                           </span>
 
                           <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadgeClass}`}>
-                            {diff === 'Oson' && '🟢 Oson'}
-                            {diff === "O'rta" && "🟡 O'rta"}
-                            {diff === 'Qiyin' && '🔴 Qiyin'}
+                            {translateDiplicity(diff, lang)}
                           </span>
 
                           {q.category && (
                             <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
                               <Tag className="w-3 h-3 text-slate-500" />
-                              {q.category}
+                              {translateCategory(q.category, lang)}
                             </span>
                           )}
 
                           <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
                             <Clock className="w-3 h-3 text-slate-500" />
-                            {q.timeLimit} soniya
+                            {q.timeLimit} {t('qsm_seconds')}
                           </span>
                         </div>
 
                         <p className="text-sm font-semibold text-white leading-relaxed">
-                          {q.text}
+                          {qq.text}
                         </p>
 
                         <div className="text-[11px] text-slate-500 font-mono italic">
-                          🔒 Javob va variantlar maxfiylik uchun yashirilgan
+                          {t('qsm_hidden')}
                         </div>
                       </div>
 
                       {used ? (
                         <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-wider shrink-0 text-center">
-                          ✓ Ishlatilgan
+                          ✓ {t('qsm_used')}
                         </span>
                       ) : (
                         <button
@@ -203,7 +204,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                           className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 group-hover:scale-105"
                         >
                           <Play className="w-4 h-4 fill-slate-950" />
-                          Tanlash & Boshlash
+                          {t('qsm_select_start')}
                         </button>
                       )}
                     </div>
@@ -220,7 +221,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider"
           >
-            Yopish
+            {t('close')}
           </button>
         </div>
       </div>
