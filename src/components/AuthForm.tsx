@@ -1,5 +1,7 @@
 import {useState, type FormEvent} from 'react';
-import {Mail, Loader2, Lock, User as UserIcon} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
+import {CheckCircle2, Mail, Loader2, Lock, User as UserIcon} from 'lucide-react';
+import {useAuth, type Provider} from '../context/AuthContext';
 
 export type Role = 'teacher' | 'student';
 type Mode = 'login' | 'signup';
@@ -15,27 +17,26 @@ const roleLabel: Record<Role, string> = {
 };
 
 export default function AuthForm({role, accent}: AuthFormProps) {
+  const navigate = useNavigate();
+  const {login} = useAuth();
   const [mode, setMode] = useState<Mode>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [social, setSocial] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const primary =
     accent === 'indigo'
       ? {
-          text: 'text-indigo-600 dark:text-indigo-400',
           bg: 'bg-indigo-600 hover:bg-indigo-700',
           ring: 'focus:ring-indigo-200 dark:focus:ring-indigo-500/20',
-          soft: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20',
+          soft: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
         }
       : {
-          text: 'text-emerald-600 dark:text-emerald-400',
           bg: 'bg-emerald-600 hover:bg-emerald-700',
           ring: 'focus:ring-emerald-200 dark:focus:ring-emerald-500/20',
-          soft: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20',
+          soft: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
         };
 
   const socials = [
@@ -71,26 +72,36 @@ export default function AuthForm({role, accent}: AuthFormProps) {
     },
   ];
 
+  const done = (provider: Provider, socialLabel?: string) => {
+    const resolvedName =
+      name.trim() || (socialLabel ? `${roleLabel[role]} (${socialLabel})` : roleLabel[role]);
+    login({
+      name: resolvedName,
+      email: email.trim() || `${resolvedName.toLowerCase().replace(/\s+/g, '.')}@eduplay.uz`,
+      role,
+      provider,
+      plan: 'free',
+    });
+    setSuccess(true);
+    setTimeout(() => navigate('/game'), 1200);
+  };
+
   const handleSocial = (id: string, label: string) => {
-    setSocial(id);
-    setMessage(null);
+    if (busy) return;
+    setBusy(true);
     setTimeout(() => {
-      setSocial(null);
-      setMessage(`${label} orqali kirish xizmati yoqilgan (demo). Rabotka davom etmoqda.`);
+      setBusy(false);
+      done(id as Provider, label);
     }, 900);
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+    if (busy) return;
+    setBusy(true);
     setTimeout(() => {
-      setLoading(false);
-      setMessage(
-        mode === 'signup'
-          ? `${roleLabel[role]} sifatida ro‘yxatdan o‘tdingiz (demo): ${email || 'email kiritilmagan'}`
-          : `${roleLabel[role]} sifatida tizimga kirdingiz (demo): ${email || 'email kiritilmagan'}`,
-      );
+      setBusy(false);
+      done('email');
     }, 900);
   };
 
@@ -101,133 +112,141 @@ export default function AuthForm({role, accent}: AuthFormProps) {
       <div className={`h-1.5 w-full bg-gradient-to-r ${accent === 'indigo' ? 'from-indigo-500 to-blue-500' : 'from-emerald-500 to-teal-500'}`} />
 
       <div className="p-6 sm:p-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {roleLabel[role]} bo‘limi
-          </h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">
-            {mode === 'signup' ? 'Hisob yarating va boshlang' : 'Hisobingizga kiring'}
-          </p>
-        </div>
+        {success ? (
+          <div className="flex flex-col items-center py-10 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+              <CheckCircle2 className="h-9 w-9 animate-pop" />
+            </span>
+            <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+              Muvaffaqiyatli kirdingiz!
+            </h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {roleLabel[role]} sifatida o‘yinga o‘tkazilmoqda...
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {roleLabel[role]} bo‘limi
+              </h2>
+              <p className="mt-1 text-slate-500 dark:text-slate-400">
+                {mode === 'signup' ? 'Hisob yarating va o‘yinga kiring' : 'Hisobingizga kiring'}
+              </p>
+            </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-          <button
-            type="button"
-            onClick={() => setMode('signup')}
-            className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-              mode === 'signup'
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            Ro‘yxatdan o‘tish
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('login')}
-            className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-              mode === 'login'
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            Kirish
-          </button>
-        </div>
+            <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => setMode('signup')}
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                  mode === 'signup'
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                Ro‘yxatdan o‘tish
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                  mode === 'login'
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                Kirish
+              </button>
+            </div>
 
-        <div className="mt-6 grid gap-3">
-          {socials.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              disabled={social !== null}
-              onClick={() => handleSocial(s.id, s.label)}
-              className={`inline-flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${
-                social === s.id ? 'cursor-wait opacity-70' : ''
-              }`}
-            >
-              {s.svg}
-              {s.label} orqali {mode === 'signup' ? 'ro‘yxatdan o‘tish' : 'kirish'}
-              {social === s.id && <Loader2 className="h-4 w-4 animate-spin" />}
-            </button>
-          ))}
-        </div>
+            <div className="mt-6 grid gap-3">
+              {socials.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => handleSocial(s.id, s.label)}
+                  className="inline-flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  {s.svg}
+                  {s.label} orqali {mode === 'signup' ? 'ro‘yxatdan o‘tish' : 'kirish'}
+                  {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                </button>
+              ))}
+            </div>
 
-        <div className="my-6 flex items-center gap-3">
-          <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            yoki email bilan
-          </span>
-          <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-        </div>
-
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          {mode === 'signup' && (
-            <label className="grid gap-1.5">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Ism
+            <div className="my-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                yoki email bilan
               </span>
-              <div className="relative">
-                <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="To‘liq ismingiz"
-                  className={`${inputClass} pl-10`}
-                />
-              </div>
-            </label>
-          )}
-
-          <label className="grid gap-1.5">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Email
-            </span>
-            <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="siz@misol.com"
-                className={`${inputClass} pl-10`}
-              />
+              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
             </div>
-          </label>
 
-          <label className="grid gap-1.5">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Parol
-            </span>
-            <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Kamida 6 belgi"
-                className={`${inputClass} pl-10`}
-              />
-            </div>
-          </label>
+            <form onSubmit={handleSubmit} className="grid gap-4">
+              {mode === 'signup' && (
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Ism
+                  </span>
+                  <div className="relative">
+                    <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="To‘liq ismingiz"
+                      className={`${inputClass} pl-10`}
+                    />
+                  </div>
+                </label>
+              )}
 
-          <button
-            type="submit"
-            disabled={loading || social !== null}
-            className={`mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === 'signup' ? 'Hisob yaratish' : 'Tizimga kirish'}
-          </button>
-        </form>
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Email
+                </span>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="siz@misol.com"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+              </label>
 
-        {message && (
-          <p className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${primary.soft}`}>
-            {message}
-          </p>
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Parol
+                </span>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Kamida 6 belgi"
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+              </label>
+
+              <button
+                type="submit"
+                disabled={busy}
+                className={`mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
+              >
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {mode === 'signup' ? 'Hisob yaratish' : 'Tizimga kirish'}
+              </button>
+            </form>
+          </>
         )}
       </div>
     </div>

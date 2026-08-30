@@ -1,10 +1,10 @@
 import {Link} from 'react-router-dom';
-import {ArrowRight, BookOpenCheck, GraduationCap, Users, Layers, Search, Star} from 'lucide-react';
+import {ArrowRight, BookOpenCheck, Gamepad2, GraduationCap, Users, Layers, Search, Star} from 'lucide-react';
 
 const features = [
   {icon: Users, title: 'Rollar bo‘yicha interfeys', desc: 'O‘qituvchi va o‘quvchi uchun alohida, moslashgan tajriba'},
   {icon: Search, title: 'Mustaqil qidiruv', desc: 'Har bir rol uchun alohida qidiruv tizimi'},
-  {icon: Star, title: 'Moslashuvchan tariflar', desc: 'Bepul, Oylik va Yillik rejalar'},
+  {icon: Star, title: 'Real vaqt viktorinasi', desc: 'Pusher orqali sinf bo‘ylab jonli o‘yin va reyting'},
   {icon: Layers, title: 'Zamonaviy dizayn', desc: 'Dark / Light rejim, responsive va toza interfeys'},
 ];
 
@@ -31,8 +31,26 @@ export default function Hero() {
           </h1>
           <p className="mt-6 text-lg text-slate-600 dark:text-slate-400">
             O‘z rolini tanlang va platformaning o‘zingizga mos bor imkoniyatlaridan
-            foydalaning — qidiruv, ro‘yxatdan o‘tish va moslashuvchan tariflar.
+            foydalaning — real vaqt rejimidagi viktorina, qidiruv, ro‘yxatdan
+            o‘tish va moslashuvchan tariflar.
           </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/game"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-500/25 transition-transform hover:scale-105"
+            >
+              <Gamepad2 className="h-5 w-5" />
+              O‘ynashni boshlash
+            </Link>
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Narxlarni ko‘rish
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">

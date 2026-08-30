@@ -11,7 +11,7 @@ export default function Footer() {
               <GraduationCap className="h-4 w-4" />
             </span>
             <span className="font-bold text-slate-900 dark:text-white">
-              Edu<span className="text-indigo-600 dark:text-indigo-400">Pal</span>
+              Edu<span className="text-indigo-600 dark:text-indigo-400">Play</span>
             </span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
@@ -30,7 +30,7 @@ export default function Footer() {
           </nav>
         </div>
         <p className="mt-8 text-center text-sm text-slate-400 dark:text-slate-500">
-          © {new Date().getFullYear()} EduPal — Taʼlim platformasi. Barcha huquqlar himoyalangan.
+          © {new Date().getFullYear()} EduPlay — Taʼlim platformasi. Barcha huquqlar himoyalangan.
         </p>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Link, NavLink, useLocation} from 'react-router-dom';
-import {GraduationCap, LogIn, Menu, X} from 'lucide-react';
+import {Gamepad2, GraduationCap, LogIn, Menu, X} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const navLinkClass = ({isActive}: {isActive: boolean}) =>
@@ -26,6 +26,7 @@ export default function Header() {
     {to: '/teacher', label: 'Teacher'},
     {to: '/student', label: 'Student'},
     {to: '/pricing', label: 'Narxlar', end: true},
+    {to: '/game', label: 'O‘yin', end: false},
   ];
 
   return (
@@ -39,7 +40,7 @@ export default function Header() {
             <GraduationCap className="h-5 w-5" />
           </span>
           <span>
-            Edu<span className="text-indigo-600 dark:text-indigo-400">Pal</span>
+            Edu<span className="text-indigo-600 dark:text-indigo-400">Play</span>
           </span>
         </Link>
 
@@ -53,6 +54,13 @@ export default function Header() {
 
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
+          <Link
+            to="/game"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+          >
+            <Gamepad2 className="h-4 w-4" />
+            O‘ynash
+          </Link>
           <Link
             to={authPath}
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
@@ -89,6 +97,14 @@ export default function Header() {
                 {l.label}
               </NavLink>
             ))}
+            <Link
+              to="/game"
+              onClick={() => setOpen(false)}
+              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              <Gamepad2 className="h-4 w-4" />
+              O‘ynash
+            </Link>
             <Link
               to={authPath}
               onClick={() => setOpen(false)}

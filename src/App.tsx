@@ -1,5 +1,6 @@
 import {HashRouter, Navigate, Route, Routes} from 'react-router-dom';
 import Layout from './Layout';
+import GameApp from './GameApp';
 import HomePage from './pages/HomePage';
 import TeacherPage from './pages/TeacherPage';
 import StudentPage from './pages/StudentPage';
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
+        <Route path="/game" element={<GameApp />} />
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/teacher" element={<TeacherPage />} />
