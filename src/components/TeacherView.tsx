@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   Trophy,
   Flag,
+  Link2,
 } from 'lucide-react';
 
 interface TeacherViewProps {
@@ -70,6 +71,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Feedback Modal State
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+  // Students link copy state
+  const [studentsLinkCopied, setStudentsLinkCopied] = useState(false);
 
   // Client-driven countdown for the answering phase.
   // The server is stateless on Vercel (no long-running setInterval), so the
@@ -266,6 +270,24 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <div className="h-10 w-0.5 bg-white/15 hidden sm:block" />
 
             <div className="flex flex-wrap items-center justify-center gap-2">
+              {/* STUDENTS JOIN LINK */}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/#/play`);
+                  setStudentsLinkCopied(true);
+                  setTimeout(() => setStudentsLinkCopied(false), 2000);
+                }}
+                title={t('tv_students_link')}
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-200 text-[11px] sm:text-xs font-extrabold border border-sky-500/50 transition-all uppercase tracking-wider cursor-pointer"
+              >
+                {studentsLinkCopied ? (
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <Link2 className="w-4 h-4 text-sky-400 shrink-0" />
+                )}
+                <span>{studentsLinkCopied ? t('tv_students_link_copied') : t('tv_students_link')}</span>
+              </button>
+
               {/* FEEDBACK BUTTON */}
               <button
                 onClick={() => setIsFeedbackModalOpen(true)}

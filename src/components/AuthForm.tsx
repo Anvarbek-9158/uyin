@@ -2,6 +2,7 @@ import {useState, type FormEvent} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {CheckCircle2, Mail, Loader2, Lock, User as UserIcon} from 'lucide-react';
 import {useAuth, type Provider} from '../context/AuthContext';
+import {useLang} from '../i18n';
 
 export type Role = 'teacher' | 'student';
 type Mode = 'login' | 'signup';
@@ -18,6 +19,7 @@ const roleLabel: Record<Role, string> = {
 
 export default function AuthForm({role, accent}: AuthFormProps) {
   const navigate = useNavigate();
+  const {t} = useLang();
   const {login} = useAuth();
   const [mode, setMode] = useState<Mode>('signup');
   const [name, setName] = useState('');
@@ -72,6 +74,8 @@ export default function AuthForm({role, accent}: AuthFormProps) {
     },
   ];
 
+  const resolveDestination = () => (role === 'teacher' ? '/game' : '/play');
+
   const done = (provider: Provider, socialLabel?: string) => {
     const resolvedName =
       name.trim() || (socialLabel ? `${roleLabel[role]} (${socialLabel})` : roleLabel[role]);
@@ -82,8 +86,11 @@ export default function AuthForm({role, accent}: AuthFormProps) {
       provider,
       plan: 'free',
     });
+    if (role === 'teacher') {
+      sessionStorage.setItem('teacher_auth', 'true');
+    }
     setSuccess(true);
-    setTimeout(() => navigate('/game'), 1200);
+    setTimeout(() => navigate(resolveDestination()), 1200);
   };
 
   const handleSocial = (id: string, label: string) => {
@@ -118,20 +125,20 @@ export default function AuthForm({role, accent}: AuthFormProps) {
               <CheckCircle2 className="h-9 w-9 animate-pop" />
             </span>
             <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-              Muvaffaqiyatli kirdingiz!
+              {t('auth_success_title')}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {roleLabel[role]} sifatida o‘yinga o‘tkazilmoqda...
+              {t('auth_success_sub').replace('{role}', roleLabel[role])}
             </p>
           </div>
         ) : (
           <>
             <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {roleLabel[role]} bo‘limi
+                {roleLabel[role]} {t('auth_login')}
               </h2>
               <p className="mt-1 text-slate-500 dark:text-slate-400">
-                {mode === 'signup' ? 'Hisob yarating va o‘yinga kiring' : 'Hisobingizga kiring'}
+                {mode === 'signup' ? t('auth_create_account') : t('auth_login_to_account')}
               </p>
             </div>
 
@@ -145,7 +152,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                     : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
-                Ro‘yxatdan o‘tish
+                {t('auth_signup')}
               </button>
               <button
                 type="button"
@@ -156,7 +163,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                     : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
-                Kirish
+                {t('auth_login')}
               </button>
             </div>
 
@@ -170,7 +177,10 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                   className="inline-flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {s.svg}
-                  {s.label} orqali {mode === 'signup' ? 'ro‘yxatdan o‘tish' : 'kirish'}
+                  {(mode === 'signup' ? t('auth_via_signup') : t('auth_via_login')).replace(
+                    '{label}',
+                    s.label
+                  )}
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 </button>
               ))}
@@ -179,7 +189,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
             <div className="my-6 flex items-center gap-3">
               <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
               <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                yoki email bilan
+                {t('auth_or_email')}
               </span>
               <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
             </div>
@@ -188,14 +198,14 @@ export default function AuthForm({role, accent}: AuthFormProps) {
               {mode === 'signup' && (
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Ism
+                    {t('auth_name')}
                   </span>
                   <div className="relative">
                     <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="To‘liq ismingiz"
+                      placeholder={t('auth_name_placeholder')}
                       className={`${inputClass} pl-10`}
                     />
                   </div>
@@ -204,7 +214,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
 
               <label className="grid gap-1.5">
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Email
+                  {t('auth_email')}
                 </span>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -213,7 +223,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="siz@misol.com"
+                    placeholder={t('auth_email_placeholder')}
                     className={`${inputClass} pl-10`}
                   />
                 </div>
@@ -221,7 +231,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
 
               <label className="grid gap-1.5">
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Parol
+                  {t('auth_password')}
                 </span>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -231,7 +241,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Kamida 6 belgi"
+                    placeholder={t('auth_password_placeholder')}
                     className={`${inputClass} pl-10`}
                   />
                 </div>
@@ -243,7 +253,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                 className={`mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                {mode === 'signup' ? 'Hisob yaratish' : 'Tizimga kirish'}
+                {mode === 'signup' ? t('auth_submit_signup') : t('auth_submit_login')}
               </button>
             </form>
           </>

@@ -7,12 +7,14 @@ import StudentPage from './pages/StudentPage';
 import PricingPage from './pages/PricingPage';
 import TeacherAuthPage from './pages/TeacherAuthPage';
 import StudentAuthPage from './pages/StudentAuthPage';
+import PlayPage from './pages/PlayPage';
 
 export default function App() {
   return (
     <HashRouter>
       <Routes>
         <Route path="/game" element={<GameApp />} />
+        <Route path="/play" element={<PlayPage />} />
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/teacher" element={<TeacherPage />} />

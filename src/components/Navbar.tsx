@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Award, Copy, Check, LogOut, KeyRound, Languages, ChevronDown } from 'lucide-react';
-import { useLang, Language } from '../i18n';
+import { Award, Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';import { useLang, Language } from '../i18n';
 
 interface NavbarProps {
   viewMode: 'LANDING' | 'TEACHER' | 'STUDENT';
@@ -11,13 +10,12 @@ interface NavbarProps {
   onResetGame?: () => void;
   isTeacherAuth?: boolean;
   onLogoutTeacher?: () => void;
-  onChangePasswordTeacher?: () => void;
 }
 
-const LANG_OPTIONS: { value: Language; label: string; flag: string }[] = [
-  { value: 'uz', label: 'O\'zbek', flag: '🇺🇿' },
-  { value: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { value: 'en', label: 'English', flag: '🇬🇧' },
+const LANG_OPTIONS: { value: Language; label: string }[] = [
+  { value: 'uz', label: 'O\'zbek' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,7 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   pin,
   isTeacherAuth,
   onLogoutTeacher,
-  onChangePasswordTeacher,
 }) => {
   const [copied, setCopied] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -115,17 +112,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Teacher Actions */}
           {viewMode === 'TEACHER' && isTeacherAuth && (
             <>
-              {onChangePasswordTeacher && (
-                <button
-                  onClick={onChangePasswordTeacher}
-                  aria-label={t('change_password_title')}
-                  className="flex items-center gap-1.5 px-2.5 py-2 sm:px-3.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/40 text-[11px] sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer"
-                  title={t('change_password_title')}
-                >
-                  <KeyRound className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
-                  <span className="hidden md:inline">{t('change_password_title')}</span>
-                </button>
-              )}
               {onLogoutTeacher && (
                 <button
                   onClick={onLogoutTeacher}
@@ -150,10 +136,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 shrink-0" />
               <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
-                <span>{currentLang.flag}</span>
                 {currentLang.value.toUpperCase()}
               </span>
-              <span className="sm:hidden text-xs font-bold">{currentLang.flag}</span>
+              <span className="sm:hidden text-xs font-bold">{currentLang.value.toUpperCase()}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${langOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -169,7 +154,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`}
                   >
-                    <span className="text-base">{opt.flag}</span>
                     <span className="uppercase tracking-wider">{opt.label}</span>
                     {lang === opt.value && <Check className="w-4 h-4 ml-auto text-indigo-300" />}
                   </button>

@@ -1,14 +1,17 @@
 import {Link} from 'react-router-dom';
-import {ArrowRight, BookOpenCheck, Gamepad2, GraduationCap, Users, Layers, Search, Star} from 'lucide-react';
-
-const features = [
-  {icon: Users, title: 'Rollar bo‘yicha interfeys', desc: 'O‘qituvchi va o‘quvchi uchun alohida, moslashgan tajriba'},
-  {icon: Search, title: 'Mustaqil qidiruv', desc: 'Har bir rol uchun alohida qidiruv tizimi'},
-  {icon: Star, title: 'Real vaqt viktorinasi', desc: 'Pusher orqali sinf bo‘ylab jonli o‘yin va reyting'},
-  {icon: Layers, title: 'Zamonaviy dizayn', desc: 'Dark / Light rejim, responsive va toza interfeys'},
-];
+import {ArrowRight, BookOpenCheck, Gamepad2, GraduationCap, Users, Gauge, Layers} from 'lucide-react';
+import {useLang} from '../i18n';
 
 export default function Hero() {
+  const {t} = useLang();
+
+  const features = [
+    {icon: Users, title: t('hero_feat_1_title'), desc: t('hero_feat_1_desc')},
+    {icon: Gamepad2, title: t('hero_feat_2_title'), desc: t('hero_feat_2_desc')},
+    {icon: Gauge, title: t('hero_feat_3_title'), desc: t('hero_feat_3_desc')},
+    {icon: Layers, title: t('hero_feat_4_title'), desc: t('hero_feat_4_desc')},
+  ];
+
   return (
     <div className="relative">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -20,34 +23,26 @@ export default function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
             <BookOpenCheck className="h-4 w-4" />
-            Taʼlim platformasi
+            {t('hero_badge')}
           </span>
           <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl dark:text-white">
-            O‘qituvchi va o‘quvchini{' '}
-            <span className="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">
-              bog‘lovchi
-            </span>{' '}
-            yagona maydon
+            {t('hero_title')}
           </h1>
-          <p className="mt-6 text-lg text-slate-600 dark:text-slate-400">
-            O‘z rolini tanlang va platformaning o‘zingizga mos bor imkoniyatlaridan
-            foydalaning — real vaqt rejimidagi viktorina, qidiruv, ro‘yxatdan
-            o‘tish va moslashuvchan tariflar.
-          </p>
+          <p className="mt-6 text-lg text-slate-600 dark:text-slate-400">{t('hero_sub')}</p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              to="/game"
+              to="/play"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-emerald-500/25 transition-transform hover:scale-105"
             >
               <Gamepad2 className="h-5 w-5" />
-              O‘ynashni boshlash
+              {t('hero_play')}
             </Link>
             <Link
               to="/pricing"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Narxlarni ko‘rish
+              {t('hero_pricing')}
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
@@ -63,13 +58,11 @@ export default function Hero() {
               <GraduationCap className="h-8 w-8" />
             </div>
             <h2 className="mt-5 text-2xl font-bold text-slate-900 dark:text-white">
-              Men O‘qituvchiman
+              {t('hero_teacher_title')}
             </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Kurslar, darslar va o‘quvchilarni boshqaring. O‘quvchilar va materiallarni toping.
-            </p>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">{t('hero_teacher_desc')}</p>
             <div className="mt-6 flex items-center gap-2 font-semibold text-indigo-600 dark:text-indigo-400">
-              Teacher bo‘limi
+              {t('hero_teacher_link')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
@@ -83,13 +76,11 @@ export default function Hero() {
               <Users className="h-8 w-8" />
             </div>
             <h2 className="mt-5 text-2xl font-bold text-slate-900 dark:text-white">
-              Men O‘quvchiman
+              {t('hero_student_title')}
             </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
-              O‘qituvchilar, fanlar va kurslarni toping. O‘qishda davom eting.
-            </p>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">{t('hero_student_desc')}</p>
             <div className="mt-6 flex items-center gap-2 font-semibold text-emerald-600 dark:text-emerald-400">
-              Student bo‘limi
+              {t('hero_student_link')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>

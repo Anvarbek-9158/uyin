@@ -1,7 +1,14 @@
-import {useState} from 'react';
-import {Link, NavLink, useLocation} from 'react-router-dom';
-import {Gamepad2, GraduationCap, LogIn, Menu, X} from 'lucide-react';
+import {useEffect, useRef, useState} from 'react';
+import {Link, NavLink} from 'react-router-dom';
+import {Check, ChevronDown, GraduationCap, Languages, LogIn, Menu, X} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import {useLang, type Language} from '../i18n';
+
+const LANG_OPTIONS: {value: Language; label: string}[] = [
+  {value: 'uz', label: 'UZB'},
+  {value: 'ru', label: 'RUS'},
+  {value: 'en', label: 'ENG'},
+];
 
 const navLinkClass = ({isActive}: {isActive: boolean}) =>
   `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -12,21 +19,32 @@ const navLinkClass = ({isActive}: {isActive: boolean}) =>
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const location = useLocation();
+  const [langOpen, setLangOpen] = useState(false);
+  const [langOpenMobile, setLangOpenMobile] = useState(false);
+  const {lang, setLang, t} = useLang();
+  const langRef = useRef<HTMLDivElement | null>(null);
+  const langRefMobile = useRef<HTMLDivElement | null>(null);
 
-  const authPath =
-    location.pathname.startsWith('/teacher') && !location.pathname.includes('/auth')
-      ? '/teacher/auth'
-      : location.pathname.startsWith('/student')
-        ? '/student/auth'
-        : '/teacher/auth';
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      const outsideDesktop = langRef.current && !langRef.current.contains(e.target as Node);
+      const outsideMobile = langRefMobile.current && !langRefMobile.current.contains(e.target as Node);
+      if (outsideDesktop || outsideMobile) {
+        setLangOpen(false);
+        setLangOpenMobile(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const currentLang = LANG_OPTIONS.find((o) => o.value === lang) ?? LANG_OPTIONS[0];
 
   const links = [
-    {to: '/', label: 'Bosh sahifa', end: true},
-    {to: '/teacher', label: 'Teacher'},
-    {to: '/student', label: 'Student'},
-    {to: '/pricing', label: 'Narxlar', end: true},
-    {to: '/game', label: 'O‘yin', end: false},
+    {to: '/', label: t('nav_home'), end: true},
+    {to: '/teacher', label: t('nav_teacher')},
+    {to: '/student', label: t('nav_student')},
+    {to: '/pricing', label: t('nav_pricing'), end: true},
   ];
 
   return (
@@ -54,27 +72,100 @@ export default function Header() {
 
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
+
+          <div className="relative" ref={langRef}>
+            <button
+              type="button"
+              onClick={() => setLangOpen((v) => !v)}
+              aria-label={t('lang_select')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+              {currentLang.label}
+              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {langOpen && (
+              <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
+                {LANG_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setLang(opt.value);
+                      setLangOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <span
+                      className={`uppercase tracking-wider ${
+                        lang === opt.value
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </span>
+                    {lang === opt.value && <Check className="ml-auto h-4 w-4 text-indigo-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <Link
-            to="/game"
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
-          >
-            <Gamepad2 className="h-4 w-4" />
-            O‘ynash
-          </Link>
-          <Link
-            to={authPath}
+            to="/teacher/auth"
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
             <LogIn className="h-4 w-4" />
-            Kirish / Roʻyxatdan oʻtish
+            {t('auth_login_signup')}
           </Link>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
+          <div className="relative" ref={langRefMobile}>
+            <button
+              type="button"
+              onClick={() => setLangOpenMobile((v) => !v)}
+              aria-label={t('lang_select')}
+              className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            >
+              <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+              {currentLang.label}
+              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${langOpenMobile ? 'rotate-180' : ''}`} />
+            </button>
+
+            {langOpenMobile && (
+              <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
+                {LANG_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setLang(opt.value);
+                      setLangOpenMobile(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <span
+                      className={`uppercase tracking-wider ${
+                        lang === opt.value
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </span>
+                    {lang === opt.value && <Check className="ml-auto h-4 w-4 text-indigo-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            aria-label="Menyu"
+            aria-label={t('menu_open')}
             onClick={() => setOpen((v) => !v)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
@@ -97,22 +188,6 @@ export default function Header() {
                 {l.label}
               </NavLink>
             ))}
-            <Link
-              to="/game"
-              onClick={() => setOpen(false)}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
-            >
-              <Gamepad2 className="h-4 w-4" />
-              O‘ynash
-            </Link>
-            <Link
-              to={authPath}
-              onClick={() => setOpen(false)}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
-            >
-              <LogIn className="h-4 w-4" />
-              Kirish / Roʻyxatdan oʻtish
-            </Link>
           </nav>
         </div>
       )}
