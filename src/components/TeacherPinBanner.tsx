@@ -49,7 +49,10 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
             <div className="text-[11px] sm:text-xs uppercase font-extrabold text-slate-400 tracking-widest">
               {t('tv_pin_label')}
             </div>
-            <div className="font-mono font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1">
+            <div
+              data-testid="pin-value"
+              className="font-mono font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1"
+            >
               {pin}
             </div>
           </div>

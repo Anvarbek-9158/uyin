@@ -28,6 +28,14 @@ export const JOIN_ATTEMPT_LIMIT = Number(process.env.JOIN_ATTEMPT_LIMIT ?? 10);
 export const JOIN_ATTEMPT_WINDOW_MS =
   (Number(process.env.JOIN_ATTEMPT_WINDOW_SECONDS) || 60) * 1000;
 
+// Create-game rate limit: a session is minted (and a token issued) on every
+// /api/create-game call, so it is the single cheapest way to flood the store
+// with games. Bound it per IP — a classroom teacher creates a handful of games
+// per session, never hundreds in ten minutes. Env-overridable like the others.
+export const CREATE_GAME_LIMIT = Number(process.env.CREATE_GAME_LIMIT ?? 120);
+export const CREATE_GAME_WINDOW_MS =
+  (Number(process.env.CREATE_GAME_WINDOW_MINUTES) || 10) * 60 * 1000;
+
 // Hard lifetime of a game PIN. After this many milliseconds from creation the
 // PIN stops accepting joins (treated exactly like "no such game"), which (a)
 // bounds the window in which the 6-digit PIN can be brute-forced and (b) stops

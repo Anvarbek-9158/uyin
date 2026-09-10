@@ -258,6 +258,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
 
               <button
                 type="submit"
+                data-testid="auth-submit"
                 disabled={busy}
                 className={`mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
               >

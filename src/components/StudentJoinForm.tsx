@@ -89,6 +89,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
               enterKeyHint="go"
               required
               maxLength={6}
+              data-testid="pin-input"
               value={pinInput}
               onChange={(e) => { onPinChange(e.target.value.replace(/\D/g, '').slice(0, 6)); }}
               placeholder={t('sv_pin_placeholder')}
@@ -107,6 +108,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
               autoCorrect="off"
               autoCapitalize="words"
               spellCheck={false}
+              data-testid="name-input"
               value={nameInput}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder={t('sv_name_placeholder')}
@@ -116,6 +118,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
 
           <button
             type="submit"
+            data-testid="join-submit"
             disabled={loading || pinInput.trim().length !== 6 || !nameInput.trim()}
             className="w-full py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm sm:text-base uppercase tracking-widest shadow-[0_0_25px_rgba(79,70,229,0.5)] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/30"
           >

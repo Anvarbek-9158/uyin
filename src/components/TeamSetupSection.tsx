@@ -192,6 +192,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
             {teamList.length > 0 && (
               <button
                 onClick={onOpenQuestionSelect}
+                data-testid="start-quiz"
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all scale-105 cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-slate-950" />
@@ -204,6 +205,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
           <form onSubmit={onCreateTeam} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
+              data-testid="team-name"
               value={newTeamName}
               onChange={(e) => onNewTeamNameChange(e.target.value)}
               placeholder={t('tv_new_team_placeholder')}
@@ -211,6 +213,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
             />
             <button
               type="submit"
+              data-testid="add-team"
               className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
             >
               <Plus className="w-4 h-4" /> {t('tv_add_team')}
@@ -298,6 +301,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                               <div className="flex items-center gap-1 shrink-0 ml-2">
                                 {!isLeader && (
                                   <button
+                                    data-testid="make-leader"
                                     onClick={() => onMakeLeader(st.id, team.id)}
                                     className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-[11px] font-bold uppercase"
                                   >
@@ -331,6 +335,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                   {unassignedStudents.length > 0 && (
                     <div className="pt-2 border-t border-white/5 pl-2">
                       <select
+                        data-testid="assign-select"
                         onChange={(e) => {
                           if (e.target.value) {
                             onAssignStudent(e.target.value, team.id);

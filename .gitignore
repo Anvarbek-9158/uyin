@@ -13,3 +13,7 @@ bun.lock
 
 .vercel
 .env*
+test-results/
+playwright-report/
+.blob-report/
+playwright/.cache/

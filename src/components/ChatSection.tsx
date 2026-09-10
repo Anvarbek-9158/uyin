@@ -366,6 +366,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
     <div className="p-4 border-t border-white/10 bg-slate-950/60">
       <div className="flex items-center gap-2">
         <input
+          data-testid="chat-input"
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -380,6 +381,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
         />
         <button
+          data-testid="chat-send"
           onClick={handleSend}
           disabled={!inputText.trim() || sending || cooldown > 0}
           className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all cursor-pointer shrink-0"
@@ -458,7 +460,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             <div className="min-w-0">
               <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
                 {title}
-                {onGroupTab && groupTeam ? ` вЂ” ${groupTeam.name}` : ''}
+                {onGroupTab && groupTeam ? ` — ${groupTeam.name}` : ''}
               </h3>
               <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -869,6 +871,7 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
     <>
       {!open && (
         <button
+          data-testid="chat-launcher"
           onClick={() => setOpen(true)}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all cursor-pointer border border-indigo-400/40 group"
           title={t('chat_launcher_title')}
@@ -916,6 +919,7 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
   return (
     <>
       <button
+        data-testid="chat-launcher"
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
         title={t('chat_launcher_students')}

@@ -19,6 +19,8 @@ import {
 import {
   CHAT_RATE_LIMIT_MAX,
   CHAT_RATE_LIMIT_WINDOW_MS,
+  CREATE_GAME_LIMIT,
+  CREATE_GAME_WINDOW_MS,
   JOIN_ATTEMPT_LIMIT,
   JOIN_ATTEMPT_WINDOW_MS,
   PIN_LIFETIME_MS,
@@ -469,6 +471,24 @@ app.post('/api/create-game', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
   if (!clientId) {
     res.json({ success: false, message: 'clientId topilmadi!' });
+    return;
+  }
+
+  // Abuse guard: creating a game (and minting a session token) is unauthenticated
+  // by design, so cap how many games one IP may create per window. Prevents
+  // flooding the store with throwaway games.
+  const rlc = await store.checkRateLimit(
+    `create:${clientIp(req)}`,
+    CREATE_GAME_LIMIT,
+    CREATE_GAME_WINDOW_MS
+  );
+  if (!rlc.allowed) {
+    res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rlc.retryAfterMs / 1000))));
+    res.status(429).json({
+      success: false,
+      message: 'Juda ko\'p o\'yin yaratildi, biroz kuting!',
+      retryAfterMs: rlc.retryAfterMs,
+    });
     return;
   }
 

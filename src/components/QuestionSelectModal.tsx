@@ -197,6 +197,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                         </span>
                       ) : (
                         <button
+                          data-testid="q-start"
                           onClick={() => {
                             onSelectQuestion(originalIndex);
                             onClose();

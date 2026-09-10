@@ -108,6 +108,8 @@ export default function App() {
     };
   }, [clientId, gameState?.pin]);
 
+  const gameCreationRef = useRef<Promise<unknown> | null>(null);
+
   // Create a new game session via REST when teacher mode is active
   const handleCreateGame = async () => {
     const res = await apiPost<{ success: boolean; game?: GameSession; sessionToken?: string }>(
@@ -122,10 +124,13 @@ export default function App() {
     }
   };
 
-  // Auto-create game session when teacher mode is active
+  // Auto-create game session when teacher mode is active.
+  // Guarded against concurrent/repeated calls (dev StrictMode double-mount, fast re-renders)
   useEffect(() => {
-    if (isTeacherAuth && !gameState) {
-      handleCreateGame();
+    if (isTeacherAuth && !gameState && !gameCreationRef.current) {
+      gameCreationRef.current = handleCreateGame().finally(() => {
+        gameCreationRef.current = null;
+      });
     }
   }, [isTeacherAuth, gameState]);
 

@@ -94,6 +94,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             return (
               <button
                 key={idx}
+                data-testid={`option-${idx}`}
                 disabled={!isAnsweringUnlocked || !isLeader}
                 onClick={() => onSelectOption && onSelectOption(opt)}
                 className={`flex items-center justify-between p-5 sm:p-6 rounded-2xl border-2 text-left transition-all ${

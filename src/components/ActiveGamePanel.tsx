@@ -102,6 +102,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
             <div className="flex flex-wrap items-center gap-3">
               {phase === 'BETTING' && (
                 <button
+                  data-testid="start-answering"
                   onClick={onStartAnswering}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${
                     allBetPlaced
@@ -131,6 +132,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
 
               {phase === 'GRADING' && (
                 <button
+                  data-testid="finish-round"
                   onClick={onFinishRound}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.4)]"
                 >
@@ -141,6 +143,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
 
               {phase === 'ROUND_RESULT' && (
                 <button
+                  data-testid="next-question"
                   onClick={onNextQuestion}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.5)] cursor-pointer"
                 >
@@ -151,6 +154,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
               {/* End the game early and announce the winners (VAZIFA 6/QISM J) */}
               {phase !== 'GAME_OVER' && (
                 <button
+                  data-testid="end-game"
                   onClick={onEndGame}
                   className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 font-bold text-xs uppercase tracking-wider transition-all"
                 >
@@ -400,6 +404,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                       ) : (
                         <>
                           <button
+                            data-testid="grade-correct"
                             onClick={() => onGradeAnswer(team.id, true)}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
                           >

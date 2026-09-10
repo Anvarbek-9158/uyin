@@ -306,6 +306,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             )}
 
             <button
+              data-testid="add-question-btn"
               onClick={() => setShowAddQuestion(!showAddQuestion)}
               className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
             >
@@ -324,6 +325,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <input
                 type="text"
                 required
+                data-testid="q-text"
                 value={newQuestionText}
                 onChange={(e) => setNewQuestionText(e.target.value)}
                 placeholder={t('tv_question_placeholder')}
@@ -350,6 +352,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
+                  data-testid="q-opt-a"
                   placeholder={t('tv_variant_a')}
                   value={newOptA}
                   onChange={(e) => setNewOptA(e.target.value)}
@@ -357,6 +360,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 />
                 <input
                   type="text"
+                  data-testid="q-opt-b"
                   placeholder={t('tv_variant_b')}
                   value={newOptB}
                   onChange={(e) => setNewOptB(e.target.value)}
@@ -364,6 +368,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 />
                 <input
                   type="text"
+                  data-testid="q-opt-c"
                   placeholder={t('tv_variant_c')}
                   value={newOptC}
                   onChange={(e) => setNewOptC(e.target.value)}
@@ -371,6 +376,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 />
                 <input
                   type="text"
+                  data-testid="q-opt-d"
                   placeholder={t('tv_variant_d')}
                   value={newOptD}
                   onChange={(e) => setNewOptD(e.target.value)}
@@ -387,6 +393,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 <input
                   type="text"
                   required
+                  data-testid="q-correct"
                   placeholder={t('tv_correct_placeholder')}
                   value={newCorrect}
                   onChange={(e) => setNewCorrect(e.target.value)}
@@ -461,6 +468,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </button>
               <button
                 type="submit"
+                data-testid="q-save"
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)]"
               >
                 {t('save')}
