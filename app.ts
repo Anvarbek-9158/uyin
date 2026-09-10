@@ -16,18 +16,52 @@ import {
   applyPresenceSweep,
   questionsPerRound,
 } from './src/server/presence.js';
+import {
+  CHAT_RATE_LIMIT_MAX,
+  CHAT_RATE_LIMIT_WINDOW_MS,
+  JOIN_ATTEMPT_LIMIT,
+  JOIN_ATTEMPT_WINDOW_MS,
+  PIN_LIFETIME_MS,
+  clientIp,
+  isPinExpired,
+  requireTeacherAuth,
+  respondAuthError,
+  verifyChatClient,
+} from './src/server/security.js';
 
 const app = express();
 
 // Security headers: sensible defaults from helmet (X-Frame-Options,
-// X-Content-Type-Options, referrer policy, HSTS, etc.) sans the strict
+// X-Content-Type-Options, referrer policy, HSTS, etc.) plus an explicit
 // Content-Security-Policy. The UI renders with inline `style` attributes (e.g.
-// dynamic team colors and Tailwind utilities), which are blocked by the default
-// CSP; disabling CSP keeps those working while every other hardening header
-// stays on. If you want a CSP, define it explicitly via helmet({ contentSecurityPolicy: {...} }).
+// dynamic team colors and Tailwind utilities), so style-src must allow
+// 'unsafe-inline'. Scripts come from our own origin (Vite bundles) with the
+// anti-FOUC snippet inlined in index.html. connect-src allows same-origin API
+// calls plus the Pusher realtime endpoints.
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        fontSrc: ["'self'", 'data:'],
+        connectSrc: [
+          "'self'",
+          'wss://ws-ap2.pusher.com',
+          'wss://ws.pusherapp.com',
+          'https://sockjs-ap2.pusher.com',
+          'http://sockjs-ap2.pusher.com',
+          'https://sockjs.pusherapp.com',
+          'http://sockjs.pusherapp.com',
+        ],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+    },
   })
 );
 
@@ -332,95 +366,11 @@ function emitToChat(
 // `Authorization: Bearer ...` header (JSON API calls) or as a `sessionToken`
 // field (pusher-js form posts). Without a matching token a stolen clientId is
 // useless, closing the clientId-spoofing hole.
+//
+// The constants and helpers live in src/server/security.ts (SESSION_TOKEN_REGEX,
+// CHAT_RATE_LIMIT_*, JOIN_ATTEMPT_*, PIN_LIFETIME_MS, isPinExpired, clientIp,
+// verifyChatClient, requireTeacherAuth, respondAuthError).
 // ============================================================
-
-// The token is a 64-char lowercase hex string (32 random bytes).
-const SESSION_TOKEN_REGEX = /^[0-9a-f]{64}$/;
-
-// Chat rate limit: per clientId, at most N messages per fixed window. The
-// defaults (20 / 60s) are generous for a classroom chat but stop a single
-// script from flooding every student's inbox. Overridable via env vars.
-const CHAT_RATE_LIMIT_MAX = Number(process.env.CHAT_RATE_LIMIT_MAX ?? 20);
-const CHAT_RATE_LIMIT_WINDOW_MS = (Number(process.env.CHAT_RATE_LIMIT_WINDOW_SECONDS) || 60) * 1000;
-
-// Join rate limit: how many failed PIN join attempts a single IP may make per
-// window before further attempts are temporarily blocked (429). Guards against
-// brute-forcing the 6-digit PIN. Env-overridable like the chat limit.
-const JOIN_ATTEMPT_LIMIT = Number(process.env.JOIN_ATTEMPT_LIMIT ?? 10);
-const JOIN_ATTEMPT_WINDOW_MS = (Number(process.env.JOIN_ATTEMPT_WINDOW_SECONDS) || 60) * 1000;
-
-// Best-effort client IP. On Vercel req.ip is populated by the platform; behind
-// the local Vite dev proxy we fall back to the X-Forwarded-For header, then to
-// a fixed key so local requests still share (and are throttled by) one bucket.
-function clientIp(req: Request): string {
-  const xff = req.headers['x-forwarded-for'];
-  if (Array.isArray(xff)) return xff[0];
-  if (typeof xff === 'string' && xff.length > 0) return xff.split(',')[0].trim();
-  if (typeof req.ip === 'string' && req.ip.length > 0) return req.ip;
-  return 'local';
-}
-
-function extractSessionToken(req: Request): string | null {
-  const auth = req.headers['authorization'];
-  if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
-    const t = auth.slice(7).trim();
-    if (t) return t;
-  }
-  const body = (req.body as Record<string, unknown> | undefined)?.sessionToken;
-  if (typeof body === 'string' && body) return body;
-  const query = (req.query as Record<string, unknown> | undefined)?.sessionToken;
-  if (typeof query === 'string' && query) return query;
-  return null;
-}
-
-function looksLikeSessionToken(token: string | null): boolean {
-  return typeof token === 'string' && SESSION_TOKEN_REGEX.test(token);
-}
-
-// Shared gate for /api/pusher/auth, /api/chat/send and /api/chat/messages.
-// Returns null when the client is authorized, or a JSON-ready rejection to send.
-type ChatAuthError = { status: number; body: Record<string, unknown> } | null;
-
-async function verifyChatClient(req: Request, clientId: string): Promise<ChatAuthError> {
-  if (!clientId) {
-    return { status: 400, body: { success: false, message: 'clientId topilmadi!' } };
-  }
-  const presentedToken = extractSessionToken(req);
-  // Reject malformed tokens outright instead of comparing them: this also
-  // protects the store against junk lookups.
-  if (presentedToken !== null && !looksLikeSessionToken(presentedToken)) {
-    return {
-      status: 401,
-      body: { success: false, message: 'Avtorizatsiya tokeni noto\'g\'ri formatda!' },
-    };
-  }
-  const verdict = await store.verifyClientSession(clientId, presentedToken);
-  if (!verdict.ok) {
-    return { status: verdict.status, body: { success: false, message: verdict.message } };
-  }
-  return null;
-}
-
-// Gate for teacher-only endpoints. The caller must present a valid session
-// token so a stolen teacher clientId cannot alone act on a game. (The "this
-// client owns the requested game" identity check is a separate concern handled
-// by getTeacherGame at each call site.)
-async function requireTeacherAuth(
-  req: Request,
-  clientId: string
-): Promise<ChatAuthError> {
-  return verifyChatClient(req, clientId);
-}
-
-// Respond with the rejection produced by verifyChatClient/requireTeacherAuth,
-// and return whether the caller must abort the request.
-function respondAuthError(res: Response, error: ChatAuthError): boolean {
-  if (error) {
-    res.status(error.status).json(error.body);
-    return true;
-  }
-  return false;
-}
 
 // Helper: Generate a unique 6-digit PIN (checks the shared store)
 async function generateUniquePin(): Promise<string> {
@@ -548,6 +498,7 @@ app.post('/api/create-game', ah(async (req, res) => {
     maxScoreLimit: 500,
     feedbacks: [],
     createdAt: Date.now(),
+    pinExpiresAt: Date.now() + PIN_LIFETIME_MS,
   };
   newGameDefaults(newGame);
 
@@ -576,11 +527,12 @@ app.post('/api/join-game', ah(async (req, res) => {
   }
 
   // Brute-force guard on the 6-digit PIN. A failed join (the PIN does not
-  // resolve to a live game) counts against the calling IP; once the per-IP
-  // budget of failed attempts in the window is spent, further attempts are
-  // blocked for the rest of the window. A *successful* join is not counted.
+  // resolve to a live game — or expired) counts against the calling IP; once
+  // the per-IP budget of failed attempts in the window is spent, further
+  // attempts are blocked for the rest of the window. A *successful* join is not
+  // counted.
   const gameExists = await store.getGame(pin);
-  if (!gameExists) {
+  if (!gameExists || isPinExpired(gameExists)) {
     const rl = await store.checkRateLimit(
       `join:${clientIp(req)}`,
       JOIN_ATTEMPT_LIMIT,
@@ -1689,6 +1641,7 @@ app.post('/api/reset-game', ah(async (req, res) => {
     maxScoreLimit: 500,
     feedbacks: [],
     createdAt: Date.now(),
+    pinExpiresAt: Date.now() + PIN_LIFETIME_MS,
   };
   newGameDefaults(newGame);
 
@@ -1781,6 +1734,7 @@ app.post('/api/update-pin', ah(async (req, res) => {
   // Transfer game to new PIN key and clear student list so they re-authenticate
   await store.deleteGame(currentPin as string);
   game.pin = cleanPin;
+  game.pinExpiresAt = Date.now() + PIN_LIFETIME_MS;
   game.students = {};
   // Students are gone, so drop their team memberships too (the teacher re-assigns
   // everyone on the new PIN). Scores and team records are preserved.
@@ -1835,6 +1789,7 @@ app.post('/api/regenerate-pin', ah(async (req, res) => {
       team.leaderClientId = null;
     });
     game.pin = newPin;
+    game.pinExpiresAt = Date.now() + PIN_LIFETIME_MS;
     newGameDefaults(game);
     return { ok: true, game };
   });
@@ -2185,10 +2140,10 @@ app.post('/api/chat/send', ah(async (req, res) => {
   const requestedRoomType: 'private' | 'group' = req.body?.roomType === 'group' ? 'group' : 'private';
 
   let pin: string | null = null;
-  let role: 'teacher' | 'student';
-  let senderName: string;
-  let roomType: 'private' | 'group';
-  let roomId: string; // studentId for private rooms, teamId for group rooms
+  let role: 'teacher' | 'student' = 'student';
+  let senderName = '';
+  let roomType: 'private' | 'group' = 'private';
+  let roomId = '';
 
   if (teacherPin) {
     const game = await store.getGame(teacherPin);

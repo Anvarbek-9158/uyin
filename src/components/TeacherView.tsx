@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { GameSession, Question, Student, Team } from '../types';
+import { useTeacherTimer } from '../hooks/useTeacherTimer';
 import { Leaderboard } from './Leaderboard';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
@@ -75,46 +76,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // Students link copy state
   const [studentsLinkCopied, setStudentsLinkCopied] = useState(false);
 
-  // Client-driven countdown for the answering phase.
-  // The server is stateless on Vercel (no long-running setInterval), so the
-  // teacher's browser drives the timer: every second it reports the remaining
-  // seconds via /api/timer-tick and the server relays timer_tick to everyone.
-  const timerIntervalRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!gameState || gameState.phase !== 'ANSWERING' || !gameState.isTimerRunning) {
-      if (timerIntervalRef.current !== null) {
-        window.clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-      return;
-    }
-    if (timerIntervalRef.current !== null) return;
-
-    const startedAt = Date.now();
-    const totalSeconds = Math.max(0, Math.floor(gameState.timerSeconds || 0));
-
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      const remaining = Math.max(0, totalSeconds - elapsed);
-      apiPost('/api/timer-tick', { clientId, seconds: remaining }).catch(() => {});
-      if (remaining <= 0 && timerIntervalRef.current !== null) {
-        window.clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-    };
-
-    tick();
-    timerIntervalRef.current = window.setInterval(tick, 1000);
-
-    return () => {
-      if (timerIntervalRef.current !== null) {
-        window.clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, gameState?.pin, gameState?.phase, gameState?.isTimerRunning]);
+  useTeacherTimer(clientId, gameState);
 
   if (!gameState) {
     return (
@@ -1337,7 +1299,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           </span>
                         ) : (
                           <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
-                            {t('tv_test_label')} ({q.options.length}{t('tv_variant_unit')})
+                            {t('tv_test_label')} ({(q.options ?? []).length}{t('tv_variant_unit')})
                           </span>
                         )}
 

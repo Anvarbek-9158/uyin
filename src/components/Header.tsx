@@ -17,13 +17,102 @@ const navLinkClass = ({isActive}: {isActive: boolean}) =>
       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
   }`;
 
+interface LangDropdownProps {
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onSelect: (l: Language) => void;
+  triggerRef: React.RefObject<HTMLDivElement | null>;
+  compact?: boolean;
+}
+
+// Accessible language picker: Escape closes it and restores focus to the
+// trigger, aria attributes describe the listbox semantics for screen readers.
+function LangDropdown({open, onToggle, onClose, onSelect, triggerRef, compact}: LangDropdownProps) {
+  const {lang, t} = useLang();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerBtnRef = useRef<HTMLButtonElement | null>(null);
+  const currentLang = LANG_OPTIONS.find((o) => o.value === lang) ?? LANG_OPTIONS[0];
+
+  useEffect(() => {
+    if (!open) return;
+    // Move focus into the menu when it opens (listbox pattern).
+    const first = menuRef.current?.querySelector<HTMLButtonElement>('[role="option"]');
+    first?.focus();
+    return () => {
+      // Restore focus to the trigger when the menu closes (Escape, selection,
+      // or click-outside).
+      triggerBtnRef.current?.focus();
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={triggerRef}>
+      <button
+        ref={triggerBtnRef}
+        type="button"
+        onClick={onToggle}
+        aria-label={t('lang_select')}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${
+          compact ? 'h-9 px-2.5' : 'px-3 py-2'
+        }`}
+      >
+        <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+        {currentLang.label}
+        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          role="listbox"
+          aria-label={t('lang_select')}
+          className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-950"
+        >
+          {LANG_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              role="option"
+              type="button"
+              aria-selected={lang === opt.value}
+              onClick={() => {
+                onSelect(opt.value);
+                onClose();
+              }}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <span
+                className={`uppercase tracking-wider ${
+                  lang === opt.value
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                {opt.label}
+              </span>
+              {lang === opt.value && <Check className="ml-auto h-4 w-4 text-indigo-500" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [langOpenMobile, setLangOpenMobile] = useState(false);
-  const {lang, setLang, t} = useLang();
+  const {setLang, t} = useLang();
   const langRef = useRef<HTMLDivElement | null>(null);
   const langRefMobile = useRef<HTMLDivElement | null>(null);
+
+  const closeAllMenus = () => {
+    setLangOpen(false);
+    setLangOpenMobile(false);
+  };
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -34,11 +123,20 @@ export default function Header() {
         setLangOpenMobile(false);
       }
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Escape closes any open dropdown / mobile menu (ARIA dialog pattern).
+      if (e.key === 'Escape') {
+        closeAllMenus();
+        setOpen(false);
+      }
+    };
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, []);
-
-  const currentLang = LANG_OPTIONS.find((o) => o.value === lang) ?? LANG_OPTIONS[0];
 
   const links = [
     {to: '/', label: t('nav_home'), end: true},
@@ -73,45 +171,13 @@ export default function Header() {
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
 
-          <div className="relative" ref={langRef}>
-            <button
-              type="button"
-              onClick={() => setLangOpen((v) => !v)}
-              aria-label={t('lang_select')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-            >
-              <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-              {currentLang.label}
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {langOpen && (
-              <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
-                {LANG_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setLang(opt.value);
-                      setLangOpen(false);
-                    }}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <span
-                      className={`uppercase tracking-wider ${
-                        lang === opt.value
-                          ? 'text-indigo-600 dark:text-indigo-400'
-                          : 'text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      {opt.label}
-                    </span>
-                    {lang === opt.value && <Check className="ml-auto h-4 w-4 text-indigo-500" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <LangDropdown
+            open={langOpen}
+            onToggle={() => setLangOpen((v) => !v)}
+            onClose={() => setLangOpen(false)}
+            onSelect={setLang}
+            triggerRef={langRef}
+          />
 
           <Link
             to="/teacher/auth"
@@ -124,48 +190,18 @@ export default function Header() {
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
-          <div className="relative" ref={langRefMobile}>
-            <button
-              type="button"
-              onClick={() => setLangOpenMobile((v) => !v)}
-              aria-label={t('lang_select')}
-              className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-            >
-              <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-              {currentLang.label}
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${langOpenMobile ? 'rotate-180' : ''}`} />
-            </button>
-
-            {langOpenMobile && (
-              <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white py-1 shadow-2xl dark:border-slate-700 dark:bg-slate-950">
-                {LANG_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setLang(opt.value);
-                      setLangOpenMobile(false);
-                    }}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <span
-                      className={`uppercase tracking-wider ${
-                        lang === opt.value
-                          ? 'text-indigo-600 dark:text-indigo-400'
-                          : 'text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      {opt.label}
-                    </span>
-                    {lang === opt.value && <Check className="ml-auto h-4 w-4 text-indigo-500" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <LangDropdown
+            open={langOpenMobile}
+            onToggle={() => setLangOpenMobile((v) => !v)}
+            onClose={() => setLangOpenMobile(false)}
+            onSelect={setLang}
+            triggerRef={langRefMobile}
+            compact
+          />
           <button
             type="button"
             aria-label={t('menu_open')}
+            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >

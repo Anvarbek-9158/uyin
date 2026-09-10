@@ -30,6 +30,9 @@ export function ThemeProvider({children}: {children: ReactNode}) {
       root.classList.remove('dark');
     }
     window.localStorage.setItem('edupal-theme', theme);
+    // Keep the browser chrome color in sync with the active theme.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0f172a' : '#4f46e5');
   }, [theme]);
 
   const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));

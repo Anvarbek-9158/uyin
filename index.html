@@ -8,7 +8,53 @@
       content="EduPlay — taʼlim platformasi: o'qituvchi va o'quvchi uchun rolga mos interfeys, real vaqt rejimidagi viktorina, qidiruv va tariflar."
     />
     <meta name="theme-color" content="#4f46e5" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="EduPlay" />
+
+    <meta name="og:site_name" content="EduPlay" />
+    <meta name="og:title" content="EduPlay — Real Vaqtdagi Taʼlim Viktorinasi" />
+    <meta
+      name="og:description"
+      content="O'qituvchi va o'quvchi uchun real vaqt rejimidagi viktorina: PIN-kod bilan qo'shiling, savollarga javob bering va reytingda yuksaling."
+    />
+    <meta name="og:type" content="website" />
+    <meta name="og:image" content="/favicon.svg" />
+    <meta name="og:locale" content="uz_UZ" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="EduPlay — Real Vaqtdagi Taʼlim Viktorinasi" />
+    <meta
+      name="twitter:description"
+      content="O'qituvchi va o'quvchi uchun real vaqt rejimidagi viktorina: PIN-kod bilan qo'shiling, savollarga javob bering va reytingda yuksaling."
+    />
+    <meta name="twitter:image" content="/favicon.svg" />
+
     <title>EduPlay — Real Vaqtdagi Taʼlim Viktorinasi</title>
+    <script>
+      // Apply the saved (or OS-preferred) color scheme BEFORE first paint so a
+      // dark-mode user never sees a white flash (FOUC). Mirrors getInitialTheme
+      // in src/context/ThemeContext.tsx — keep the two in sync.
+      (function () {
+        try {
+          var stored = localStorage.getItem('edupal-theme');
+          var dark =
+            stored === 'dark' ||
+            (stored !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0f172a');
+          }
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

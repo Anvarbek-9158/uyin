@@ -107,6 +107,10 @@ const en: Strings = {
   nav_pricing: "Pricing",
   auth_login_signup: "Sign in / Sign up",
   menu_open: "Open menu",
+  theme_switch_to_dark: "Switch to dark mode",
+  theme_switch_to_light: "Switch to light mode",
+  theme_dark: "Dark mode",
+  theme_light: "Light mode",
 
   hero_badge: "Learning platform",
   hero_title: "One game that connects teachers and students in real time",
@@ -187,6 +191,8 @@ const en: Strings = {
   auth_success_sub: "Taking you to the game as {role}...",
   auth_create_account: "Create an account and join the game",
   auth_login_to_account: "Sign in to your account",
+  auth_demo_warning: "Demo mode: this app is in development and sign-in is simulated. No real account or data is stored.",
+  auth_demo_badge: "DEMO",
 
   // TeacherView students link
   tv_students_link: "Students link",
@@ -531,6 +537,10 @@ export const STRINGS: Record<Language, Strings> = {
     nav_pricing: "Narxlar",
     auth_login_signup: "Kirish / Ro'yxatdan o'tish",
     menu_open: "Menyu",
+    theme_switch_to_dark: "Qorong'i rejimga o'tish",
+    theme_switch_to_light: "Yorug' rejimga o'tish",
+    theme_dark: "Qorong'i rejim",
+    theme_light: "Yorug' rejim",
 
     hero_badge: "Ta'lim platformasi",
     hero_title: "O'qituvchi va o'quvchini real vaqtda bog'laydigan yagona o'yin",
@@ -608,6 +618,8 @@ export const STRINGS: Record<Language, Strings> = {
     auth_success_sub: "{role} sifatida o'yinga o'tkazilmoqda...",
     auth_create_account: "Hisob yarating va o'yinga kiring",
     auth_login_to_account: "Hisobingizga kiring",
+    auth_demo_warning: "Demo rejim: ilova ishlab chiqilmoqda va kirish simulyatsiya qilinadi. Haqiqiy akkount yoki ma'lumot saqlanmaydi.",
+    auth_demo_badge: "DEMO",
 
     tv_students_link: "O'quvchilar havolasi",
     tv_students_link_copied: "Havola nusxalandi!",
@@ -939,6 +951,10 @@ export const STRINGS: Record<Language, Strings> = {
     nav_pricing: "Тарифы",
     auth_login_signup: "Вход / Регистрация",
     menu_open: "Меню",
+    theme_switch_to_dark: "Переключить на тёмную тему",
+    theme_switch_to_light: "Переключить на светлую тему",
+    theme_dark: "Тёмная тема",
+    theme_light: "Светлая тема",
 
     hero_badge: "Образовательная платформа",
     hero_title: "Одна игра, объединяющая учителя и учеников в реальном времени",
@@ -1016,6 +1032,8 @@ export const STRINGS: Record<Language, Strings> = {
     auth_success_sub: "Переводим в игру как {role}...",
     auth_create_account: "Создайте аккаунт и войдите в игру",
     auth_login_to_account: "Войдите в свой аккаунт",
+    auth_demo_warning: "Демо-режим: приложение в разработке, вход имитируется. Реальные аккаунты и данные не сохраняются.",
+    auth_demo_badge: "ДЕМО",
 
     tv_students_link: "Ссылка для учеников",
     tv_students_link_copied: "Ссылка скопирована!",
@@ -1367,6 +1385,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch {
       // ignore
     }
+    // Keep the document language in sync so assistive tech and the browser
+    // spell-checker/translator pick the right language.
+    document.documentElement.lang = lang;
   }, [lang]);
 
   const setLang = (l: Language) => setLangState(l);

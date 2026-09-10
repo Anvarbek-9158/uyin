@@ -124,6 +124,13 @@ export interface GameSession {
   // that name takes over the seat (team/membership preserved). A successful
   // reclaim removes the name from the list.
   reconnectWhitelist?: string[];
+  // --- PIN expiration (QISM SEC) ---
+  // Timestamp (ms epoch) after which the PIN is no longer valid for joins. A
+  // game/PIN is never immortal: this gives a hard upper bound on the join
+  // window even if every other presence mechanism is bypassed, and bounds the
+  // window in which the 6-digit PIN can be brute-forced. Optional so existing
+  // Redis games and test fixtures (which predate the feature) keep working.
+  pinExpiresAt?: number;
 }
 
 // Chat message. Every message belongs to a chat room:

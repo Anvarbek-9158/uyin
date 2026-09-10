@@ -1,0 +1,17 @@
+{
+  "name": "EduPlay — Real Vaqtdagi Ta'lim Viktorinasi",
+  "short_name": "EduPlay",
+  "description": "Real vaqt rejimidagi ta'lim viktorinasi: o'qituvchi va o'quvchi uchun rolga mos interfeys.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

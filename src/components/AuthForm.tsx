@@ -119,6 +119,15 @@ export default function AuthForm({role, accent}: AuthFormProps) {
       <div className={`h-1.5 w-full bg-gradient-to-r ${accent === 'indigo' ? 'from-indigo-500 to-blue-500' : 'from-emerald-500 to-teal-500'}`} />
 
       <div className="p-6 sm:p-8">
+        <div className="mb-5 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+            {t('auth_demo_badge')}
+          </span>
+          <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+            {t('auth_demo_warning')}
+          </p>
+        </div>
+
         {success ? (
           <div className="flex flex-col items-center py-10 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
