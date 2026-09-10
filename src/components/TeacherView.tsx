@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { GameSession, Question, Student, Team } from '../types';
 import { useTeacherTimer } from '../hooks/useTeacherTimer';
 import { Leaderboard } from './Leaderboard';
+import { TeacherPinBanner } from './TeacherPinBanner';
+import { TeamSetupSection } from './TeamSetupSection';
 import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
 import { useLang, getQuestionInLanguage, translateDiplicity, translateCategory, Language } from '../i18n';
 import {
-  Users,
   Shield,
   Plus,
   Play,
@@ -22,14 +23,9 @@ import {
   Check,
   RefreshCw,
   VolumeX,
-  UserX,
   AlertTriangle,
-  LogOut,
-  MessageSquare,
-  ArrowLeft,
   Trophy,
   Flag,
-  Link2,
 } from 'lucide-react';
 
 interface TeacherViewProps {
@@ -205,424 +201,57 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. BIG PIN DISPLAY BANNER */}
-      <div className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/15 blur-3xl rounded-full pointer-events-none" />
-        
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-5 relative z-10">
-          <div className="space-y-1.5 text-center lg:text-left">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
-              {t('tv_pin_title')}
-            </h1>
-            <p className="text-slate-300 text-xs sm:text-sm font-mono font-medium tracking-wide">
-              {t('tv_pin_sub')}
-            </p>
-          </div>
-
-          {/* PIN BOX & CUSTOM EDIT BUTTONS */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-4 sm:px-7 sm:py-4 rounded-3xl border-2 border-indigo-500/60 shadow-[0_0_30px_rgba(79,70,229,0.3)] w-full max-w-full sm:w-auto">
-            <div className="text-center sm:text-left min-w-0">
-              <div className="text-[11px] sm:text-xs uppercase font-extrabold text-slate-400 tracking-widest">
-                {t('tv_pin_label')}
-              </div>
-              <div className="font-mono font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1">
-                {pin}
-              </div>
-            </div>
-
-            <div className="h-10 w-0.5 bg-white/15 hidden sm:block" />
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {/* STUDENTS JOIN LINK */}
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/#/play`);
-                  setStudentsLinkCopied(true);
-                  setTimeout(() => setStudentsLinkCopied(false), 2000);
-                }}
-                title={t('tv_students_link')}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-200 text-[11px] sm:text-xs font-extrabold border border-sky-500/50 transition-all uppercase tracking-wider cursor-pointer"
-              >
-                {studentsLinkCopied ? (
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                ) : (
-                  <Link2 className="w-4 h-4 text-sky-400 shrink-0" />
-                )}
-                <span>{studentsLinkCopied ? t('tv_students_link_copied') : t('tv_students_link')}</span>
-              </button>
-
-              {/* FEEDBACK BUTTON */}
-              <button
-                onClick={() => setIsFeedbackModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-200 text-[11px] sm:text-xs font-extrabold border border-indigo-500/50 transition-all uppercase tracking-wider relative cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>{t('tv_feedback')} ({feedbacks.length})</span>
-                {feedbacks.length > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                )}
-              </button>
-
-              <button
-                onClick={handleRegeneratePin}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
-              >
-                <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
-                {t('tv_regenerate_pin')}
-              </button>
-
-              {phase === 'LOBBY' || phase === 'TEAMS_SETUP' || phase === 'GAME_OVER' ? (
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t('tv_new_game_confirm')
-                      )
-                    ) {
-                      onResetGame();
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] sm:text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4 text-rose-400 shrink-0" />
-                  {t('tv_new_game')}
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
+      <TeacherPinBanner
+        pin={pin}
+        feedbackCount={feedbacks.length}
+        studentsLinkCopied={studentsLinkCopied}
+        showResetGame={phase === 'LOBBY' || phase === 'TEAMS_SETUP' || phase === 'GAME_OVER'}
+        onCopyStudentsLink={() => {
+          navigator.clipboard.writeText(`${window.location.origin}/#/play`);
+          setStudentsLinkCopied(true);
+          setTimeout(() => setStudentsLinkCopied(false), 2000);
+        }}
+        onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+        onRegeneratePin={handleRegeneratePin}
+        onResetGame={() => {
+          if (window.confirm(t('tv_new_game_confirm'))) {
+            onResetGame();
+          }
+        }}
+      />
 
       {/* 2. GAME SETUP & TEAM DISTRIBUTION PHASE */}
       {(phase === 'LOBBY' || phase === 'TEAMS_SETUP') && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Unassigned Students in Waiting Room */}
-          <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-xl space-y-4 backdrop-blur-md">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-white text-base uppercase tracking-wider">
-                  {t('tv_waiting_room')}
-                </h3>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
-                {unassignedStudents.length} TA
-              </span>
-            </div>
-
-            {/* Bulk Selection Bar */}
-            {unassignedStudents.length > 0 && (
-              <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-slate-950/80 border border-white/10 text-xs">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-slate-300 font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={
-                        unassignedStudents.length > 0 &&
-                        selectedStudentIds.length === unassignedStudents.length
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedStudentIds(unassignedStudents.map((s) => s.id));
-                        } else {
-                          setSelectedStudentIds([]);
-                        }
-                      }}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-white/20 cursor-pointer"
-                    />
-                    <span>{t('tv_select_all_teams')} ({selectedStudentIds.length})</span>
-                  </label>
-
-                  {selectedStudentIds.length > 0 && (
-                    <button
-                      onClick={() => setSelectedStudentIds([])}
-                      className="text-[11px] text-slate-400 hover:text-white uppercase font-bold"
-                    >
-                      {t('tv_clear')}
-                    </button>
-                  )}
-                </div>
-
-                {selectedStudentIds.length > 0 && teamList.length > 0 && (
-                  <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                    <span className="text-[11px] text-indigo-300 font-bold uppercase">{t('tv_assign_group')}</span>
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          apiPost('/api/bulk-assign-students', {
-                            clientId,
-                            studentIds: selectedStudentIds,
-                            teamId: e.target.value,
-                          });
-                          setSelectedStudentIds([]);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="flex-1 px-2 py-1 rounded bg-indigo-600 text-white font-bold text-xs focus:outline-none cursor-pointer"
-                    >
-                      <option value="">{t('tv_select_team')}</option>
-                      {teamList.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {unassignedStudents.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6 font-mono uppercase tracking-widest">
-                {t('tv_all_assigned')}
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                {unassignedStudents.map((st) => {
-                  const isChecked = selectedStudentIds.includes(st.id);
-                  return (
-                    <div
-                      key={st.id}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition-all text-xs ${
-                        isChecked
-                          ? 'bg-indigo-500/20 border-indigo-500/50 text-white'
-                          : 'bg-slate-950/60 border-white/5 text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedStudentIds([...selectedStudentIds, st.id]);
-                            } else {
-                              setSelectedStudentIds(selectedStudentIds.filter((id) => id !== st.id));
-                            }
-                          }}
-                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-white/20 cursor-pointer"
-                        />
-                        <span className="font-semibold text-sm">{st.name}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleReconnectStudent(st.id)}
-                          className="p-1 px-2 rounded bg-sky-500/10 hover:bg-sky-500/30 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          {t('tv_reconnect')}
-                        </button>
-                        <button
-                          onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
-                          className="p-1 px-2 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
-                        >
-                          <UserX className="w-3 h-3" />
-                          {t('tv_kick')}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Center/Right: Team Creation & Assigning */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-xl space-y-6 backdrop-blur-md">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <h3 className="font-bold text-white text-xl uppercase tracking-tight">
-                    {t('tv_team_setup_title')}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {t('tv_team_setup_sub')}
-                  </p>
-                </div>
-
-                {teamList.length > 0 && (
-                  <button
-                    onClick={() => setIsQuestionSelectModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all scale-105 cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 fill-slate-950" />
-                    {t('tv_start_quiz')}
-                  </button>
-                )}
-              </div>
-
-              {/* Add Team Form */}
-              <form onSubmit={handleCreateTeam} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder={t('tv_new_team_placeholder')}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500 w-full"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
-                >
-                  <Plus className="w-4 h-4" /> {t('tv_add_team')}
-                </button>
-              </form>
-
-              {/* Teams Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teamList.map((team, idx) => {
-                  const accentColors = ['#06b6d4', '#f59e0b', '#f43f5e', '#6366f1', '#10b981'];
-                  const teamAccent = team.color || accentColors[idx % accentColors.length];
-
-                  return (
-                    <div
-                      key={team.id}
-                      className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 space-y-4 relative overflow-hidden group"
-                    >
-                      <div
-                        className="absolute top-0 left-0 w-1.5 h-full"
-                        style={{ backgroundColor: teamAccent }}
-                      />
-
-                      <div className="flex items-center justify-between pl-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-3.5 h-3.5 rounded-full"
-                            style={{ backgroundColor: teamAccent }}
-                          />
-                          <h4 className="font-bold text-white text-base">
-                            {team.name}
-                          </h4>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => apiPost('/api/penalize-team', { clientId, teamId: team.id, points: 5, reason: 'shovqin qilgani uchun' })}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
-                            title="Shovqin qilgani uchun 5 ball ayirish"
-                          >
-                            <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                            {t('tv_penalize_noise')}
-                          </button>
-
-                          <button
-                            onClick={() => apiPost('/api/delete-team', { clientId, teamId: team.id })}
-                            className="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition-colors"
-                            title="Guruhni o'chirish"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Members & Leader Selector */}
-                      <div className="space-y-2 pl-2">
-                        <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                          {t('tv_members_leader')}
-                        </div>
-                        {team.memberIds.length === 0 ? (
-                          <p className="text-xs text-slate-500 italic">
-                            {t('tv_no_members')}
-                          </p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {team.memberIds.map((mId) => {
-                              const st = students[mId];
-                              if (!st) return null;
-                              const isLeader = st.isLeader;
-
-                              return (
-                                <div
-                                  key={st.id}
-                                  className={`flex items-center justify-between p-2 rounded-lg text-xs border ${
-                                    isLeader
-                                      ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-200'
-                                      : 'bg-slate-950/80 border-white/5 text-slate-200'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    {isLeader && (
-                                      <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    )}
-                                    <span className="font-semibold truncate">{st.name}</span>
-                                  </div>
-
-                                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                                    {!isLeader && (
-                                      <button
-                                        onClick={() =>
-                                          apiPost('/api/set-team-leader', {
-                                            clientId,
-                                            studentId: st.id,
-                                            teamId: team.id,
-                                          })
-                                        }
-                                        className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-[11px] font-bold uppercase"
-                                      >
-                                        {t('tv_make_leader')}
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() =>
-                                        apiPost('/api/assign-student', {
-                                          clientId,
-                                          studentId: st.id,
-                                          teamId: null,
-                                        })
-                                      }
-                                      className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
-                                      title="Guruhdan chiqarib, kutish zaliga qaytarish"
-                                    >
-                                      <LogOut className="w-3 h-3 text-amber-400" />
-                                      <span>{t('tv_to_waiting')}</span>
-                                    </button>
-                                    <button
-                                      onClick={() => apiPost('/api/kick-student', { clientId, studentId: st.id })}
-                                      className="p-1 rounded bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
-                                      title="Tizimdan/o'yindan butunlay o'chirish"
-                                    >
-                                      <UserX className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Quick Assign Dropdown */}
-                      {unassignedStudents.length > 0 && (
-                        <div className="pt-2 border-t border-white/5 pl-2">
-                          <select
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                apiPost('/api/assign-student', {
-                                  clientId,
-                                  studentId: e.target.value,
-                                  teamId: team.id,
-                                });
-                                e.target.value = '';
-                              }
-                            }}
-                            className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-xs text-slate-300 focus:outline-none"
-                          >
-                            <option value="">{t('tv_add_student_team')}</option>
-                            {unassignedStudents.map((st) => (
-                              <option key={st.id} value={st.id}>
-                                {st.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
+        <TeamSetupSection
+          teamList={teamList}
+          students={students}
+          unassignedStudents={unassignedStudents}
+          selectedStudentIds={selectedStudentIds}
+          newTeamName={newTeamName}
+          onSelectStudents={setSelectedStudentIds}
+          onNewTeamNameChange={setNewTeamName}
+          onCreateTeam={handleCreateTeam}
+          onOpenQuestionSelect={() => setIsQuestionSelectModalOpen(true)}
+          onReconnectStudent={handleReconnectStudent}
+          onAssignStudent={(studentId, teamId) =>
+            apiPost('/api/assign-student', { clientId, studentId, teamId })
+          }
+          onBulkAssign={(studentIds, teamId) =>
+            apiPost('/api/bulk-assign-students', { clientId, studentIds, teamId })
+          }
+          onMakeLeader={(studentId, teamId) =>
+            apiPost('/api/set-team-leader', { clientId, studentId, teamId })
+          }
+          onKickStudent={(studentId) =>
+            apiPost('/api/kick-student', { clientId, studentId })
+          }
+          onPenalizeTeam={(teamId) =>
+            apiPost('/api/penalize-team', { clientId, teamId, points: 5, reason: 'shovqin qilgani uchun' })
+          }
+          onDeleteTeam={(teamId) =>
+            apiPost('/api/delete-team', { clientId, teamId })
+          }
+        />
       )}
 
       {/* 3. ACTIVE GAME CONTROLLER PANEL */}
