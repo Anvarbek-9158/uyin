@@ -48,6 +48,10 @@ import {
   publicUser,
   verifyPassword,
 } from './src/server/auth.js';
+import {
+  SEED_QUESTIONS_BY_EMAIL,
+  isProEmail,
+} from './src/data/proSeedQuestions.js';
 
 const app = express();
 
@@ -456,6 +460,32 @@ function authError(res: Response, status: number, code: string, message: string)
   res.status(status).json({ success: false, code, message });
 }
 
+// Resolve the logged-in ACCOUNT behind this request. The teacher console sends
+// the account's auth token in the `x-auth-token` header (separate from the
+// per-game `Authorization` session token). Questions live per-account, so these
+// endpoints resolve the account to find the right question bank. Returns null
+// for anonymous callers (including all unit tests, which use clientIds only).
+async function resolveAccountUser(req: Request): Promise<UserRecord | null> {
+  const token = (req.headers['x-auth-token'] || '').toString();
+  if (!token || !looksLikeSessionToken(token)) return null;
+  const session = await store.getAuthSession(token);
+  return session?.user ?? null;
+}
+
+// Question bank that seeds a new game for the caller. Teachers get their OWN
+// account bank (seeded once from the curated starter set when it was never
+// initialized; empty for everyone else — they create their own questions).
+// Anonymous callers (unit tests, legacy no-account flows) keep the shared bank.
+async function teacherQuestionBank(req: Request): Promise<Question[]> {
+  const account = await resolveAccountUser(req);
+  if (!account) return store.loadQuestions();
+  const own = await store.getUserQuestions(account.id);
+  if (own !== null) return own;
+  const seeded = SEED_QUESTIONS_BY_EMAIL[account.email] ?? [];
+  await store.saveUserQuestions(account.id, seeded);
+  return seeded;
+}
+
 app.post('/api/auth/signup', ah(async (req, res) => {
   // Signup is rate-limited per IP: a bot must not be able to create unbounded
   // throwaway accounts.
@@ -508,6 +538,7 @@ app.post('/api/auth/signup', ah(async (req, res) => {
     email,
     role: role as 'teacher' | 'student',
     passwordHash: hashPassword(password),
+    plan: isProEmail(email) ? 'pro' : 'free',
     createdAt: Date.now(),
   };
 
@@ -585,6 +616,18 @@ app.post('/api/auth/login', ah(async (req, res) => {
         : 'Bu akkount o\'qituvchi uchun ro\'yxatdan o\'tgan! O\'qituvchi tizimiga kiring.'
     );
     return;
+  }
+
+  // Reserved accounts get the 'pro' plan (and keep it) no matter how/when they
+  // were registered. The update is best-effort so a storage hiccup never blocks
+  // a valid login.
+  if (isProEmail(email) && user.plan !== 'pro') {
+    user.plan = 'pro';
+    try {
+      await store.updateUser(user);
+    } catch {
+      // keep the in-memory override; the stored record is fixed next login
+    }
   }
 
   const token = mintAuthToken();
@@ -708,7 +751,9 @@ app.post('/api/create-game', ah(async (req, res) => {
   }
 
   const pin = await generateUniquePin();
-  const initialQuestions = await store.loadQuestions();
+  // Per-account bank: the logged-in teacher's OWN questions (seeded for the
+  // reserved PRO accounts, empty otherwise — never another account's).
+  const initialQuestions = await teacherQuestionBank(req);
   const newGame: GameSession = {
     pin,
     teacherClientId: clientId,
@@ -1278,7 +1323,15 @@ app.post('/api/set-questions', ah(async (req, res) => {
     game.questions = questions;
     game.currentQuestionIndex = 0;
     game.timerSeconds = questions[0]?.timeLimit || 30;
-    await store.saveQuestions(questions);
+    // Persist to the teacher's OWN account bank when the request carries an
+    // account token (per-account isolation); anonymous callers (unit tests,
+    // legacy flows) keep using the shared bank.
+    const account = await resolveAccountUser(req);
+    if (account) {
+      await store.saveUserQuestions(account.id, questions);
+    } else {
+      await store.saveQuestions(questions);
+    }
     return { ok: true, game };
   });
 
@@ -1855,7 +1908,7 @@ app.post('/api/reset-game', ah(async (req, res) => {
 
   // Generate NEW PIN Code
   const newPin = await generateUniquePin();
-  const resetQuestions = await store.loadQuestions();
+  const resetQuestions = await teacherQuestionBank(req);
 
   const newGame: GameSession = {
     pin: newPin,

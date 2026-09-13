@@ -40,10 +40,11 @@ export function verifyPassword(password: string, stored: string): boolean {
   }
 }
 
-// Public-safe projection: never send the hash to the browser.
+// Public-safe projection: never send the hash to the browser. Legacy account
+// records (created before plans existed) lack a `plan`; they are 'free'.
 export function publicUser(user: UserRecord): Omit<UserRecord, 'passwordHash'> {
   const { passwordHash: _hash, ...rest } = user;
-  return rest;
+  return { ...rest, plan: user.plan === 'pro' ? 'pro' : 'free' };
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

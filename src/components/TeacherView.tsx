@@ -8,6 +8,7 @@ import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { Modal } from './ui/Modal';
 import { useLang, getQuestionInLanguage, translateDiplicity, Language } from '../i18n';
 import {
@@ -34,6 +35,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onPinUpdated,
 }) => {
   const { lang, t } = useLang();
+  const { user } = useAuth();
+  const isPro = user?.plan === 'pro';
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [newQuestionText, setNewQuestionText] = useState('');
@@ -82,6 +85,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         <h2 className="text-2xl font-black text-white mb-2">
           {t('nav_teacher_console')}
         </h2>
+        {isPro && (
+          <span className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-xs font-black tracking-widest text-slate-950 shadow-lg shadow-amber-500/30 mb-4">
+            {t('tv_pro_badge')}
+          </span>
+        )}
         <p className="text-slate-400 text-sm max-w-md mb-6">
           {t('tv_empty_create_sub')}
         </p>
@@ -387,9 +395,16 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
-            <h3 className="font-bold text-white text-lg uppercase tracking-tight">
-              {t('tv_questions_bank')}
-            </h3>
+            <div className="flex items-center gap-2.5">
+              <h3 className="font-bold text-white text-lg uppercase tracking-tight">
+                {t('tv_questions_bank')}
+              </h3>
+              {isPro && (
+                <span className="rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-slate-950 shadow shadow-amber-500/30">
+                  {t('tv_pro_badge')}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400 font-mono">
               {t('tv_total_questions_prefix')}{questions.length}{t('tv_total_questions_suffix')}
             </p>

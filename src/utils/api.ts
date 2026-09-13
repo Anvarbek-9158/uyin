@@ -1,5 +1,9 @@
 const CLIENT_ID_KEY = 'rv_client_id';
 const SESSION_TOKEN_KEY = 'rv_session_token';
+// The account session token (email+password login) is stored by AuthContext
+// under this key. Attaching it on every call lets the server resolve the logged
+// in account and use its OWN question bank (per-account isolation).
+const ACCOUNT_TOKEN_KEY = 'eduplay-auth-token';
 
 export function getClientId(): string {
   let id = localStorage.getItem(CLIENT_ID_KEY);
@@ -38,7 +42,17 @@ export function setSessionToken(token: string | null): void {
 
 function authHeaders(): Record<string, string> {
   const token = getSessionToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const accountToken = (() => {
+    try {
+      return localStorage.getItem(ACCOUNT_TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  })();
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(accountToken ? { 'x-auth-token': accountToken } : {}),
+  };
 }
 
 export async function apiPost<T = { success: boolean }>(

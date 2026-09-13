@@ -58,13 +58,16 @@ export interface Question {
 
 // Real user account (email+password). Stored server-side only; the password
 // hash (scrypt) is never sent to clients. `role` decides whether the account
-// signs into the teacher console or the student side.
+// signs into the teacher console or the student side. `plan` reflects the
+// account's subscription tier (settings have no plan yet — only the teacher
+// console surfaces it); legacy records without a `plan` are treated as 'free'.
 export interface UserRecord {
   id: string;
   name: string;
   email: string; // stored lowercased
   role: 'teacher' | 'student';
   passwordHash: string; // scrypt$<salt>:<hex> produced by src/server/auth.ts
+  plan: 'free' | 'pro';
   createdAt: number;
 }
 

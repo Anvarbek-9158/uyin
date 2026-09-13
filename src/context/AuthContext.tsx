@@ -13,7 +13,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  plan: 'free' | 'monthly' | 'yearly';
+  plan: 'free' | 'pro';
 }
 
 export interface AuthInput {
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         const data = (await res.json()) as { success: boolean; user?: User };
         if (res.ok && data.success && data.user) {
-          const restored: User = { ...data.user, plan: 'free' };
+          const restored: User = { ...data.user, plan: data.user.plan ?? 'free' };
           setUser(restored);
           try {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
@@ -175,7 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: input.role,
     });
     if (res.ok && res.user && res.token) {
-      persist({ ...res.user, plan: 'free' }, res.token);
+      // Plan comes from the server (the account may be 'pro').
+      persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
     }
     return { ok: res.ok, code: res.code, message: res.message };
   };
@@ -188,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: input.role,
     });
     if (res.ok && res.user && res.token) {
-      persist({ ...res.user, plan: 'free' }, res.token);
+      persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
     }
     return { ok: res.ok, code: res.code, message: res.message };
   };

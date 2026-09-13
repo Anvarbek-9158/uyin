@@ -32,6 +32,10 @@ const KEYS = {
   teacher: (clientId: string) => `rv:teacher:${clientId}`,
   student: (clientId: string) => `rv:student:${clientId}`,
   questions: () => 'rv:questions',
+  // A teacher's OWN question bank (per-account isolation). Keyed by user id so
+  // one account can never see another account's questions. The plain
+  // `rv:questions` key above remains the shared fallback for anonymous use.
+  userQuestions: (userId: string) => `rv:questions:user:${userId}`,
   // Chat rooms. "private" rooms use the student's id as roomId (backward
   // compatible with pre-group keys); "group" rooms use "g:<teamId>".
   chat: (pin: string, roomId: string) => `rv:chat:${pin}:${roomId}`,
@@ -54,6 +58,7 @@ const memSessions = new Map<string, string>();
 const memRate = new Map<string, number[]>();
 const memUsers = new Map<string, UserRecord>();
 const memAuthSessions = new Map<string, { user: UserRecord; createdAt: number }>();
+const memUserQuestions = new Map<string, Question[]>();
 
 // Per-key promise-chain mutex for the in-memory backend.
 async function withMemLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
@@ -361,6 +366,21 @@ export async function createUser(record: UserRecord): Promise<boolean> {
   });
 }
 
+// Overwrite an existing account record (e.g. a plan upgrade applied at login).
+// Returns false when no account with this email exists.
+export async function updateUser(record: UserRecord): Promise<boolean> {
+  const key = KEYS.user(record.email);
+  if (redis) {
+    const res = await redis.set(key, JSON.stringify(record));
+    return res === 'OK';
+  }
+  return withMemLock(`user:${key}`, async () => {
+    if (!memUsers.has(key)) return false;
+    memUsers.set(key, record);
+    return true;
+  });
+}
+
 export async function setAuthSession(
   token: string,
   user: UserRecord
@@ -563,6 +583,37 @@ export async function saveQuestions(questions: Question[]): Promise<void> {
   } catch (err) {
     console.error('Error saving questions database:', err);
   }
+}
+
+// ------------------------------------------------------------
+// Per-account question banks (isolation).
+//
+// Every teacher account owns a private question bank. It is created lazily the
+// first time the teacher starts a game (seeded from a curated starter set for a
+// few reserved accounts, empty for everyone else), so one account can never see
+// another account's questions.
+// ------------------------------------------------------------
+export async function getUserQuestions(userId: string): Promise<Question[] | null> {
+  const key = KEYS.userQuestions(userId);
+  if (redis) {
+    const raw = await redis.get<Question[] | string>(key);
+    if (!raw) return null;
+    try {
+      return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch {
+      return null;
+    }
+  }
+  return memUserQuestions.get(key) ?? null;
+}
+
+export async function saveUserQuestions(userId: string, questions: Question[]): Promise<void> {
+  const key = KEYS.userQuestions(userId);
+  if (redis) {
+    await redis.set(key, JSON.stringify(questions));
+    return;
+  }
+  memUserQuestions.set(key, questions);
 }
 
 // ------------------------------------------------------------
