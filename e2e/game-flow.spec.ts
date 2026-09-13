@@ -1,4 +1,5 @@
 import {test, expect, type Browser, type Page, type BrowserContext} from '@playwright/test';
+import {loginOrSignupTeacher} from './auth';
 
 // ---------------------------------------------------------------------------
 // End-to-end flow: TEACHER + 2 STUDENT devices against a real, running dev server.
@@ -35,14 +36,8 @@ async function teacherLogin(browserContext: BrowserContext): Promise<Page> {
   // Destructive actions use an in-app confirm Modal (no native dialogs left);
   // auto-accept any stray native dialog defensively.
   page.on('dialog', (d) => d.accept());
-  await page.goto(`${baseURL()}/#/teacher/auth`);
-  // Switch to the "login" tab (fewer fields than signup).
-  await page.getByRole('button', {name: 'Kirish'}).click();
-  await page.getByPlaceholder('siz@misol.com').fill('teacher@eduplay.uz');
-  await page.getByPlaceholder('Kamida 6 belgi').fill('test-pass-123');
-  await page.getByTestId('auth-submit').click();
-  // AuthForm waits ~1.2s then navigates to the teacher console.
-  await page.waitForURL(/#\/game$/, {timeout: 20_000});
+  // Real-account sign-in: signs up on a fresh server, logs in otherwise.
+  await loginOrSignupTeacher(page);
   return page;
 }
 

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import helmet from 'helmet';
 import cors from 'cors';
 import type { Request, Response } from 'express';
@@ -10,6 +11,7 @@ import {
   Question,
   Student,
   Team,
+  UserRecord,
 } from './src/types.js';
 import * as store from './src/server/state.js';
 import {
@@ -23,13 +25,29 @@ import {
   CREATE_GAME_WINDOW_MS,
   JOIN_ATTEMPT_LIMIT,
   JOIN_ATTEMPT_WINDOW_MS,
+  LOGIN_ATTEMPT_LIMIT,
+  LOGIN_ATTEMPT_WINDOW_MS,
+  LOGIN_IP_ATTEMPT_LIMIT,
   PIN_LIFETIME_MS,
+  SIGNUP_ATTEMPT_LIMIT,
+  SIGNUP_ATTEMPT_WINDOW_MS,
   clientIp,
+  extractSessionToken,
   isPinExpired,
+  looksLikeSessionToken,
   requireTeacherAuth,
   respondAuthError,
   verifyChatClient,
 } from './src/server/security.js';
+import {
+  PASSWORD_MIN_LENGTH,
+  hashPassword,
+  isValidEmail,
+  mintAuthToken,
+  normalizeEmail,
+  publicUser,
+  verifyPassword,
+} from './src/server/auth.js';
 
 const app = express();
 
@@ -420,6 +438,181 @@ async function getStudentGame(clientId: string): Promise<{ pin: string; game: Ga
 // REST API: Health Check
 app.get('/api/health', ah(async (req, res) => {
   res.json({ status: 'ok', activeGames: await store.listActiveGames() });
+}));
+
+// ============================================================
+// Real account auth (email + password).
+//
+// Unlike the demo sign-in this actually creates a persistent user account
+// (stored in Redis on Vercel, in-memory locally), hashed with scrypt. Every
+// auth response carries a Bearer token that is checked by /api/auth/me on
+// every page load so sessions survive refreshes but can be revoked server-side
+// by logging out.
+// ============================================================
+
+const AUTH_ROLES = ['teacher', 'student'] as const;
+
+function authError(res: Response, status: number, code: string, message: string) {
+  res.status(status).json({ success: false, code, message });
+}
+
+app.post('/api/auth/signup', ah(async (req, res) => {
+  // Signup is rate-limited per IP: a bot must not be able to create unbounded
+  // throwaway accounts.
+  const rl = await store.checkRateLimit(
+    `auth:signup:${clientIp(req)}`,
+    SIGNUP_ATTEMPT_LIMIT,
+    SIGNUP_ATTEMPT_WINDOW_MS
+  );
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rl.retryAfterMs / 1000))));
+    authError(res, 429, 'rate_limited', 'Juda ko\'p ro\'yxatdan o\'tish urinishlari, biroz kuting!');
+    return;
+  }
+
+  const role = (req.body?.role || '').toString();
+  if (!AUTH_ROLES.includes(role as (typeof AUTH_ROLES)[number])) {
+    authError(res, 400, 'invalid_role', 'Rol (o\'qituvchi yoki o\'quvchi) noto\'g\'ri!');
+    return;
+  }
+
+  const name = (req.body?.name || '').toString().trim().slice(0, 64);
+  if (!name) {
+    authError(res, 400, 'invalid_name', 'Ism kiritilmadi!');
+    return;
+  }
+
+  const email = normalizeEmail((req.body?.email || '').toString());
+  if (!isValidEmail(email)) {
+    authError(res, 400, 'invalid_email', 'Elektron pochta manzili noto\'g\'ri!');
+    return;
+  }
+
+  const password = (req.body?.password || '').toString();
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    authError(res, 400, 'invalid_password', 'Parol kamida 8 belgidan iborat bo\'lishi shart!');
+    return;
+  }
+
+  // Race-safe unique check: createUser is atomic in both backends, so two
+  // concurrent signups with the same email cannot both succeed.
+  const exists = await store.getUserByEmail(email);
+  if (exists) {
+    authError(res, 409, 'email_taken', 'Ushbu elektron pochta bilan akkount allaqachon ro\'yxatdan o\'tgan!');
+    return;
+  }
+
+  const user: UserRecord = {
+    id: randomUUID(),
+    name,
+    email,
+    role: role as 'teacher' | 'student',
+    passwordHash: hashPassword(password),
+    createdAt: Date.now(),
+  };
+
+  const created = await store.createUser(user);
+  if (!created) {
+    authError(res, 409, 'email_taken', 'Ushbu elektron pochta bilan akkount allaqachon ro\'yxatdan o\'tgan!');
+    return;
+  }
+
+  const token = mintAuthToken();
+  await store.setAuthSession(token, user);
+
+  console.log(`Yangi akkount ro'yxatdan o'tdi: ${user.email} (${user.role})`);
+  res.json({ success: true, user: publicUser(user), token });
+}));
+
+app.post('/api/auth/login', ah(async (req, res) => {
+  const email = normalizeEmail((req.body?.email || '').toString());
+  const password = (req.body?.password || '').toString();
+  const role = (req.body?.role || '').toString();
+
+  // Generic message for "no such account" AND "wrong password" so a login
+  // endpoint cannot be used to enumerate which emails exist.
+  const invalid = () =>
+    authError(res, 401, 'invalid_credentials', 'Elektron pochta yoki parol noto\'g\'ri!');
+
+  if (!isValidEmail(email) || !password) {
+    invalid();
+    return;
+  }
+
+  const user = await store.getUserByEmail(email);
+
+  // Throttle FAILED attempts only (a successful login never locks anyone out,
+  // so a shared classroom IP is not punished). Both the known email AND the
+  // caller's IP share a budget, cutting off password guessing on one email
+  // AND enumeration across many emails from a single source.
+  const applyPenalty = async (): Promise<boolean> => {
+    const rlEmail = await store.checkRateLimit(
+      `auth:login:${email}`,
+      LOGIN_ATTEMPT_LIMIT,
+      LOGIN_ATTEMPT_WINDOW_MS
+    );
+    const rlIp = await store.checkRateLimit(
+      `auth:login:ip:${clientIp(req)}`,
+      LOGIN_IP_ATTEMPT_LIMIT,
+      LOGIN_ATTEMPT_WINDOW_MS
+    );
+    if (!rlEmail.allowed || !rlIp.allowed) {
+      const retryAfterMs = Math.max(rlEmail.retryAfterMs, rlIp.retryAfterMs);
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil(retryAfterMs / 1000))));
+      authError(res, 429, 'rate_limited', 'Juda ko\'p kirish urinishlari, biroz kuting!');
+      return false;
+    }
+    return true;
+  };
+
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    await applyPenalty();
+    invalid();
+    return;
+  }
+
+  if (role && role !== user.role) {
+    // Wrong role is a genuine attempt at a real account: it counts against the
+    // budget like any other rejected login, but the answer stays informative.
+    await applyPenalty();
+    if (res.headersSent) return;
+    authError(
+      res,
+      403,
+      'role_mismatch',
+      role === 'teacher'
+        ? 'Bu akkount o\'quvchi uchun ro\'yxatdan o\'tgan! O\'quvchi tizimiga kiring.'
+        : 'Bu akkount o\'qituvchi uchun ro\'yxatdan o\'tgan! O\'qituvchi tizimiga kiring.'
+    );
+    return;
+  }
+
+  const token = mintAuthToken();
+  await store.setAuthSession(token, user);
+
+  res.json({ success: true, user: publicUser(user), token });
+}));
+
+app.get('/api/auth/me', ah(async (req, res) => {
+  const token = extractSessionToken(req);
+  if (!token || !looksLikeSessionToken(token)) {
+    authError(res, 401, 'not_authenticated', 'Tizimga kirmagansiz!');
+    return;
+  }
+  const session = await store.getAuthSession(token);
+  if (!session) {
+    authError(res, 401, 'not_authenticated', 'Sessiya muddati tugagan, qayta kiring!');
+    return;
+  }
+  res.json({ success: true, user: publicUser(session.user) });
+}));
+
+app.post('/api/auth/logout', ah(async (req, res) => {
+  const token = extractSessionToken(req);
+  if (token && looksLikeSessionToken(token)) {
+    await store.deleteAuthSession(token);
+  }
+  res.json({ success: true });
 }));
 
 // REST API: Fetch authoritative game state for a teacher or student client.

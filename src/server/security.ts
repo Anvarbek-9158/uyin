@@ -36,6 +36,21 @@ export const CREATE_GAME_LIMIT = Number(process.env.CREATE_GAME_LIMIT ?? 120);
 export const CREATE_GAME_WINDOW_MS =
   (Number(process.env.CREATE_GAME_WINDOW_MINUTES) || 10) * 60 * 1000;
 
+// Auth (account) rate limits. Login is attempted with a known email by
+// definition, so it must be throttled per email AND per IP to stop password
+// guessing and email-enumeration floods. The per-IP budget is a multiple of the
+// per-email budget: a shared address (school/office NAT, library) with several
+// real users must not be locked out by a few genuine mistakes, while one email
+// being hammered stays tightly bounded. Signup is throttled per IP so a bot
+// cannot create unbounded throwaway accounts. Env-overridable like the others.
+export const LOGIN_ATTEMPT_LIMIT = Number(process.env.LOGIN_ATTEMPT_LIMIT ?? 8);
+export const LOGIN_ATTEMPT_WINDOW_MS =
+  (Number(process.env.LOGIN_ATTEMPT_WINDOW_MINUTES) || 15) * 60 * 1000;
+export const LOGIN_IP_ATTEMPT_LIMIT = Math.max(LOGIN_ATTEMPT_LIMIT, LOGIN_ATTEMPT_LIMIT * 4);
+export const SIGNUP_ATTEMPT_LIMIT = Number(process.env.SIGNUP_ATTEMPT_LIMIT ?? 10);
+export const SIGNUP_ATTEMPT_WINDOW_MS =
+  (Number(process.env.SIGNUP_ATTEMPT_WINDOW_MINUTES) || 60) * 60 * 1000;
+
 // Hard lifetime of a game PIN. After this many milliseconds from creation the
 // PIN stops accepting joins (treated exactly like "no such game"), which (a)
 // bounds the window in which the 6-digit PIN can be brute-forced and (b) stops

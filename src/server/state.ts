@@ -2,7 +2,7 @@ import { Redis } from '@upstash/redis';
 import fs from 'fs';
 import path from 'path';
 import { randomBytes, timingSafeEqual } from 'crypto';
-import { ChatMessage, GameSession, Question } from '../types.js';
+import { ChatMessage, GameSession, Question, UserRecord } from '../types.js';
 import { DEFAULT_QUESTIONS } from '../data/defaultQuestions.js';
 
 // ============================================================
@@ -37,6 +37,9 @@ const KEYS = {
   chat: (pin: string, roomId: string) => `rv:chat:${pin}:${roomId}`,
   session: (clientId: string) => `rv:session:${clientId}`,
   rateLimit: (key: string) => `rv:rl:${key}`,
+  // User accounts (email-indexed, lowercased) and auth sessions (token-indexed).
+  user: (email: string) => `rv:user:${email}`,
+  authSession: (token: string) => `rv:auth:${token}`,
 };
 
 // ------------------------------------------------------------
@@ -49,6 +52,8 @@ const memLocks = new Map<string, Promise<unknown>>();
 const memChats = new Map<string, ChatMessage[]>();
 const memSessions = new Map<string, string>();
 const memRate = new Map<string, number[]>();
+const memUsers = new Map<string, UserRecord>();
+const memAuthSessions = new Map<string, { user: UserRecord; createdAt: number }>();
 
 // Per-key promise-chain mutex for the in-memory backend.
 async function withMemLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
@@ -286,6 +291,113 @@ export async function deleteSessionToken(clientId: string): Promise<void> {
     return;
   }
   memSessions.delete(key);
+}
+
+// ------------------------------------------------------------
+// User accounts (real name+email+password auth).
+//
+// Accounts are keyed by the lowercased email. The stored record carries the
+// scrypt password hash (never the plaintext), so even a Redis dump cannot
+// reveal passwords. Accounts are persistent: unlike game state they do NOT
+// expire, so a signup survives for the next login.
+// ------------------------------------------------------------
+
+// Auth sessions live far longer than the per-game client tokens and are minted
+// only by the /api/auth/* endpoints. The token is the same unguessable 64-char
+// hex format as the game session tokens, so it is stored/compared identically.
+export const AUTH_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+
+export async function getUserByEmail(email: string): Promise<UserRecord | null> {
+  const key = KEYS.user(email);
+  if (redis) {
+    const raw = await redis.get<UserRecord | string>(key);
+    if (!raw) return null;
+    try {
+      return typeof raw === 'string' ? (JSON.parse(raw) as UserRecord) : raw;
+    } catch {
+      return null;
+    }
+  }
+  return memUsers.get(key) ?? null;
+}
+
+export async function getUserById(id: string): Promise<UserRecord | null> {
+  // Looking up by id requires a scan; the /me endpoint resolves id -> account
+  // through the auth session (which embeds the full record), so this is only
+  // used for self-contained lookups and cost is acceptable.
+  const emails = (await redis?.keys(`${KEYS.user('*')}`)) as string[] | undefined;
+  if (emails && emails.length > 0) {
+    for (const key of emails) {
+      const raw = await redis?.get<UserRecord | string>(key);
+      if (!raw) continue;
+      try {
+        const rec = typeof raw === 'string' ? (JSON.parse(raw) as UserRecord) : raw;
+        if (rec.id === id) return rec;
+      } catch {
+        // skip corrupt entry
+      }
+    }
+    return null;
+  }
+  for (const rec of memUsers.values()) {
+    if (rec.id === id) return rec;
+  }
+  return null;
+}
+
+// Create a user account. Returns false when an account with this email already
+// exists (the write is atomic: on Redis via SET NX, in memory by a mutexed
+// check-and-set) so two racing signups cannot both succeed.
+export async function createUser(record: UserRecord): Promise<boolean> {
+  const key = KEYS.user(record.email);
+  if (redis) {
+    const res = await redis.set(key, JSON.stringify(record), { nx: true });
+    return res === 'OK';
+  }
+  return withMemLock(`user:${key}`, async () => {
+    if (memUsers.has(key)) return false;
+    memUsers.set(key, record);
+    return true;
+  });
+}
+
+export async function setAuthSession(
+  token: string,
+  user: UserRecord
+): Promise<void> {
+  const key = KEYS.authSession(token);
+  if (redis) {
+    await redis.set(key, JSON.stringify({ user, createdAt: Date.now() }), {
+      ex: AUTH_SESSION_TTL_SECONDS,
+    });
+    return;
+  }
+  memAuthSessions.set(key, { user, createdAt: Date.now() });
+}
+
+export async function getAuthSession(
+  token: string
+): Promise<{ user: UserRecord; createdAt: number } | null> {
+  const key = KEYS.authSession(token);
+  if (redis) {
+    const raw = await redis.get<{ user: UserRecord; createdAt: number } | string>(key);
+    if (!raw) return null;
+    try {
+      return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch {
+      return null;
+    }
+  }
+  return memAuthSessions.get(key) ?? null;
+}
+
+export async function deleteAuthSession(token: string): Promise<void> {
+  const key = KEYS.authSession(token);
+  if (redis) {
+    await redis.del(key);
+    return;
+  }
+  memAuthSessions.delete(key);
 }
 
 // ------------------------------------------------------------

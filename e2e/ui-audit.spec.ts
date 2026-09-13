@@ -1,4 +1,5 @@
 ﻿import {test, expect, type Page} from '@playwright/test';
+import {loginOrSignupTeacher} from './auth';
 
 // ---------------------------------------------------------------------------
 // UI/UX audit вЂ” captures full-page screenshots at the 3 main breakpoints and
@@ -66,12 +67,7 @@ async function audit(page: Page, label: string): Promise<Anomaly[]> {
 }
 
 async function loginTeacher(page: Page): Promise<void> {
-  await page.goto(`${baseURL()}/#/teacher/auth`);
-  await page.getByRole('button', {name: 'Kirish'}).click();
-  await page.getByPlaceholder('siz@misol.com').fill('teacher@eduplay.uz');
-  await page.getByPlaceholder('Kamida 6 belgi').fill('test-pass-123');
-  await page.getByTestId('auth-submit').click();
-  await page.waitForURL(/#\/game$/, {timeout: 20_000});
+  await loginOrSignupTeacher(page);
   await expect(page.getByTestId('pin-value')).toHaveText(/^\d{6}$/, {timeout: 20_000});
 }
 

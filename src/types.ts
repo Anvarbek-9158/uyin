@@ -56,6 +56,22 @@ export interface Question {
   }>;
 }
 
+// Real user account (email+password). Stored server-side only; the password
+// hash (scrypt) is never sent to clients. `role` decides whether the account
+// signs into the teacher console or the student side.
+export interface UserRecord {
+  id: string;
+  name: string;
+  email: string; // stored lowercased
+  role: 'teacher' | 'student';
+  passwordHash: string; // scrypt$<salt>:<hex> produced by src/server/auth.ts
+  createdAt: number;
+}
+
+// Minimum password length, shared by the client form (minLength + hints) and
+// the server signup validator (single source of truth).
+export const PASSWORD_MIN_LENGTH = 8;
+
 export type GamePhase =
   | 'LOBBY'            // Students joining, PIN active
   | 'TEAMS_SETUP'     // Teacher organizing students into teams & leaders
