@@ -54,7 +54,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -165,18 +165,18 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                             {t('qsm_question')}{originalIndex + 1}
                           </span>
 
-                          <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadgeClass}`}>
+                          <span className={`text-xs px-2 py-1 rounded border font-bold uppercase ${diffBadgeClass}`}>
                             {translateDiplicity(diff, lang)}
                           </span>
 
                           {q.category && (
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                            <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
                               <Tag className="w-3 h-3 text-slate-500" />
                               {translateCategory(q.category, lang)}
                             </span>
                           )}
 
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                          <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
                             <Clock className="w-3 h-3 text-slate-500" />
                             {q.timeLimit} {t('qsm_seconds')}
                           </span>
@@ -186,7 +186,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                           {qq.text}
                         </p>
 
-                        <div className="text-[11px] text-slate-500 font-mono italic">
+                        <div className="text-xs text-slate-500 font-mono italic">
                           {t('qsm_hidden')}
                         </div>
                       </div>

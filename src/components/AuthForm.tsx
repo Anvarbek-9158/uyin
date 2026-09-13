@@ -12,11 +12,6 @@ export interface AuthFormProps {
   accent: 'indigo' | 'emerald';
 }
 
-const roleLabel: Record<Role, string> = {
-  teacher: 'O‘qituvchi',
-  student: 'O‘quvchi',
-};
-
 export default function AuthForm({role, accent}: AuthFormProps) {
   const navigate = useNavigate();
   const {t} = useLang();
@@ -27,6 +22,8 @@ export default function AuthForm({role, accent}: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const resolvedRole = role === 'teacher' ? t('auth_role_teacher') : t('auth_role_student');
 
   const primary =
     accent === 'indigo'
@@ -78,7 +75,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
 
   const done = (provider: Provider, socialLabel?: string) => {
     const resolvedName =
-      name.trim() || (socialLabel ? `${roleLabel[role]} (${socialLabel})` : roleLabel[role]);
+      name.trim() || (socialLabel ? `${resolvedRole} (${socialLabel})` : resolvedRole);
     login({
       name: resolvedName,
       email: email.trim() || `${resolvedName.toLowerCase().replace(/\s+/g, '.')}@eduplay.uz`,
@@ -120,7 +117,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
 
       <div className="p-6 sm:p-8">
         <div className="mb-5 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-          <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+          <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-black uppercase tracking-wider text-white">
             {t('auth_demo_badge')}
           </span>
           <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
@@ -137,14 +134,14 @@ export default function AuthForm({role, accent}: AuthFormProps) {
               {t('auth_success_title')}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {t('auth_success_sub').replace('{role}', roleLabel[role])}
+              {t('auth_success_sub').replace('{role}', resolvedRole)}
             </p>
           </div>
         ) : (
           <>
             <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {roleLabel[role]} {t('auth_login')}
+                {resolvedRole} {t('auth_login')}
               </h2>
               <p className="mt-1 text-slate-500 dark:text-slate-400">
                 {mode === 'signup' ? t('auth_create_account') : t('auth_login_to_account')}
@@ -155,18 +152,18 @@ export default function AuthForm({role, accent}: AuthFormProps) {
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
                   mode === 'signup'
                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                     : 'text-slate-500 dark:text-slate-400'
                 }`}
-              >
+>
                 {t('auth_signup')}
               </button>
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
                   mode === 'login'
                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                     : 'text-slate-500 dark:text-slate-400'
@@ -183,7 +180,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSocial(s.id, s.label)}
-                  className="inline-flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  className="inline-flex h-10 items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {s.svg}
                   {(mode === 'signup' ? t('auth_via_signup') : t('auth_via_login')).replace(
@@ -260,7 +257,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                 type="submit"
                 data-testid="auth-submit"
                 disabled={busy}
-                className={`mt-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
+                className={`mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {mode === 'signup' ? t('auth_submit_signup') : t('auth_submit_login')}

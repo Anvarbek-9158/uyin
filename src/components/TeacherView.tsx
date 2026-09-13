@@ -8,6 +8,7 @@ import { QuestionSelectModal } from './QuestionSelectModal';
 import { FeedbackListModal } from './FeedbackListModal';
 import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
+import { Modal } from './ui/Modal';
 import { useLang, getQuestionInLanguage, translateDiplicity, Language } from '../i18n';
 import {
   Shield,
@@ -15,7 +16,6 @@ import {
   XCircle,
   Trash2,
   Check,
-  AlertTriangle,
 } from 'lucide-react';
 
 interface TeacherViewProps {
@@ -50,10 +50,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // Difficulty & Question Selection Modal states
   const [activeDbDifficultyTab, setActiveDbDifficultyTab] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
   const [isQuestionSelectModalOpen, setIsQuestionSelectModalOpen] = useState(false);
-  const [modalDifficultyTab, setModalDifficultyTab] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
 
-  // Deletion confirm states
-  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  // Unified in-app confirm/alert dialog (replaces window.confirm/window.alert).
+  type ConfirmState =
+    | { kind: 'reconnect'; student: Student }
+    | { kind: 'regenerate-pin' }
+    | { kind: 'reset-game' }
+    | { kind: 'end-game' }
+    | { kind: 'stop-keep-teams' }
+    | { kind: 'delete-all' }
+    | { kind: 'alert'; message: string };
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+
+  // Inline per-question delete confirmation index
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
 
   // Feedback Modal State
@@ -118,25 +127,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const handleReconnectStudent = (studentId: string) => {
     const student = gameState?.students?.[studentId];
     if (!student) return;
-    if (
-      !window.confirm(
-        `"${student.name}" ${t('tv_conn_reason_prefix')}`
-      )
-    ) {
-      return;
-    }
-    apiPost('/api/reconnect-student', { clientId, studentId });
+    setConfirmState({ kind: 'reconnect', student });
   };
 
   // Regenerate the game PIN with one click: every student is kicked out and
   // must re-join with the fresh PIN, while teams and their scores are kept
   // (QISM E).
-  const handleRegeneratePin = async () => {
-    if (
-      !window.confirm(t('tv_pin_regenerate_confirm'))
-    ) {
-      return;
-    }
+  const handleRegeneratePin = () => {
+    setConfirmState({ kind: 'regenerate-pin' });
+  };
+
+  const doRegeneratePin = async () => {
     const res = await apiPost<{ success: boolean; pin?: string; message?: string; game?: GameSession }>(
       '/api/regenerate-pin',
       { clientId }
@@ -144,7 +145,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (res?.success && res.game) {
       onPinUpdated(res.game);
     } else {
-      window.alert(res?.message || t('tv_pin_error'));
+      setConfirmState({ kind: 'alert', message: res?.message || t('tv_pin_error') });
     }
   };
 
@@ -183,10 +184,123 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const handleDeleteAllQuestions = () => {
     if (questions.length === 0) return;
     apiPost('/api/set-questions', { clientId, questions: [] });
-    setConfirmDeleteAll(false);
+    setConfirmState(null);
   };
 
   const feedbacks = gameState.feedbacks || [];
+
+  // Map the current confirm state to the shared Modal dialog.
+  const renderConfirmModal = () => {
+    if (!confirmState) return null;
+
+    const close = () => setConfirmState(null);
+
+    switch (confirmState.kind) {
+      case 'reconnect':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('confirm_action')}
+            message={`"${confirmState.student.name}" ${t('tv_conn_reason_prefix')}`}
+            confirmLabel={t('confirm_action')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={() => {
+              apiPost('/api/reconnect-student', { clientId, studentId: confirmState.student.id });
+              close();
+            }}
+          />
+        );
+      case 'regenerate-pin':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('confirm_action')}
+            message={t('tv_pin_regenerate_confirm')}
+            confirmLabel={t('confirm_action')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={() => {
+              doRegeneratePin();
+            }}
+          />
+        );
+      case 'reset-game':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('confirm_action')}
+            message={t('tv_new_game_confirm')}
+            confirmLabel={t('confirm_action')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={() => {
+              onResetGame();
+              close();
+            }}
+          />
+        );
+      case 'end-game':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('confirm_action')}
+            message={t('tv_end_game_confirm')}
+            confirmLabel={t('confirm_action')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={() => {
+              apiPost('/api/end-game-and-announce-winners', { clientId });
+              close();
+            }}
+          />
+        );
+      case 'stop-keep-teams':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('confirm_action')}
+            message={t('tv_stop_keep_teams_confirm')}
+            confirmLabel={t('confirm_action')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={() => {
+              apiPost('/api/reset-game-keep-teams', { clientId });
+              close();
+            }}
+          />
+        );
+      case 'delete-all':
+        return (
+          <Modal
+            open
+            variant="danger"
+            title={t('tv_delete_all_title')}
+            message={`${t('tv_delete_all_confirm_prefix')}${questions.length}${t('tv_delete_all_confirm_suffix')}`}
+            confirmLabel={t('tv_delete_confirm_btn')}
+            cancelLabel={t('cancel_action')}
+            onCancel={close}
+            onConfirm={handleDeleteAllQuestions}
+          />
+        );
+      case 'alert':
+        return (
+          <Modal
+            open
+            title={t('tv_pin_error')}
+            message={confirmState.message}
+            confirmLabel={t('close')}
+            onCancel={close}
+            onConfirm={close}
+          />
+        );
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -203,11 +317,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         }}
         onOpenFeedback={() => setIsFeedbackModalOpen(true)}
         onRegeneratePin={handleRegeneratePin}
-        onResetGame={() => {
-          if (window.confirm(t('tv_new_game_confirm'))) {
-            onResetGame();
-          }
-        }}
+        onResetGame={() => setConfirmState({ kind: 'reset-game' })}
       />
 
       {/* 2. GAME SETUP & TEAM DISTRIBUTION PHASE */}
@@ -261,16 +371,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           onStopAnswering={() => apiPost('/api/stop-answering-phase', { clientId })}
           onFinishRound={() => apiPost('/api/finish-round', { clientId })}
           onNextQuestion={() => setIsQuestionSelectModalOpen(true)}
-          onEndGame={() => {
-            if (window.confirm(t('tv_end_game_confirm'))) {
-              apiPost('/api/end-game-and-announce-winners', { clientId });
-            }
-          }}
-          onStopKeepTeams={() => {
-            if (window.confirm(t('tv_stop_keep_teams_confirm'))) {
-              apiPost('/api/reset-game-keep-teams', { clientId });
-            }
-          }}
+          onEndGame={() => setConfirmState({ kind: 'end-game' })}
+          onStopKeepTeams={() => setConfirmState({ kind: 'stop-keep-teams' })}
           onNewRound={() => apiPost('/api/reset-game-keep-teams', { clientId })}
           onPenalizeTeam={(teamId) =>
             apiPost('/api/penalize-team', { clientId, teamId, points: 5, reason: 'shovqin qilgani uchun' })
@@ -296,8 +398,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {questions.length > 0 && (
               <button
-                onClick={() => setConfirmDeleteAll(true)}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold uppercase tracking-wider transition-all"
+                onClick={() => setConfirmState({ kind: 'delete-all' })}
+                className="flex h-10 items-center justify-center gap-1.5 px-3.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold uppercase tracking-wider transition-all"
                 title="Barcha savollarni bazadan o'chirish"
               >
                 <Trash2 className="w-4 h-4 text-rose-400" />
@@ -308,7 +410,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               data-testid="add-question-btn"
               onClick={() => setShowAddQuestion(!showAddQuestion)}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
+              className="flex h-10 items-center justify-center gap-1.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
             >
               <Plus className="w-4 h-4" /> {t('tv_add_question')}
             </button>
@@ -319,7 +421,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {showAddQuestion && (
           <form onSubmit={handleAddQuestion} className="p-5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-4">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
                 {t('tv_question_text')}
               </label>
               <input
@@ -387,7 +489,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
                   {t('tv_correct_answer_label')}
                 </label>
                 <input
@@ -402,7 +504,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
                   {t('tv_time_limit')}
                 </label>
                 <input
@@ -418,7 +520,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
             {/* Difficulty Level Input */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
                 {t('tv_difficulty')}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -462,14 +564,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddQuestion(false)}
-                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs uppercase font-bold"
+                className="h-10 px-4 rounded-xl text-slate-400 hover:text-white text-xs uppercase font-bold"
               >
                 {t('cancel')}
               </button>
               <button
                 type="submit"
                 data-testid="q-save"
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)]"
+                className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)]"
               >
                 {t('save')}
               </button>
@@ -483,7 +585,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">{t('tv_filter')}</span>
             <button
               onClick={() => setActiveDbDifficultyTab('Barchasi')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Barchasi'
                   ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.4)]'
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
@@ -493,7 +595,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Oson')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Oson'
                   ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
@@ -503,7 +605,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab("O'rta")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === "O'rta"
                   ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
@@ -513,7 +615,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Qiyin')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Qiyin'
                   ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50'
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
@@ -528,7 +630,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {questions.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400 space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-300">{t('tv_bank_empty')}</p>
-            <p className="text-[11px] text-slate-500 font-mono">{t('tv_bank_empty_sub')}</p>
+            <p className="text-xs text-slate-500 font-mono">{t('tv_bank_empty_sub')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
@@ -564,45 +666,45 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       </span>
 
                       <div className="flex items-center gap-1.5">
-                        <span className={`text-[11px] px-2 py-0.5 rounded border font-bold uppercase ${diffBadge}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded border font-bold uppercase ${diffBadge}`}>
                           {diff === 'Oson' && `🟢 ${translateDiplicity('Oson', lang)}`}
                           {diff === "O'rta" && `🟡 ${translateDiplicity("O'rta", lang)}`}
                           {diff === 'Qiyin' && `🔴 ${translateDiplicity('Qiyin', lang)}`}
                         </span>
 
                         {isNoOpt ? (
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold uppercase">
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold uppercase">
                             {t('tv_variantless')}
                           </span>
                         ) : (
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
+                          <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
                             {t('tv_test_label')} ({(q.options ?? []).length}{t('tv_variant_unit')})
                           </span>
                         )}
 
                         {/* Delete single question button */}
                         {confirmDeleteIndex === idx ? (
-                          <div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 rounded-lg">
-                            <span className="text-[11px] text-rose-300 font-bold uppercase">{t('tv_delete_confirm')}</span>
+<div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-1 rounded-lg">
+                            <span className="text-xs text-rose-300 font-bold uppercase">{t('tv_delete_confirm')}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteQuestion(idx);
                               }}
-                              className="p-1 rounded bg-rose-600 text-white hover:bg-rose-500"
+                              className="h-10 w-10 rounded bg-rose-600 text-white hover:bg-rose-500 flex items-center justify-center"
                               title={t('tv_yes')}
                             >
-                              <Check className="w-3 h-3" />
+                              <Check className="w-4 h-4" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setConfirmDeleteIndex(null);
                               }}
-                              className="p-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
+                              className="h-10 w-10 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center"
                               title={t('cancel')}
                             >
-                              <XCircle className="w-3 h-3" />
+                              <XCircle className="w-4 h-4" />
                             </button>
                           </div>
                         ) : (
@@ -611,7 +713,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               e.stopPropagation();
                               setConfirmDeleteIndex(idx);
                             }}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors"
+                            className="h-10 w-10 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors flex items-center justify-center"
                             title="Ushbu savolni o'chirish"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -627,41 +729,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         )}
       </div>
 
-      {/* Delete All Confirmation Modal */}
-      {confirmDeleteAll && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-rose-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center border border-rose-500/30">
-                <AlertTriangle className="w-5 h-5 text-rose-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-base uppercase tracking-tight">
-                  {t('tv_delete_all_title')}
-                </h3>
-                <p className="text-xs text-slate-400">
-                  {t('tv_delete_all_confirm_prefix')}{questions.length}{t('tv_delete_all_confirm_suffix')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setConfirmDeleteAll(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition-all"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleDeleteAllQuestions}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)]"
-              >
-                {t('tv_delete_confirm_btn')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Unified confirm/alert dialogs (replaces window.confirm/window.alert) */}
+      {renderConfirmModal()}
 
       {/* Question Selection Modal prior to Starting Game */}
       <QuestionSelectModal

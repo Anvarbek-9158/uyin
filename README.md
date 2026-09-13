@@ -1,4 +1,4 @@
-# EduPal — Taʼlim Platformasi
+# EduPlay — Taʼlim Platformasi
 
 Oʻqituvchi va oʻquvchi uchun moslashtirilgan taʼlim veb-sayti.
 

@@ -46,7 +46,7 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
         {/* PIN BOX & CUSTOM EDIT BUTTONS */}
         <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-4 sm:px-7 sm:py-4 rounded-3xl border-2 border-indigo-500/60 shadow-[0_0_30px_rgba(79,70,229,0.3)] w-full max-w-full sm:w-auto">
           <div className="text-center sm:text-left min-w-0">
-            <div className="text-[11px] sm:text-xs uppercase font-extrabold text-slate-400 tracking-widest">
+            <div className="text-xs uppercase font-extrabold text-slate-400 tracking-widest">
               {t('tv_pin_label')}
             </div>
             <div
@@ -64,7 +64,7 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
             <button
               onClick={onCopyStudentsLink}
               title={t('tv_students_link')}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-200 text-[11px] sm:text-xs font-extrabold border border-sky-500/50 transition-all uppercase tracking-wider cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-10 sm:px-3.5 sm:h-11 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 text-sky-200 text-xs font-extrabold border border-sky-500/50 transition-all uppercase tracking-wider cursor-pointer"
             >
               {studentsLinkCopied ? (
                 <Check className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -77,7 +77,7 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
             {/* FEEDBACK BUTTON */}
             <button
               onClick={onOpenFeedback}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-200 text-[11px] sm:text-xs font-extrabold border border-indigo-500/50 transition-all uppercase tracking-wider relative cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-10 sm:px-3.5 sm:h-11 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-200 text-xs font-extrabold border border-indigo-500/50 transition-all uppercase tracking-wider relative cursor-pointer"
             >
               <MessageSquare className="w-4 h-4 text-indigo-400 shrink-0" />
               <span>{t('tv_feedback')} ({feedbackCount})</span>
@@ -88,7 +88,7 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
 
             <button
               onClick={onRegeneratePin}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-[11px] sm:text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-10 sm:px-3.5 sm:h-11 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-200 text-xs font-extrabold border border-emerald-500/50 transition-all uppercase tracking-wider cursor-pointer"
             >
               <RefreshCw className="w-4 h-4 text-emerald-400 shrink-0" />
               {t('tv_regenerate_pin')}
@@ -97,7 +97,7 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
             {showResetGame && (
               <button
                 onClick={onResetGame}
-                className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] sm:text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
+                className="flex items-center gap-1.5 px-3 h-10 sm:px-3.5 sm:h-11 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-xs font-extrabold border border-rose-500/40 transition-all uppercase tracking-wider cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4 text-rose-400 shrink-0" />
                 {t('tv_new_game')}

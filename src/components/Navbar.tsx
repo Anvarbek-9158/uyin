@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Award, Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';import { useLang, Language } from '../i18n';
+import { Award, Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';
+import { useLang, Language } from '../i18n';
 
 interface NavbarProps {
   viewMode: 'LANDING' | 'TEACHER' | 'STUDENT';
@@ -71,11 +72,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-white">Edu</span>
                 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Play</span>
               </span>
-              <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hidden lg:inline-block shrink-0">
+              <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hidden lg:inline-block shrink-0">
                 {viewMode === 'TEACHER' ? t('nav_teacher_console') : t('nav_student_system')}
               </span>
             </div>
-            <p className="text-[10px] sm:text-xs text-slate-300 font-mono font-medium tracking-wide uppercase hidden md:block truncate">
+            <p className="text-xs text-slate-300 font-mono font-medium tracking-wide uppercase hidden md:block truncate">
               {t('nav_subtitle')}
             </p>
           </div>
@@ -85,10 +86,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         {pin && viewMode === 'TEACHER' && isTeacherAuth && (
           <button
             onClick={handleCopyPin}
-            className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.25)] transition-all cursor-pointer group shrink-0"
+            className="flex items-center gap-2 px-3 sm:px-4 h-10 sm:h-11 rounded-xl bg-slate-950 hover:bg-slate-800 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.25)] transition-all cursor-pointer group shrink-0"
             title={t('pin_code')}
           >
-            <span className="text-[11px] text-slate-300 uppercase font-extrabold tracking-wider hidden md:inline">
+            <span className="text-xs text-slate-300 uppercase font-extrabold tracking-wider hidden md:inline">
               {t('pin_code')}
             </span>
             <span className="font-mono font-black text-indigo-400 text-base sm:text-xl md:text-2xl tracking-widest">
@@ -116,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={onLogoutTeacher}
                   aria-label={t('login')}
-                  className="flex items-center gap-1.5 px-2.5 py-2 sm:px-3.5 sm:py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 text-[11px] sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer"
                   title={t('login')}
                 >
                   <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
@@ -131,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => setLangOpen((o) => !o)}
               aria-label={t('lang_select')}
-              className="flex items-center gap-1.5 px-2.5 py-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all border border-white/10 shrink-0 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all border border-white/10 shrink-0 cursor-pointer"
               title={t('lang_select')}
             >
               <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 shrink-0" />

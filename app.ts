@@ -34,36 +34,47 @@ import {
 const app = express();
 
 // Security headers: sensible defaults from helmet (X-Frame-Options,
-// X-Content-Type-Options, referrer policy, HSTS, etc.) plus an explicit
-// Content-Security-Policy. The UI renders with inline `style` attributes (e.g.
-// dynamic team colors and Tailwind utilities), so style-src must allow
-// 'unsafe-inline'. Scripts come from our own origin (Vite bundles) with the
-// anti-FOUC snippet inlined in index.html. connect-src allows same-origin API
-// calls plus the Pusher realtime endpoints.
+// X-Content-Type-Options, referrer policy, HSTS, etc.). In PRODUCTION we also
+// set an explicit Content-Security-Policy. No inline scripts are used in the
+// production bundle: the anti-FOUC theme snippet lives in /theme-init.js
+// (public/, same-origin), so script-src stays strictly 'self' — the strongest
+// position that blocks injected/inline script execution. style-src keeps
+// 'unsafe-inline' because the UI sets inline `style` attributes (dynamic team
+// colors and Tailwind utilities) at runtime. connect-src allows same-origin
+// API calls plus the Pusher realtime endpoints.
+//
+// In development the strict policy is disabled: the Vite dev server injects an
+// inline Fast-Refresh preamble and style modules into index.html, which a
+// `script-src 'self'` policy would block (breaking HMR). The e2e suite runs
+// against the dev server, so a dedicated unit test asserts the production CSP
+// header instead (tests/security.test.ts).
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        fontSrc: ["'self'", 'data:'],
-        connectSrc: [
-          "'self'",
-          'wss://ws-ap2.pusher.com',
-          'wss://ws.pusherapp.com',
-          'https://sockjs-ap2.pusher.com',
-          'http://sockjs-ap2.pusher.com',
-          'https://sockjs.pusherapp.com',
-          'http://sockjs.pusherapp.com',
-        ],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-        frameAncestors: ["'none'"],
-      },
-    },
+    contentSecurityPolicy:
+      process.env.NODE_ENV === 'production'
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'blob:'],
+              fontSrc: ["'self'", 'data:'],
+              connectSrc: [
+                "'self'",
+                'wss://ws-ap2.pusher.com',
+                'wss://ws.pusherapp.com',
+                'https://sockjs-ap2.pusher.com',
+                'http://sockjs-ap2.pusher.com',
+                'https://sockjs.pusherapp.com',
+                'http://sockjs.pusherapp.com',
+              ],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+              formAction: ["'self'"],
+              frameAncestors: ["'none'"],
+            },
+          }
+        : false,
   })
 );
 
@@ -539,10 +550,15 @@ app.post('/api/create-game', ah(async (req, res) => {
 app.post('/api/join-game', ah(async (req, res) => {
   const clientId = (req.body?.clientId || '').toString();
   const pin = (req.body?.pin || '').toString().trim();
-  const name = (req.body?.name || '').toString().trim();
+  const name = (req.body?.name || '').toString().trim().slice(0, 64);
 
   if (!clientId) {
     res.json({ success: false, message: 'clientId topilmadi!' });
+    return;
+  }
+
+  if (!name) {
+    res.json({ success: false, message: 'Ism kiritilmadi!' });
     return;
   }
 
@@ -690,7 +706,7 @@ app.post('/api/create-team', ah(async (req, res) => {
 
     const newTeam: Team = {
       id: teamId,
-      name: req.body?.name || `Guruh ${teamCount + 1}`,
+      name: (req.body?.name || `Guruh ${teamCount + 1}`).toString().slice(0, 64),
       color: teamColor,
       score: 100, // Initial score 100 points
       leaderClientId: null,
@@ -1726,8 +1742,11 @@ app.post('/api/update-pin', ah(async (req, res) => {
   const authError = await requireTeacherAuth(req, clientId);
   if (respondAuthError(res, authError)) return;
   const cleanPin = (req.body?.newPin || '').toString().trim().toUpperCase();
-  if (!cleanPin || cleanPin.length !== 6) {
-    res.json({ success: false, message: `O'yin PIN-kodi (paroli) rosa 6 xonali bo'lishi shart!` });
+  // PIN codes are store keys and channel suffixes: enforce a strict
+  // alphanumeric format so a malformed value can never act as an
+  // unexpected key/suffix (6 chars: 1 ~ million combinations).
+  if (!/^[A-Z0-9]{6}$/.test(cleanPin)) {
+    res.json({ success: false, message: `O'yin PIN-kodi (paroli) rosa 6 ta raqam yoki harfdan iborat bo'lishi shart!` });
     return;
   }
 
@@ -1997,8 +2016,8 @@ app.post('/api/submit-feedback', ah(async (req, res) => {
       studentId: clientId,
       studentName: student.name,
       teamName: team ? team.name : 'Guruhsiz',
-      rating: (req.body?.rating || "A'lo") as 'Yaxshi' | 'Yomon' | "A'lo",
-      comment: (req.body?.comment || '').toString().trim(),
+      rating: ['Yaxshi', 'Yomon', "A'lo"].includes(req.body?.rating) ? req.body?.rating : "A'lo",
+      comment: (req.body?.comment || '').toString().trim().slice(0, 1000),
       createdAt: Date.now(),
     };
 

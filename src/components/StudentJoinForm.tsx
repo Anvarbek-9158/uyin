@@ -34,7 +34,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
 
         {/* Top Bar inside Card */}
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5 relative z-20">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-white/5 text-[11px] font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-full bg-slate-800/80 text-slate-300 border border-white/5 text-xs font-bold uppercase tracking-wider inline-flex">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>{t('sv_student_system')}</span>
           </div>
@@ -43,7 +43,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
             <button
               type="button"
               onClick={onTeacherClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer hover:border-indigo-400 shadow-sm"
+              className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer hover:border-indigo-400 shadow-sm"
             >
               <Shield className="w-3.5 h-3.5 text-indigo-400" />
               <span>{t('sv_login_as_teacher')}</span>

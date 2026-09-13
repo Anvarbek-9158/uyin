@@ -89,7 +89,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                           </h4>
                         </div>
                         {isEliminated && (
-                          <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-black uppercase px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                          <span className="inline-flex items-center gap-1 mt-1 text-xs font-black uppercase px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40">
                             <Skull className="w-3 h-3" /> {t('lb_exited')}
                           </span>
                         )}
@@ -98,7 +98,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
                     {/* Score badge (right-aligned, always visible) */}
                     <div className="bg-slate-950 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-indigo-500/40 shadow-inner shrink-0 text-right">
-                      <div className="text-[10px] uppercase font-black text-slate-400 tracking-widest">
+                      <div className="text-xs uppercase font-black text-slate-400 tracking-widest">
                         {t('lb_points')}
                       </div>
                       <div className="font-mono font-black text-indigo-400 text-xl sm:text-2xl leading-none text-center">
@@ -115,12 +115,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         <span className="truncate">{t('lb_leader')}{leader.name}</span>
                       </span>
                     )}
-                    <span className="text-[11px] font-mono font-bold text-slate-400 uppercase whitespace-nowrap">
+                    <span className="text-xs font-mono font-bold text-slate-400 uppercase whitespace-nowrap">
                       {team.memberIds.length} {t('lb_member')}
                     </span>
 
                     {team.currentBet !== null && (
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-400 uppercase tracking-wider whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-amber-400 uppercase tracking-wider whitespace-nowrap">
                         <span>{t('lb_bet')}</span>
                         <span className="font-mono text-sm">🔥 {team.currentBet}</span>
                       </span>
@@ -128,11 +128,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
                     {currentPhase === 'ANSWERING' &&
                       (team.currentAnswer ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-xs uppercase font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> {t('lb_submitted')}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] uppercase font-extrabold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 animate-pulse whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-xs uppercase font-extrabold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 animate-pulse whitespace-nowrap">
                           {t('lb_thinking')}
                         </span>
                       ))}

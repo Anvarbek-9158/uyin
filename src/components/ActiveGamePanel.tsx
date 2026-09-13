@@ -183,7 +183,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>{t('tv_bets_100')}{t('tv_bets_100_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_100_sub_suffix')}</span>
                   </div>
-                  <span className="text-[11px] uppercase tracking-wider font-mono bg-emerald-500/30 px-2.5 py-1 rounded text-emerald-200 shrink-0 font-extrabold">
+                  <span className="text-xs uppercase tracking-wider font-mono bg-emerald-500/30 px-2.5 py-1 rounded text-emerald-200 shrink-0 font-extrabold">
                     {t('tv_bets_100_badge')}
                   </span>
                 </div>
@@ -193,7 +193,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>{t('tv_bets_pending')}{t('tv_bets_pending_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_pending_sub_suffix')}</span>
                   </div>
-                  <span className="text-[11px] uppercase tracking-wider font-mono bg-amber-500/30 px-2.5 py-1 rounded text-amber-200 shrink-0 font-extrabold">
+                  <span className="text-xs uppercase tracking-wider font-mono bg-amber-500/30 px-2.5 py-1 rounded text-amber-200 shrink-0 font-extrabold">
                     {t('tv_bets_pending_badge')}
                   </span>
                 </div>
@@ -215,7 +215,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                   <Clock className="w-7 h-7" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  <div className="text-xs font-bold uppercase tracking-widest text-slate-400">
                     ⏱️ {t('tv_timer_running')}
                   </div>
                   <div className="text-3xl font-black font-mono tracking-tight flex items-baseline gap-2">
@@ -247,7 +247,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <h4 className="font-black text-white text-lg uppercase tracking-tight">
                       {t('tv_game_over_banner')}
                     </h4>
-                    <p className="text-[11px] text-slate-300 font-mono">
+                    <p className="text-xs text-slate-300 font-mono">
                       {t('tv_final_table')}
                     </p>
                   </div>
@@ -293,7 +293,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
           {/* Active Question Display */}
           {displayQ && (
             <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2 relative overflow-hidden">
-              <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase tracking-widest text-indigo-400">
+              <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-widest text-indigo-400">
                 <span>{translateCategory(displayQ?.category, lang)} • {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
                 {phase === 'ANSWERING' && (
                   <span className="text-amber-400 font-black animate-pulse">
@@ -354,7 +354,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
 
                       <button
                         onClick={() => onPenalizeTeam(team.id)}
-                        className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
+                        className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all"
                       >
                         <VolumeX className="w-3 h-3 text-rose-400" />
                         {t('tv_penalize_noise')}

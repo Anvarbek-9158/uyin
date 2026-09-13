@@ -89,7 +89,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               {selectedStudentIds.length > 0 && (
                 <button
                   onClick={() => onSelectStudents([])}
-                  className="text-[11px] text-slate-400 hover:text-white uppercase font-bold"
+                  className="text-xs text-slate-400 hover:text-white uppercase font-bold"
                 >
                   {t('tv_clear')}
                 </button>
@@ -98,7 +98,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
 
             {selectedStudentIds.length > 0 && teamList.length > 0 && (
               <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                <span className="text-[11px] text-indigo-300 font-bold uppercase">{t('tv_assign_group')}</span>
+                <span className="text-xs text-indigo-300 font-bold uppercase">{t('tv_assign_group')}</span>
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
@@ -156,14 +156,14 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => onReconnectStudent(st.id)}
-                      className="p-1 px-2 rounded bg-sky-500/10 hover:bg-sky-500/30 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
+                      className="p-1 px-2.5 rounded bg-sky-500/10 hover:bg-sky-500/30 text-sky-300 border border-sky-500/20 text-xs font-bold uppercase transition-all flex items-center gap-1 h-10"
                     >
                       <RefreshCw className="w-3 h-3" />
                       {t('tv_reconnect')}
                     </button>
                     <button
                       onClick={() => onKickStudent(st.id)}
-                      className="p-1 px-2 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all flex items-center gap-1"
+                      className="p-1 px-2.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all flex items-center gap-1 h-10"
                     >
                       <UserX className="w-3 h-3" />
                       {t('tv_kick')}
@@ -214,7 +214,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
             <button
               type="submit"
               data-testid="add-team"
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
+              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
             >
               <Plus className="w-4 h-4" /> {t('tv_add_team')}
             </button>
@@ -249,7 +249,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onPenalizeTeam(team.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-[11px] font-bold uppercase transition-all"
+                        className="flex items-center gap-1 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all h-10"
                         title="Shovqin qilgani uchun 5 ball ayirish"
                       >
                         <VolumeX className="w-3.5 h-3.5 text-rose-400" />
@@ -257,9 +257,9 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                       </button>
 
                       <button
-                        onClick={() => onDeleteTeam(team.id)}
-                        className="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition-colors"
-                        title="Guruhni o'chirish"
+onClick={() => onDeleteTeam(team.id)}
+          className="inline-flex items-center justify-center h-10 w-10 text-slate-500 hover:text-rose-400 rounded-xl hover:bg-slate-800 transition-colors"
+          title="Guruhni o'chirish"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -268,7 +268,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
 
                   {/* Members & Leader Selector */}
                   <div className="space-y-2 pl-2">
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500">
                       {t('tv_members_leader')}
                     </div>
                     {team.memberIds.length === 0 ? (
@@ -303,14 +303,14 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                                   <button
                                     data-testid="make-leader"
                                     onClick={() => onMakeLeader(st.id, team.id)}
-                                    className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-[11px] font-bold uppercase"
+                                    className="px-2.5 h-9 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-xs font-bold uppercase"
                                   >
                                     {t('tv_make_leader')}
                                   </button>
                                 )}
                                 <button
                                   onClick={() => onAssignStudent(st.id, null)}
-                                  className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
+                                  className="px-2.5 h-9 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
                                   title="Guruhdan chiqarib, kutish zaliga qaytarish"
                                 >
                                   <LogOut className="w-3 h-3 text-amber-400" />
@@ -318,7 +318,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                                 </button>
                                 <button
                                   onClick={() => onKickStudent(st.id)}
-                                  className="p-1 rounded bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
+                                  className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
                                   title="Tizimdan/o'yindan butunlay o'chirish"
                                 >
                                   <UserX className="w-3.5 h-3.5" />

@@ -1,7 +1,9 @@
 import {Link} from 'react-router-dom';
 import {GraduationCap} from 'lucide-react';
+import {useLang} from '../i18n';
 
 export default function Footer() {
+  const {t} = useLang();
   return (
     <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -16,21 +18,21 @@ export default function Footer() {
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-400">
             <Link to="/" className="transition-colors hover:text-slate-900 dark:hover:text-white">
-              Bosh sahifa
+              {t('nav_home')}
             </Link>
             <Link to="/teacher" className="transition-colors hover:text-slate-900 dark:hover:text-white">
-              Teacher
+              {t('nav_teacher')}
             </Link>
             <Link to="/student" className="transition-colors hover:text-slate-900 dark:hover:text-white">
-              Student
+              {t('nav_student')}
             </Link>
             <Link to="/pricing" className="transition-colors hover:text-slate-900 dark:hover:text-white">
-              Narxlar
+              {t('nav_pricing')}
             </Link>
           </nav>
         </div>
         <p className="mt-8 text-center text-sm text-slate-400 dark:text-slate-500">
-          © {new Date().getFullYear()} EduPlay — Taʼlim platformasi. Barcha huquqlar himoyalangan.
+          {t('footer_tag')}
         </p>
       </div>
     </footer>

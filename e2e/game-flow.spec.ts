@@ -32,7 +32,8 @@ const baseURL = (): string =>
 
 async function teacherLogin(browserContext: BrowserContext): Promise<Page> {
   const page = await browserContext.newPage();
-  // The game-flow buttons use window.confirm; auto-accept so they actually fire.
+  // Destructive actions use an in-app confirm Modal (no native dialogs left);
+  // auto-accept any stray native dialog defensively.
   page.on('dialog', (d) => d.accept());
   await page.goto(`${baseURL()}/#/teacher/auth`);
   // Switch to the "login" tab (fewer fields than signup).
@@ -154,6 +155,8 @@ test('teacher + 2 students end-to-end game with realtime chat', async ({browser}
 
   // --- 10. End the game and announce winners --------------------------------
   await teacher.getByTestId('end-game').click();
+  // The destructive action is confirmed through the in-app confirm Modal.
+  await teacher.getByRole('button', {name: 'Tasdiqlash'}).click();
   await expect(teacher.getByText(/[G\u2018']olib/)).toBeVisible({timeout: 20_000});
 
   // --- 11. Student sees Game Over + submits feedback -------------------------

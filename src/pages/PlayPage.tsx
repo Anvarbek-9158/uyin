@@ -87,7 +87,7 @@ export default function PlayPage() {
       <footer className="bg-[#0B1121]/80 border-t border-white/5 py-6 text-center text-xs text-[#94A3B8] backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <p className="break-words">{t('footer_tag')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-[11px]">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-xs">
             <span>Node.js</span>
             <span>Pusher Channels</span>
             <span>Express</span>

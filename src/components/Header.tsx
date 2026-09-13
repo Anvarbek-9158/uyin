@@ -55,8 +55,8 @@ function LangDropdown({open, onToggle, onClose, onSelect, triggerRef, compact}: 
         aria-label={t('lang_select')}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${
-          compact ? 'h-9 px-2.5' : 'px-3 py-2'
+        className={`inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold uppercase tracking-wider text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${
+          compact ? 'px-2.5' : 'px-3'
         }`}
       >
         <Languages className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
@@ -181,7 +181,7 @@ export default function Header() {
 
           <Link
             to="/teacher/auth"
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
             <LogIn className="h-4 w-4" />
             {t('auth_login_signup')}
@@ -203,7 +203,7 @@ export default function Header() {
             aria-label={t('menu_open')}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

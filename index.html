@@ -34,27 +34,12 @@
     <meta name="twitter:image" content="/favicon.svg" />
 
     <title>EduPlay — Real Vaqtdagi Taʼlim Viktorinasi</title>
-    <script>
-      // Apply the saved (or OS-preferred) color scheme BEFORE first paint so a
-      // dark-mode user never sees a white flash (FOUC). Mirrors getInitialTheme
-      // in src/context/ThemeContext.tsx — keep the two in sync.
-      (function () {
-        try {
-          var stored = localStorage.getItem('edupal-theme');
-          var dark =
-            stored === 'dark' ||
-            (stored !== 'light' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (dark) {
-            document.documentElement.classList.add('dark');
-            var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#0f172a');
-          }
-        } catch (e) {
-          /* ignore */
-        }
-      })();
-    </script>
+    <!--
+      Anti-FOUC theme init must run before first paint (blocking, no defer),
+      so it lives in an external same-origin file that satisfies
+      Content-Security-Policy `script-src 'self'` (no inline scripts).
+    -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

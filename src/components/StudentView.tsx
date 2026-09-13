@@ -288,7 +288,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
           </div>
 
           <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
               {t('sv_waiting_room')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
@@ -306,7 +306,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
                 {t('sv_game_started')}
               </div>
-              <p className="text-[11px] text-amber-200/90 font-mono">
+              <p className="text-xs text-amber-200/90 font-mono">
                 {t('sv_game_started_sub')}
               </p>
             </div>
@@ -320,7 +320,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 {t('sv_joined_team')}{myTeam.name}{t('sv_joined_team_suffix')}
               </span>
               {isLeader && (
-                <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/20">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/20">
                   <Crown className="w-3.5 h-3.5" /> {t('sv_team_leader')}
                 </span>
               )}
@@ -365,11 +365,11 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 {myTeam.name}
               </h2>
               {isLeader ? (
-                <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
                   <Crown className="w-3.5 h-3.5" /> {t('sv_leader_badge')}
                 </span>
               ) : (
-                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
                   {t('sv_member_label')}
                 </span>
               )}
@@ -384,7 +384,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
         <div className="flex items-center gap-3 bg-slate-950 px-5 py-2.5 rounded-2xl border border-white/10">
           <Award className="w-6 h-6 text-indigo-400" />
           <div>
-            <div className="text-[11px] uppercase font-bold text-slate-500 tracking-widest">
+            <div className="text-xs uppercase font-bold text-slate-500 tracking-widest">
               {t('sv_team_score')}
             </div>
             <div className="font-mono font-black text-2xl text-indigo-300 leading-none mt-0.5">
@@ -491,7 +491,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 ) : (
                   <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                     <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
                         {t('sv_rate_label')}
                       </label>
                       <div className="grid grid-cols-3 gap-3">
@@ -534,7 +534,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
                         {t('sv_comment_label')}
                       </label>
                       <textarea
@@ -577,7 +577,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
               <div className="bg-slate-900/60 border border-indigo-500/30 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden text-center backdrop-blur-xl">
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
                 <div className="relative z-10 space-y-3">
-                  <div className="text-[11px] font-mono font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
+                  <div className="text-xs font-mono font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
                     {t('sv_question')}{gameState.currentQuestionIndex + 1} / {gameState.questions.length}
                   </div>
                   <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center animate-pulse">
@@ -667,7 +667,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               <button
                                 key={idx}
                                 onClick={() => setBetAmount(Math.min(myTeam.score, preset))}
-                                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 hover:bg-slate-800 text-[11px] font-bold text-slate-300 uppercase tracking-wider"
+                                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 hover:bg-slate-800 text-xs font-bold text-slate-300 uppercase tracking-wider"
                               >
                                 {preset === myTeam.score ? t('sv_all_in') : `${preset} ${t('sv_pts')}`}
                               </button>
@@ -688,7 +688,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
-                      <p className="font-mono text-[11px]">
+                      <p className="font-mono text-xs">
                         {t('sv_leader_betting')}
                         <span className="font-bold text-white">
                           {myTeam.currentBet !== null ? `${myTeam.currentBet} ${t('sv_pts')}` : t('sv_waiting_bet')}
@@ -752,7 +752,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
-                      <p className="font-mono text-[11px]">
+                      <p className="font-mono text-xs">
                         {t('sv_leader_answering')}
                         <span className="font-bold text-white">
                           {myTeam.currentAnswer ? myTeam.currentAnswer : t('sv_thinking')}

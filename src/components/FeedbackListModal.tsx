@@ -51,8 +51,8 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
           </div>
 
           <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+onClick={onClose}
+          className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -134,18 +134,18 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                       <span className="font-bold text-white text-sm">
                         {fb.studentName}
                       </span>
-                      <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono font-bold">
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono font-bold">
                         {fb.teamName}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider ${ratingBadge}`}>
+                      <span className={`text-xs px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${ratingBadge}`}>
                         {fb.rating === "A'lo" && `🟢 ${t('sv_rate_excellent')}`}
                         {fb.rating === 'Yaxshi' && `🟡 ${t('sv_rate_good')}`}
                         {fb.rating === 'Yomon' && `🔴 ${t('sv_rate_bad')}`}
                       </span>
-                      <span className="text-[11px] text-slate-500 font-mono">
+                      <span className="text-xs text-slate-500 font-mono">
                         {new Date(fb.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -156,7 +156,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
                       "{fb.comment}"
                     </p>
                   ) : (
-                    <p className="text-[11px] text-slate-500 italic">
+                    <p className="text-xs text-slate-500 italic">
                       {t('flm_no_comment')}
                     </p>
                   )}
