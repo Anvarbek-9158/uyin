@@ -185,14 +185,14 @@ export default function App() {
   }, [clientId, isTeacherAuth, gameState?.pin]);
 
   return (
-    <div className="min-h-screen bg-[#0B1121] text-[#F8FAFC] flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-[#0EA5E9] selection:text-[#0B1121]">
+    <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
       {/* Toast Notification Banner */}
       {notification && (
-        <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-[#0B1121]/90 border border-[#0EA5E9]/40 rounded-2xl p-4 shadow-2xl backdrop-blur-xl animate-fade-in flex items-center gap-3 max-w-[calc(100vw-2rem)]">
-          <div className="p-2 rounded-xl bg-[#0EA5E9]/20 text-[#0EA5E9] shrink-0">
+        <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-slate-950/90 border border-indigo-500/40 rounded-2xl p-4 shadow-card backdrop-blur-xl animate-fade-in flex items-center gap-3 max-w-[calc(100vw-2rem)]">
+          <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 shrink-0">
             <Sparkles className="w-5 h-5" />
           </div>
-          <p className="text-xs font-semibold text-[#F8FAFC] break-words min-w-0">{notification.text}</p>
+          <p className="text-xs font-semibold text-white break-words min-w-0">{notification.text}</p>
         </div>
       )}
 
@@ -220,10 +220,10 @@ export default function App() {
       </main>
 
       {/* Modern Footer */}
-      <footer className="bg-[#0B1121]/80 border-t border-white/5 py-6 text-center text-xs text-[#94A3B8] backdrop-blur-xl">
+      <footer className="bg-slate-950/80 border-t border-white/5 py-6 text-center text-xs text-slate-400 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <p className="break-words">{t('footer_tag')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 uppercase tracking-widest text-xs">
             <span>Node.js</span>
             <span>Pusher Channels</span>
             <span>Express</span>

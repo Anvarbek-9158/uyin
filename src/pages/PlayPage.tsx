@@ -72,7 +72,7 @@ export default function PlayPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#0B1121] text-[#F8FAFC] flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-[#0EA5E9] selection:text-[#0B1121]"
+      className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white"
     >
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
         <StudentView
@@ -84,10 +84,10 @@ export default function PlayPage() {
         />
       </main>
 
-      <footer className="bg-[#0B1121]/80 border-t border-white/5 py-6 text-center text-xs text-[#94A3B8] backdrop-blur-xl">
+      <footer className="bg-slate-950/80 border-t border-white/5 py-6 text-center text-xs text-slate-400 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <p className="break-words">{t('footer_tag')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[#94A3B8] uppercase tracking-widest text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 uppercase tracking-widest text-xs">
             <span>Node.js</span>
             <span>Pusher Channels</span>
             <span>Express</span>
