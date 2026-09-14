@@ -228,6 +228,14 @@ const en: Strings = {
   close: "Close",
   save: "Save",
   back: "Back",
+  auth_logout: "Log out",
+  plan_free: "Free",
+
+  // OAuth social sign-in
+  oauth_title: "Continue with {label}",
+  oauth_sub_teacher: "Connect your account to start creating classroom games.",
+  oauth_sub_student: "Connect your account to start playing and competing.",
+  oauth_continue: "Continue",
 
   // Landing / footer
   footer_tag: "© 2026 EduPlay — Real-Time Learning and Championship Platform",
@@ -694,6 +702,14 @@ export const STRINGS: Record<Language, Strings> = {
     close: "Yopish",
     save: "Saqlash",
     back: "Orqaga",
+    auth_logout: "Chiqish",
+    plan_free: "Bepul",
+
+    // OAuth social sign-in
+    oauth_title: "{label} orqali davom etish",
+    oauth_sub_teacher: "Hisobingizni ulab sinf o'yinlarini yarating.",
+    oauth_sub_student: "Hisobingizni ulab o'ynashni va raqobatlashishni boshlang.",
+    oauth_continue: "Davom etish",
 
     footer_tag: "© 2026 EduPlay — Real-Time O'quv va Chempionat Platformasi",
     footer_node: "Node.js",
@@ -1151,6 +1167,14 @@ export const STRINGS: Record<Language, Strings> = {
     close: "Закрыть",
     save: "Сохранить",
     back: "Назад",
+    auth_logout: "Выйти",
+    plan_free: "Бесплатно",
+
+    // OAuth social sign-in
+    oauth_title: "Продолжить с {label}",
+    oauth_sub_teacher: "Подключите аккаунт, чтобы создавать классные игры.",
+    oauth_sub_student: "Подключите аккаунт, чтобы играть и соревноваться.",
+    oauth_continue: "Продолжить",
 
     footer_tag: "© 2026 EduPlay — Интерактивная платформа обучения и чемпионатов",
     footer_node: "Node.js",

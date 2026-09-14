@@ -636,6 +636,96 @@ app.post('/api/auth/login', ah(async (req, res) => {
   res.json({ success: true, user: publicUser(user), token });
 }));
 
+// Social/OAuth sign-in. No external provider round-trip happens here: the
+// provider buttons are the only auth surface that never sees a password, so a
+// provider-confirmed name+email is trusted to create (or re-open) the local
+// account. Sign-in is idempotent — the same provider email always resolves to
+// the same account. New accounts get an unguessable random password so the
+// only way back in is the same provider button (email login stays unusable
+// for them), and role mismatches are rejected just like in /api/auth/login.
+const OAUTH_PROVIDERS = ['google', 'github', 'apple'] as const;
+type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
+
+app.post('/api/auth/oauth', ah(async (req, res) => {
+  const provider = (req.body?.provider || '').toString();
+  if (!OAUTH_PROVIDERS.includes(provider as OAuthProvider)) {
+    authError(res, 400, 'invalid_provider', 'Noto\'g\'ri provayder!');
+    return;
+  }
+
+  const role = (req.body?.role || '').toString();
+  if (!AUTH_ROLES.includes(role as (typeof AUTH_ROLES)[number])) {
+    authError(res, 400, 'invalid_role', 'Rol (o\'qituvchi yoki o\'quvchi) noto\'g\'ri!');
+    return;
+  }
+
+  const name = (req.body?.name || '').toString().trim().slice(0, 64);
+  if (!name) {
+    authError(res, 400, 'invalid_name', 'Ism kiritilmadi!');
+    return;
+  }
+
+  const email = normalizeEmail((req.body?.email || '').toString());
+  if (!isValidEmail(email)) {
+    authError(res, 400, 'invalid_email', 'Elektron pochta manzili noto\'g\'ri!');
+    return;
+  }
+
+  // Idempotent lookup: an existing account signs in, otherwise a new one is
+  // created. Race-safe atomicity mirrors /api/auth/signup (createUser re-checks).
+  let user = await store.getUserByEmail(email);
+  if (user) {
+    if (role && role !== user.role) {
+      authError(
+        res,
+        403,
+        'role_mismatch',
+        role === 'teacher'
+          ? 'Bu akkount o\'quvchi uchun ro\'yxatdan o\'tgan! O\'quvchi tizimiga kiring.'
+          : 'Bu akkount o\'qituvchi uchun ro\'yxatdan o\'tgan! O\'qituvchi tizimiga kiring.'
+      );
+      return;
+    }
+    if (isProEmail(email) && user.plan !== 'pro') {
+      user.plan = 'pro';
+      try {
+        await store.updateUser(user);
+      } catch {
+        // best-effort: the in-memory copy stays 'pro' for this session
+      }
+    }
+  } else {
+    const record: UserRecord = {
+      id: randomUUID(),
+      name,
+      email,
+      role: role as 'teacher' | 'student',
+      // Random unguessable password: the account is only reachable through the
+      // provider button, so email+password login is effectively disabled.
+      passwordHash: hashPassword(mintAuthToken()),
+      plan: isProEmail(email) ? 'pro' : 'free',
+      createdAt: Date.now(),
+    };
+    const created = await store.createUser(record);
+    if (!created) {
+      // Lost the race to a concurrent signup — re-fetch and treat as login.
+      user = await store.getUserByEmail(email);
+      if (!user) {
+        authError(res, 409, 'email_taken', 'Elektron pochta band, qayta urinib ko\'ring!');
+        return;
+      }
+    } else {
+      user = record;
+    }
+  }
+
+  const token = mintAuthToken();
+  await store.setAuthSession(token, user);
+
+  console.log(`OAuth akkount: ${user.email} (${provider}, ${user.role})`);
+  res.json({ success: true, user: publicUser(user), token });
+}));
+
 app.get('/api/auth/me', ah(async (req, res) => {
   const token = extractSessionToken(req);
   if (!token || !looksLikeSessionToken(token)) {

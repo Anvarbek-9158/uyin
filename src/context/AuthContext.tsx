@@ -23,6 +23,13 @@ export interface AuthInput {
   role: Role;
 }
 
+export interface OAuthInput {
+  provider: 'google' | 'github' | 'apple';
+  name: string;
+  email: string;
+  role: Role;
+}
+
 export interface AuthResult {
   ok: boolean;
   code?: string;
@@ -36,6 +43,7 @@ interface AuthContextValue {
   checkingSession: boolean;
   signup: (input: AuthInput) => Promise<AuthResult>;
   login: (input: AuthInput) => Promise<AuthResult>;
+  oauthLogin: (input: OAuthInput) => Promise<AuthResult>;
   logout: () => void;
 }
 
@@ -194,6 +202,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: res.ok, code: res.code, message: res.message };
   };
 
+  const oauthLogin = async (input: OAuthInput): Promise<AuthResult> => {
+    const res = await authCall('/api/auth/oauth', {
+      provider: input.provider,
+      name: input.name,
+      email: input.email,
+      role: input.role,
+    });
+    if (res.ok && res.user && res.token) {
+      persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
+    }
+    return { ok: res.ok, code: res.code, message: res.message };
+  };
+
   const logout = () => {
     const currentToken = token;
     if (currentToken) {
@@ -216,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkingSession,
         signup,
         login,
+        oauthLogin,
         logout,
       }}
     >

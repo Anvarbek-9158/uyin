@@ -1,9 +1,10 @@
 import {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Check, ChevronDown, Languages, LogIn, Menu, Search, User} from 'lucide-react';
+import {Bell, Check, ChevronDown, Languages, LogIn, LogOut, Menu, Search, User} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import {Logo} from './Logo';
 import {useLang, type Language} from '../i18n';
+import {useAuth} from '../context/AuthContext';
 
 const LANG_OPTIONS: {value: Language; label: string}[] = [
   {value: 'uz', label: 'UZB'},
@@ -101,6 +102,7 @@ export default function Header({onMenuClick}: HeaderProps) {
   const [langOpen, setLangOpen] = useState(false);
   const [langOpenMobile, setLangOpenMobile] = useState(false);
   const {setLang, t} = useLang();
+  const {user, isAuthenticated, logout} = useAuth();
   const langRef = useRef<HTMLDivElement | null>(null);
   const langRefMobile = useRef<HTMLDivElement | null>(null);
 
@@ -181,21 +183,41 @@ export default function Header({onMenuClick}: HeaderProps) {
           </button>
 
           {/* Profile chip */}
-          <button
-            type="button"
-            aria-label={t('topbar_profile')}
-            className="hidden items-center gap-2.5 rounded-xl border border-slate-700/60 bg-slate-800/60 py-1.5 pl-1.5 pr-3 text-left transition-colors hover:bg-slate-700 sm:inline-flex"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-glow-indigo">
-              <User className="h-4 w-4" />
-            </span>
-            <span className="leading-tight">
-              <span className="block text-xs font-bold text-white">EduPlayer</span>
-              <span className="block text-xs font-medium text-slate-400">
-                {t('nav_teacher_console')}
+          {isAuthenticated && user ? (
+            <button
+              type="button"
+              aria-label={t('topbar_profile')}
+              className="hidden items-center gap-2.5 rounded-xl border border-slate-700/60 bg-slate-800/60 py-1.5 pl-1.5 pr-3 text-left transition-colors hover:bg-slate-700 sm:inline-flex"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-glow-indigo">
+                {user.name.trim().charAt(0).toUpperCase() || 'U'}
               </span>
-            </span>
-          </button>
+              <span className="leading-tight">
+                <span className="block max-w-40 truncate text-xs font-bold text-white">
+                  {user.name}
+                </span>
+                <span className="block max-w-40 truncate text-xs font-medium text-slate-400">
+                  {user.email}
+                </span>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label={t('topbar_profile')}
+              className="hidden items-center gap-2.5 rounded-xl border border-slate-700/60 bg-slate-800/60 py-1.5 pl-1.5 pr-3 text-left transition-colors hover:bg-slate-700 sm:inline-flex"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-glow-indigo">
+                <User className="h-4 w-4" />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-xs font-bold text-white">EduPlayer</span>
+                <span className="block text-xs font-medium text-slate-400">
+                  {t('nav_teacher_console')}
+                </span>
+              </span>
+            </button>
+          )}
 
           {/* Desktop controls */}
           <div className="hidden md:flex md:items-center md:gap-2">
@@ -209,13 +231,25 @@ export default function Header({onMenuClick}: HeaderProps) {
               triggerRef={langRef}
             />
 
-            <Link
-              to="/teacher/auth"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-sm font-semibold text-white shadow-glow-indigo transition-all hover:from-indigo-500 hover:to-violet-500"
-            >
-              <LogIn className="h-4 w-4" />
-              {t('auth_login_signup')}
-            </Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={logout}
+                data-testid="header-logout"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-800/60 px-3.5 text-sm font-semibold text-slate-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400"
+              >
+                <LogOut className="h-4 w-4" />
+                {t('auth_logout')}
+              </button>
+            ) : (
+              <Link
+                to="/teacher/auth"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-sm font-semibold text-white shadow-glow-indigo transition-all hover:from-indigo-500 hover:to-violet-500"
+              >
+                <LogIn className="h-4 w-4" />
+                {t('auth_login_signup')}
+              </Link>
+            )}
           </div>
 
           {/* Mobile controls */}

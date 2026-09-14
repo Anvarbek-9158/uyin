@@ -1,7 +1,15 @@
 import {useEffect} from 'react';
 import {NavLink, useLocation} from 'react-router-dom';
-import {GraduationCap, LayoutGrid, CreditCard, Users, X} from 'lucide-react';
+import {
+  GraduationCap,
+  LayoutGrid,
+  CreditCard,
+  LogOut,
+  Users,
+  X,
+} from 'lucide-react';
 import {useLang} from '../i18n';
+import {useAuth} from '../context/AuthContext';
 import {Logo} from './Logo';
 
 const NAV_ITEMS = [
@@ -19,6 +27,7 @@ interface SidebarProps {
 export default function Sidebar({open, onClose}: SidebarProps) {
   const {t} = useLang();
   const {pathname} = useLocation();
+  const {user, isAuthenticated, logout} = useAuth();
 
   // Any navigation closes the mobile drawer.
   useEffect(() => {
@@ -93,17 +102,52 @@ export default function Sidebar({open, onClose}: SidebarProps) {
           ))}
         </nav>
 
-        {/* Bottom CTA card */}
+        {/* Bottom: signed-in account card or sign-in CTA */}
         <div className="shrink-0 border-t border-slate-800 p-4">
-          <NavLink
-            to="/teacher/auth"
-            className="block rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3.5 text-center transition-all hover:border-indigo-400/60 hover:bg-indigo-500/20"
-          >
-            <span className="block text-sm font-bold text-white">{t('auth_login_signup')}</span>
-            <span className="mt-0.5 block text-xs font-medium text-indigo-300">
-              {t('nav_teacher_console')}
-            </span>
-          </NavLink>
+          {isAuthenticated && user ? (
+            <div className="rounded-2xl border border-slate-700/60 bg-slate-800/50 p-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-glow-indigo">
+                  {user.name.trim().charAt(0).toUpperCase() || 'U'}
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate text-sm font-bold text-white">{user.name}</span>
+                  <span className="block truncate text-xs font-medium text-slate-400">
+                    {user.email}
+                  </span>
+                  <span
+                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                      user.plan === 'pro'
+                        ? 'bg-amber-500/15 text-amber-400'
+                        : 'bg-slate-700/60 text-slate-400'
+                    }`}
+                  >
+                    {user.plan === 'pro' ? 'PRO' : t('plan_free')}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  data-testid="sidebar-logout"
+                  title={t('auth_logout')}
+                  aria-label={t('auth_logout')}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-700/60 text-slate-400 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <NavLink
+              to="/teacher/auth"
+              className="block rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3.5 text-center transition-all hover:border-indigo-400/60 hover:bg-indigo-500/20"
+            >
+              <span className="block text-sm font-bold text-white">{t('auth_login_signup')}</span>
+              <span className="mt-0.5 block text-xs font-medium text-indigo-300">
+                {t('nav_teacher_console')}
+              </span>
+            </NavLink>
+          )}
         </div>
       </aside>
     </>
