@@ -1,7 +1,8 @@
 import {useEffect, useRef, useState} from 'react';
 import {Link, NavLink} from 'react-router-dom';
-import {Check, ChevronDown, GraduationCap, Languages, LogIn, Menu, X} from 'lucide-react';
+import {Check, ChevronDown, Languages, LogIn, Menu, X} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import {Logo} from './Logo';
 import {useLang, type Language} from '../i18n';
 
 const LANG_OPTIONS: {value: Language; label: string}[] = [
@@ -152,9 +153,7 @@ export default function Header() {
           to="/"
           className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
-            <GraduationCap className="h-5 w-5" />
-          </span>
+          <Logo className="h-9 w-9" />
           <span>
             Edu<span className="text-indigo-600 dark:text-indigo-400">Play</span>
           </span>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Award, Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';
+import { Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';
 import { useLang, Language } from '../i18n';
+import { Logo } from './Logo';
 
 interface NavbarProps {
   viewMode: 'LANDING' | 'TEACHER' | 'STUDENT';
@@ -63,9 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => setViewMode('TEACHER')}
           className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0 shrink"
         >
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-indigo-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.5)] group-hover:scale-105 transition-transform shrink-0 border border-indigo-400/40">
-            <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
+          <Logo className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-[0_0_12px_rgba(99,102,241,0.55)] group-hover:scale-105 transition-transform" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-black text-base sm:text-xl md:text-2xl tracking-tight truncate">
