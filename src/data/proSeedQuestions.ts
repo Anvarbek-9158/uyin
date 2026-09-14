@@ -1,5 +1,5 @@
 import { Question } from '../types';
-import { DEFAULT_QUESTIONS } from './defaultQuestions';
+import { DEFAULT_QUESTIONS } from './defaultQuestions.js';
 
 // ============================================================
 // Reserved PRO account(s) and their starter question banks.
