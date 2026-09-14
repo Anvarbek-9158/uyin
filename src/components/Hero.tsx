@@ -40,7 +40,7 @@ export default function Hero() {
             </Link>
             <Link
               to="/pricing"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-8 py-3.5 text-base font-semibold text-slate-200 transition-all hover:border-indigo-500/50 hover:bg-slate-800 hover:text-white"
             >
               {t('hero_pricing')}
               <ArrowRight className="h-5 w-5" />
@@ -51,17 +51,17 @@ export default function Hero() {
         <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
           <Link
             to="/teacher"
-            className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900"
+            className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-card backdrop-blur transition-all hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-card-hover"
           >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400 ring-1 ring-inset ring-indigo-500/30">
               <GraduationCap className="h-8 w-8" />
             </div>
-            <h2 className="mt-5 text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-5 text-2xl font-bold text-white">
               {t('hero_teacher_title')}
             </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">{t('hero_teacher_desc')}</p>
-            <div className="mt-6 flex items-center gap-2 font-semibold text-indigo-600 dark:text-indigo-400">
+            <p className="mt-2 text-slate-400">{t('hero_teacher_desc')}</p>
+            <div className="mt-6 flex items-center gap-2 font-semibold text-indigo-400">
               {t('hero_teacher_link')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
@@ -69,17 +69,17 @@ export default function Hero() {
 
           <Link
             to="/student"
-            className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900"
+            className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-card backdrop-blur transition-all hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-card-hover"
           >
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
               <Users className="h-8 w-8" />
             </div>
-            <h2 className="mt-5 text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-5 text-2xl font-bold text-white">
               {t('hero_student_title')}
             </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">{t('hero_student_desc')}</p>
-            <div className="mt-6 flex items-center gap-2 font-semibold text-emerald-600 dark:text-emerald-400">
+            <p className="mt-2 text-slate-400">{t('hero_student_desc')}</p>
+            <div className="mt-6 flex items-center gap-2 font-semibold text-emerald-400">
               {t('hero_student_link')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
@@ -90,11 +90,13 @@ export default function Hero() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-slate-200 bg-white/60 p-5 dark:border-slate-800 dark:bg-slate-900/60"
+              className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-indigo-500/40 hover:bg-slate-900 hover:shadow-glow-indigo"
             >
-              <f.icon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-              <h3 className="mt-3 font-semibold text-slate-900 dark:text-white">{f.title}</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{f.desc}</p>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 ring-1 ring-inset ring-indigo-500/30 transition-transform group-hover:scale-110">
+                <f.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 font-semibold text-white">{f.title}</h3>
+              <p className="mt-1 text-sm text-slate-400">{f.desc}</p>
             </div>
           ))}
         </div>

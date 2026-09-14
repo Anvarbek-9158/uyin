@@ -10,13 +10,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  const stored = window.localStorage.getItem('edupal-theme');
-  if (stored === 'light' || stored === 'dark') return stored;
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
-  }
-  return 'light';
+  return 'dark';
 }
 
 export function ThemeProvider({children}: {children: ReactNode}) {
@@ -35,7 +29,7 @@ export function ThemeProvider({children}: {children: ReactNode}) {
     if (meta) meta.setAttribute('content', theme === 'dark' ? '#0f172a' : '#4f46e5');
   }, [theme]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => setTheme('dark');
 
   return (
     <ThemeContext.Provider value={{theme, toggleTheme}}>{children}</ThemeContext.Provider>

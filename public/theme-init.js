@@ -1,18 +1,10 @@
-// Apply the saved (or OS-preferred) color scheme BEFORE first paint so a
-// dark-mode user never sees a white flash (FOUC). Mirrors getInitialTheme
-// in src/context/ThemeContext.tsx — keep the two in sync.
+// The Corona dashboard design is a permanent dark theme. Force `.dark` before
+// first paint so no white flash (FOUC) ever appears. Mirrors ThemeContext.tsx.
 (function () {
   try {
-    var stored = localStorage.getItem('edupal-theme');
-    var dark =
-      stored === 'dark' ||
-      (stored !== 'light' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if (dark) {
-      document.documentElement.classList.add('dark');
-      var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', '#0f172a');
-    }
+    document.documentElement.classList.add('dark');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', '#0f1116');
   } catch (e) {
     /* ignore */
   }

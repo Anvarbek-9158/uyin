@@ -219,6 +219,9 @@ const en: Strings = {
 
   // Language
   lang_select: "Select language",
+  topbar_search: "Search content, courses or questions...",
+  topbar_notifications: "Notifications",
+  topbar_profile: "Profile",
 
   // Generic
   cancel: "Cancel",
@@ -683,6 +686,9 @@ export const STRINGS: Record<Language, Strings> = {
     copied: "Nusxalandi!",
 
     lang_select: "Tilni tanlash",
+    topbar_search: "Kontent, kurslar yoki savollarni qidiring...",
+    topbar_notifications: "Bildirishnomalar",
+    topbar_profile: "Profil",
 
     cancel: "Bekor qilish",
     close: "Yopish",
@@ -1137,6 +1143,9 @@ export const STRINGS: Record<Language, Strings> = {
     copied: "Скопировано!",
 
     lang_select: "Выбор языка",
+    topbar_search: "Ищите контент, курсы или вопросы...",
+    topbar_notifications: "Уведомления",
+    topbar_profile: "Профиль",
 
     cancel: "Отмена",
     close: "Закрыть",
