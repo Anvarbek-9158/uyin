@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Crown, LogOut, Play, Plus, RefreshCw, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { Student, Team } from '../types';
 import { useLang } from '../i18n';
@@ -58,7 +58,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               {t('tv_waiting_room')}
             </h3>
           </div>
-          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
+          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
             {unassignedStudents.length} TA
           </span>
         </div>
@@ -121,7 +121,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
         )}
 
         {unassignedStudents.length === 0 ? (
-          <p className="text-xs text-slate-500 text-center py-6 font-mono uppercase tracking-widest">
+          <p className="text-xs text-slate-500 text-center py-6 uppercase tracking-widest">
             {t('tv_all_assigned')}
           </p>
         ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';
 import { useLang, Language } from '../i18n';
 import { Logo } from './Logo';
@@ -16,7 +16,7 @@ interface NavbarProps {
 
 const LANG_OPTIONS: { value: Language; label: string }[] = [
   { value: 'uz', label: 'O\'zbek' },
-  { value: 'ru', label: 'Русский' },
+  { value: 'ru', label: 'Р СѓСЃСЃРєРёР№' },
   { value: 'en', label: 'English' },
 ];
 
@@ -67,15 +67,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Logo className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-[0_0_12px_rgba(99,102,241,0.55)] group-hover:scale-105 transition-transform" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-black text-base sm:text-xl md:text-2xl tracking-tight truncate">
+              <span className="font-black text-base sm:text-xl md:text-2xl tracking-tight whitespace-nowrap">
                 <span className="text-white">Edu</span>
-                <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Play</span>
+                <span className="text-indigo-400">Play</span>
               </span>
               <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hidden lg:inline-block shrink-0">
                 {viewMode === 'TEACHER' ? t('nav_teacher_console') : t('nav_student_system')}
               </span>
             </div>
-            <p className="text-xs text-slate-300 font-mono font-medium tracking-wide uppercase hidden md:block truncate">
+            <p className="text-xs text-slate-300 font-medium tracking-wide uppercase hidden md:block truncate">
               {t('nav_subtitle')}
             </p>
           </div>
@@ -91,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-xs text-slate-300 uppercase font-extrabold tracking-wider hidden md:inline">
               {t('pin_code')}
             </span>
-            <span className="font-mono font-black text-indigo-400 text-base sm:text-xl md:text-2xl tracking-widest">
+            <span className=" font-black text-indigo-400 text-base sm:text-xl md:text-2xl tracking-widest">
               {pin}
             </span>
             {copied ? (

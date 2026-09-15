@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { StudentFeedback } from '../types';
 import { MessageSquare, X } from 'lucide-react';
 import { useLang } from '../i18n';
@@ -44,7 +44,7 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
               <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
                 {t('flm_title')} ({feedbacks.length})
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-slate-400">
                 {t('flm_sub')}
               </p>
             </div>
@@ -81,7 +81,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🟢 {t('sv_rate_excellent')} ({aloCount})
+            рџџў {t('sv_rate_excellent')} ({aloCount})
           </button>
 
           <button
@@ -93,7 +93,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🟡 {t('sv_rate_good')} ({yaxshiCount})
+            рџџЎ {t('sv_rate_good')} ({yaxshiCount})
           </button>
 
           <button
@@ -105,7 +105,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            🔴 {t('sv_rate_bad')} ({yomonCount})
+            рџ”ґ {t('sv_rate_bad')} ({yomonCount})
           </button>
         </div>
 
@@ -134,18 +134,18 @@ onClick={onClose}
                       <span className="font-bold text-white text-sm">
                         {fb.studentName}
                       </span>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono font-bold">
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-bold">
                         {fb.teamName}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${ratingBadge}`}>
-                        {fb.rating === "A'lo" && `🟢 ${t('sv_rate_excellent')}`}
-                        {fb.rating === 'Yaxshi' && `🟡 ${t('sv_rate_good')}`}
-                        {fb.rating === 'Yomon' && `🔴 ${t('sv_rate_bad')}`}
+                        {fb.rating === "A'lo" && `рџџў ${t('sv_rate_excellent')}`}
+                        {fb.rating === 'Yaxshi' && `рџџЎ ${t('sv_rate_good')}`}
+                        {fb.rating === 'Yomon' && `рџ”ґ ${t('sv_rate_bad')}`}
                       </span>
-                      <span className="text-xs text-slate-500 font-mono">
+                      <span className="text-xs text-slate-500">
                         {new Date(fb.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 // Small label/keyword component. Enforces the audit's 12px minimum font size.
 type BadgeVariant = 'indigo' | 'emerald' | 'amber' | 'rose' | 'slate' | 'sky';
@@ -21,7 +21,7 @@ const variantClasses: Record<BadgeVariant, string> = {
 export const Badge: React.FC<BadgeProps> = ({ variant = 'slate', className = '', children }) => {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 font-mono font-bold text-xs border ${variantClasses[variant]} ${className}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 font-bold text-xs border ${variantClasses[variant]} ${className}`}
     >
       {children}
     </span>

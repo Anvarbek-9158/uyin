@@ -87,7 +87,7 @@ const MessageBubble: React.FC<{
         ))}
       <p className="text-[13px]">{msg.text}</p>
       <div
-        className={`mt-1 text-xs font-mono ${
+        className={`mt-1 text-xs ${
           mine ? 'text-indigo-200' : 'text-slate-500'
         }`}
       >
@@ -462,7 +462,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 {title}
                 {onGroupTab && groupTeam ? ` — ${groupTeam.name}` : ''}
               </h3>
-              <p className="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+              <p className="text-xs text-slate-400 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {subtitle}
               </p>
@@ -520,7 +520,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
           {loadingHistory && ownMessages.length === 0 && (
-            <div className="flex items-center justify-center py-8 text-slate-500 text-xs font-mono">
+            <div className="flex items-center justify-center py-8 text-slate-500 text-xs">
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> {t('chat_loading')}
             </div>
           )}
@@ -533,7 +533,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">
                 {t('chat_no_messages')}
               </p>
-              <p className="text-xs text-slate-500 font-mono max-w-xs mx-auto">{emptyText}</p>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">{emptyText}</p>
             </div>
           )}
 
@@ -577,7 +577,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
               {t('chat_teacher_chats')}
             </h3>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-slate-400">
               {t('chat_teacher_sub')}
             </p>
           </div>
@@ -600,7 +600,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">
               {t('chat_no_students')}
             </p>
-            <p className="text-xs text-slate-600 font-mono">
+            <p className="text-xs text-slate-600">
               {t('chat_no_students_sub')}
             </p>
           </div>
@@ -616,7 +616,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                   <Users className="w-3 h-3 text-emerald-400" />
                   <span className="text-xs font-black uppercase tracking-widest text-emerald-400/90 truncate">
                     {t('chat_group_section')}
-                  </span>                  <span className="text-xs font-mono text-slate-600">
+                  </span>                  <span className="text-xs text-slate-600">
                     ({groupRooms.length})
                   </span>
                 </div>
@@ -648,11 +648,11 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-bold truncate">
                           {team.name}
-                          <span className="ml-1 text-xs font-mono text-slate-500">
+                          <span className="ml-1 text-xs text-slate-500">
                             {memberCount} {t('chat_member')}
                           </span>
                         </span>
-                        <span className="block text-xs text-slate-500 font-mono truncate">
+                        <span className="block text-xs text-slate-500 truncate">
                           {preview || t('chat_group_preview')}
                         </span>
                       </span>
@@ -678,7 +678,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                   <span className="text-xs font-black uppercase tracking-widest text-slate-500 truncate">
                     {group.label}
                   </span>
-                  <span className="text-xs font-mono text-slate-600">
+                  <span className="text-xs text-slate-600">
                     ({group.students.length})
                   </span>
                 </div>
@@ -709,7 +709,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-bold truncate">{st.name}</span>
-                        <span className="flex items-center gap-1 text-xs text-slate-500 font-mono truncate">
+                        <span className="flex items-center gap-1 text-xs text-slate-500 truncate">
                           {st.isLeader && <Crown className="w-2.5 h-2.5 text-amber-400" />}
                           {preview || (st.isLeader ? t('chat_captain_role') : t('chat_student_role'))}
                         </span>
@@ -745,7 +745,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     <span className="block font-bold text-white text-sm truncate">
                       {selectedTeam.name}
                     </span>
-                    <p className="text-xs text-slate-500 font-mono truncate">
+                    <p className="text-xs text-slate-500 truncate">
                       {selectedTeamMemberCount} {t('chat_member')} · {t('chat_student_group_sub')}
                     </p>
                   </div>
@@ -759,7 +759,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                         {t('chat_group_empty')}
                       </p>
-                      <p className="text-xs text-slate-600 font-mono">
+                      <p className="text-xs text-slate-600">
                         {t('chat_group_empty_sub')}
                       </p>
                     </div>
@@ -798,7 +798,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                         <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 font-mono truncate">
+                    <p className="text-xs text-slate-500 truncate">
                       {currentTeam ? currentTeam.name : t('chat_no_group')}
                     </p>
                   </div>
@@ -812,7 +812,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                         {t('chat_start')}
                       </p>
-                      <p className="text-xs text-slate-600 font-mono">
+                      <p className="text-xs text-slate-600">
                         {t('chat_private_hint')}
                       </p>
                     </div>
@@ -837,7 +837,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center p-8">
-                <p className="text-xs text-slate-500 font-mono text-center">
+                <p className="text-xs text-slate-500 text-center">
                   {t('chat_no_room')}
                 </p>
               </div>
@@ -873,7 +873,7 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
         <button
           data-testid="chat-launcher"
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all cursor-pointer border border-indigo-400/40 group"
+          className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all cursor-pointer border border-indigo-400/40 group"
           title={t('chat_launcher_title')}
           aria-label={t('chat_launcher_open')}
         >
@@ -883,7 +883,7 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
       )}
 
       {open && (
-        <div className="fixed bottom-6 right-3 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[400px] h-[min(560px,70vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
+        <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[400px] h-[min(560px,70vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
           <ChatSection
             clientId={clientId}
             pin={pin}
@@ -921,7 +921,7 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
       <button
         data-testid="chat-launcher"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
+        className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
         title={t('chat_launcher_students')}
         aria-label={t('chat_launcher_open')}
       >

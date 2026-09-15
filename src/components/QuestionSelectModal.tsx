@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Play, X, HelpCircle, Clock, Tag } from 'lucide-react';
 import { Question } from '../types';
 import { useLang, getQuestionInLanguage, translateDiplicity, translateCategory } from '../i18n';
@@ -46,7 +46,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
               <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
                 {t('qsm_title')}
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-slate-400">
                 {t('qsm_sub')}
               </p>
             </div>
@@ -83,7 +83,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🟢 {translateDiplicity('Oson', lang)} ({osonCount})
+            рџџў {translateDiplicity('Oson', lang)} ({osonCount})
           </button>
 
           <button
@@ -95,7 +95,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🟡 {translateDiplicity("O'rta", lang)} ({ortaCount})
+            рџџЎ {translateDiplicity("O'rta", lang)} ({ortaCount})
           </button>
 
           <button
@@ -107,7 +107,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            🔴 {translateDiplicity('Qiyin', lang)} ({qiyinCount})
+            рџ”ґ {translateDiplicity('Qiyin', lang)} ({qiyinCount})
           </button>
         </div>
 
@@ -161,7 +161,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                     >
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-indigo-400">
+                          <span className=" text-xs font-bold text-indigo-400">
                             {t('qsm_question')}{originalIndex + 1}
                           </span>
 
@@ -170,13 +170,13 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                           </span>
 
                           {q.category && (
-                            <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                            <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1">
                               <Tag className="w-3 h-3 text-slate-500" />
                               {translateCategory(q.category, lang)}
                             </span>
                           )}
 
-                          <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1 font-mono">
+                          <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1">
                             <Clock className="w-3 h-3 text-slate-500" />
                             {q.timeLimit} {t('qsm_seconds')}
                           </span>
@@ -186,14 +186,14 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                           {qq.text}
                         </p>
 
-                        <div className="text-xs text-slate-500 font-mono italic">
+                        <div className="text-xs text-slate-500 italic">
                           {t('qsm_hidden')}
                         </div>
                       </div>
 
                       {used ? (
                         <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-wider shrink-0 text-center">
-                          ✓ {t('qsm_used')}
+                          вњ“ {t('qsm_used')}
                         </span>
                       ) : (
                         <button

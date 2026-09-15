@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import type { Channel } from 'pusher-js';
 import { GameSession, Student, Team } from '../types';
 import { QuestionCard } from './QuestionCard';
@@ -294,7 +294,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
               {t('sv_hello')}{myStudent.name}!
             </h2>
-            <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto font-mono">
+            <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto">
               {t('sv_waiting_sub')}
             </p>
           </div>
@@ -306,7 +306,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
                 {t('sv_game_started')}
               </div>
-              <p className="text-xs text-amber-200/90 font-mono">
+              <p className="text-xs text-amber-200/90">
                 {t('sv_game_started_sub')}
               </p>
             </div>
@@ -387,7 +387,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <div className="text-xs uppercase font-bold text-slate-500 tracking-widest">
               {t('sv_team_score')}
             </div>
-            <div className="font-mono font-black text-2xl text-indigo-300 leading-none mt-0.5">
+            <div className=" font-black text-2xl text-indigo-300 leading-none mt-0.5">
               {myTeam.score}
             </div>
           </div>
@@ -408,7 +408,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
                     {t('sv_game_over')}
                   </h2>
-                  <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto font-mono mt-1">
+                  <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto mt-1">
                     {t('sv_game_over_sub')}
                   </p>
                 </div>
@@ -419,7 +419,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 <h2 className="text-2xl font-bold text-white uppercase tracking-wider">
                   {t('sv_team_zero')}
                 </h2>
-                <p className="text-rose-200 text-xs sm:text-sm max-w-md mx-auto font-mono">
+                <p className="text-rose-200 text-xs sm:text-sm max-w-md mx-auto">
                   {t('sv_team_zero_sub')}{myTeam.name}{t('sv_team_zero_sub2')}
                 </p>
               </>
@@ -435,14 +435,14 @@ export const StudentView: React.FC<StudentViewProps> = ({
               <h3 className="mt-3 text-lg sm:text-xl font-black uppercase tracking-tight text-amber-200">
                 {(gameState.winners ?? []).length > 1 ? t('sv_winners') : t('sv_winner')}
               </h3>
-              <p className="mt-1 font-mono font-black text-white text-base sm:text-lg">
+              <p className="mt-1 font-black text-white text-base sm:text-lg">
                 {(gameState.winners ?? [])
                   .map((id) => gameState.teams?.[id]?.name)
                   .filter(Boolean)
-                  .join('  🏆  ')}
+                  .join('  рџЏ†  ')}
               </p>
-              <p className="mt-2 text-xs text-slate-300 font-mono">
-                {t('sv_winners_sub')} 🎉
+              <p className="mt-2 text-xs text-slate-300">
+                {t('sv_winners_sub')} рџЋ‰
               </p>
             </div>
           )}
@@ -460,7 +460,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <h3 className="text-lg font-bold text-white uppercase tracking-tight">
                         {t('sv_feedback_title')}
                       </h3>
-                      <p className="text-xs text-slate-400 font-mono">
+                      <p className="text-xs text-slate-400">
                         {t('sv_feedback_sub')}
                       </p>
                     </div>
@@ -483,7 +483,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     </div>
                     <button
                       onClick={() => setFeedbackSubmitted(false)}
-                      className="text-xs text-emerald-400 underline hover:text-emerald-200 font-mono cursor-pointer"
+                      className="text-xs text-emerald-400 underline hover:text-emerald-200 cursor-pointer"
                     >
                       {t('sv_re_edit')}
                     </button>
@@ -504,7 +504,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🔴 {t('sv_rate_bad')}
+                          рџ”ґ {t('sv_rate_bad')}
                         </button>
 
                         <button
@@ -516,7 +516,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🟡 {t('sv_rate_good')}
+                          рџџЎ {t('sv_rate_good')}
                         </button>
 
                         <button
@@ -528,7 +528,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          🟢 {t('sv_rate_excellent')}
+                          рџџў {t('sv_rate_excellent')}
                         </button>
                       </div>
                     </div>
@@ -577,7 +577,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
               <div className="bg-slate-900/60 border border-indigo-500/30 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden text-center backdrop-blur-xl">
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
                 <div className="relative z-10 space-y-3">
-                  <div className="text-xs font-mono font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
+                  <div className="text-xs font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
                     {t('sv_question')}{gameState.currentQuestionIndex + 1} / {gameState.questions.length}
                   </div>
                   <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center animate-pulse">
@@ -586,7 +586,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   <h3 className="text-xl sm:text-2xl font-bold text-white">
                     {t('sv_question_waiting')}
                   </h3>
-                  <p className="text-sm text-slate-400 font-mono max-w-md mx-auto">
+                  <p className="text-sm text-slate-400 max-w-md mx-auto">
                     {t('sv_question_waiting_sub')}
                   </p>
                 </div>
@@ -629,7 +629,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <Flame className="w-5 h-5 text-indigo-400" />
                       {t('sv_phase1')}
                     </h3>
-                    <span className="text-xs font-mono font-bold text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+                    <span className="text-xs font-bold text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
                       {t('sv_available')}{myTeam.score} {t('sv_pts')}
                     </span>
                   </div>
@@ -655,7 +655,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                             onChange={(e) => setBetAmount(Number(e.target.value))}
                             className="flex-1 accent-indigo-500"
                           />
-                          <span className="font-mono font-black text-2xl text-indigo-400 w-16 text-right">
+                          <span className=" font-black text-2xl text-indigo-400 w-16 text-right">
                             {betAmount}
                           </span>
                         </div>
@@ -679,7 +679,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={handlePlaceBet}
                           className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all"
                         >
-                          🔥 {betAmount} {t('sv_confirm_bet')}
+                          рџ”Ґ {betAmount} {t('sv_confirm_bet')}
                         </button>
                       </div>
                     )
@@ -688,7 +688,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
-                      <p className="font-mono text-xs">
+                      <p className=" text-xs">
                         {t('sv_leader_betting')}
                         <span className="font-bold text-white">
                           {myTeam.currentBet !== null ? `${myTeam.currentBet} ${t('sv_pts')}` : t('sv_waiting_bet')}
@@ -741,7 +741,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                             </button>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 italic font-mono">
+                          <div className="text-xs text-slate-400 italic">
                             {t('sv_pick_option')}
                           </div>
                         )}
@@ -752,7 +752,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                       <div className="font-bold text-indigo-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
-                      <p className="font-mono text-xs">
+                      <p className=" text-xs">
                         {t('sv_leader_answering')}
                         <span className="font-bold text-white">
                           {myTeam.currentAnswer ? myTeam.currentAnswer : t('sv_thinking')}
@@ -772,10 +772,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                   {gameState.phase === 'ROUND_RESULT' && currentQ?.correctAnswer ? (
                     <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm">
                       <span className="text-emerald-300 font-bold uppercase text-xs tracking-wider">{t('sv_correct_answer')}</span>
-                      <span className="font-mono font-black text-white">{getQuestionInLanguage(currentQ, lang).correctAnswer}</span>
+                      <span className=" font-black text-white">{getQuestionInLanguage(currentQ, lang).correctAnswer}</span>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-300 font-mono">
+                    <p className="text-xs text-slate-300">
                       {t('sv_teacher_grading')}
                     </p>
                   )}
@@ -789,10 +789,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     >
                       <span>
                         {myTeam.lastResult.isCorrect
-                          ? `🎉 ${t('sv_congrats')}`
-                          : `❌ ${t('sv_wrong_answer')}`}
+                          ? `рџЋ‰ ${t('sv_congrats')}`
+                          : `вќЊ ${t('sv_wrong_answer')}`}
                       </span>
-                      <span className="font-mono text-sm">
+                      <span className=" text-sm">
                         {myTeam.lastResult.isCorrect ? '+' : ''}
                         {myTeam.lastResult.pointsDelta} {t('sv_pts')}
                       </span>

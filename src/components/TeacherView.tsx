@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { GameSession, Question, Student, Team } from '../types';
 import { useTeacherTimer } from '../hooks/useTeacherTimer';
 import { TeacherPinBanner } from './TeacherPinBanner';
@@ -97,7 +97,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           onClick={onCreateGame}
           className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
         >
-          🎮 {t('tv_create_game')}
+          рџЋ® {t('tv_create_game')}
         </button>
       </div>
     );
@@ -405,7 +405,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-slate-400">
               {t('tv_total_questions_prefix')}{questions.length}{t('tv_total_questions_suffix')}
             </p>
           </div>
@@ -548,7 +548,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🟢 {translateDiplicity('Oson', lang)}
+                  рџџў {translateDiplicity('Oson', lang)}
                 </button>
                 <button
                   type="button"
@@ -559,7 +559,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🟡 {translateDiplicity("O'rta", lang)}
+                  рџџЎ {translateDiplicity("O'rta", lang)}
                 </button>
                 <button
                   type="button"
@@ -570,7 +570,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  🔴 {translateDiplicity('Qiyin', lang)}
+                  рџ”ґ {translateDiplicity('Qiyin', lang)}
                 </button>
               </div>
             </div>
@@ -616,7 +616,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🟢 {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
+              рџџў {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab("O'rta")}
@@ -626,7 +626,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🟡 {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
+              рџџЎ {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Qiyin')}
@@ -636,7 +636,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              🔴 {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
+              рџ”ґ {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
             </button>
           </div>
         )}
@@ -645,7 +645,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {questions.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400 space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-300">{t('tv_bank_empty')}</p>
-            <p className="text-xs text-slate-500 font-mono">{t('tv_bank_empty_sub')}</p>
+            <p className="text-xs text-slate-500">{t('tv_bank_empty_sub')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
@@ -675,16 +675,16 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         : 'bg-slate-950/60 border-white/5 text-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between font-mono font-bold gap-2">
+                    <div className="flex items-center justify-between font-bold gap-2">
                       <span className="text-indigo-400">
                         {idx < 9 ? `0${idx + 1}` : idx + 1}-{t('tv_question_num')} ({q.timeLimit}{t('tv_time_unit')})
                       </span>
 
                       <div className="flex items-center gap-1.5">
                         <span className={`text-xs px-2 py-0.5 rounded border font-bold uppercase ${diffBadge}`}>
-                          {diff === 'Oson' && `🟢 ${translateDiplicity('Oson', lang)}`}
-                          {diff === "O'rta" && `🟡 ${translateDiplicity("O'rta", lang)}`}
-                          {diff === 'Qiyin' && `🔴 ${translateDiplicity('Qiyin', lang)}`}
+                          {diff === 'Oson' && `рџџў ${translateDiplicity('Oson', lang)}`}
+                          {diff === "O'rta" && `рџџЎ ${translateDiplicity("O'rta", lang)}`}
+                          {diff === 'Qiyin' && `рџ”ґ ${translateDiplicity('Qiyin', lang)}`}
                         </span>
 
                         {isNoOpt ? (

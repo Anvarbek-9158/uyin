@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -80,13 +80,13 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
         <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
+              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
                 {t('tv_round')} {round}
               </span>
-              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs border border-indigo-500/30">
+              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
                 {t('tv_question')} {currentQuestionIndex + 1} / {questionsCount}
               </span>
-              <div className="text-xs text-slate-400 font-mono uppercase">
+              <div className="text-xs text-slate-400 uppercase">
                 {t('tv_phase_label')}{' '}
                 <span className="font-bold text-indigo-400">
                   {phase === 'BETTING' && t('tv_phase1')}
@@ -183,7 +183,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>{t('tv_bets_100')}{t('tv_bets_100_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_100_sub_suffix')}</span>
                   </div>
-                  <span className="text-xs uppercase tracking-wider font-mono bg-emerald-500/30 px-2.5 py-1 rounded text-emerald-200 shrink-0 font-extrabold">
+                  <span className="text-xs uppercase tracking-wider bg-emerald-500/30 px-2.5 py-1 rounded text-emerald-200 shrink-0 font-extrabold">
                     {t('tv_bets_100_badge')}
                   </span>
                 </div>
@@ -193,7 +193,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>{t('tv_bets_pending')}{t('tv_bets_pending_sub_prefix')}{teamsWithBets.length}/{activeTeams.length}{t('tv_bets_pending_sub_suffix')}</span>
                   </div>
-                  <span className="text-xs uppercase tracking-wider font-mono bg-amber-500/30 px-2.5 py-1 rounded text-amber-200 shrink-0 font-extrabold">
+                  <span className="text-xs uppercase tracking-wider bg-amber-500/30 px-2.5 py-1 rounded text-amber-200 shrink-0 font-extrabold">
                     {t('tv_bets_pending_badge')}
                   </span>
                 </div>
@@ -216,9 +216,9 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    ⏱️ {t('tv_timer_running')}
+                    вЏ±пёЏ {t('tv_timer_running')}
                   </div>
-                  <div className="text-3xl font-black font-mono tracking-tight flex items-baseline gap-2">
+                  <div className="text-3xl font-black tracking-tight flex items-baseline gap-2">
                     <span>{timerSeconds}</span>
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('tv_seconds_left')}</span>
                   </div>
@@ -231,7 +231,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.4)]' 
                     : 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/50 shadow-[0_0_12px_rgba(79,70,229,0.3)]'
                 }`}>
-                  {timerSeconds <= 5 ? `⚠️ ${t('tv_hurry')}` : `⏳ ${t('tv_answer_time')}`}
+                  {timerSeconds <= 5 ? `вљ пёЏ ${t('tv_hurry')}` : `вЏі ${t('tv_answer_time')}`}
                 </span>
               </div>
             </div>
@@ -247,7 +247,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <h4 className="font-black text-white text-lg uppercase tracking-tight">
                       {t('tv_game_over_banner')}
                     </h4>
-                    <p className="text-xs text-slate-300 font-mono">
+                    <p className="text-xs text-slate-300">
                       {t('tv_final_table')}
                     </p>
                   </div>
@@ -272,8 +272,8 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     <span className="text-xs font-black uppercase tracking-widest text-amber-300">
                       {names.length > 1 ? t('tv_winners') : t('tv_winner_singular')}
                     </span>
-                    <span className="font-mono font-black text-white text-base">
-                      {names.join(', ') || '—'}
+                    <span className=" font-black text-white text-base">
+                      {names.join(', ') || 'вЂ”'}
                     </span>
                   </div>
                 );
@@ -293,11 +293,11 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
           {/* Active Question Display */}
           {displayQ && (
             <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2 relative overflow-hidden">
-              <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-widest text-indigo-400">
-                <span>{translateCategory(displayQ?.category, lang)} • {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-indigo-400">
+                <span>{translateCategory(displayQ?.category, lang)} вЂў {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
                 {phase === 'ANSWERING' && (
                   <span className="text-amber-400 font-black animate-pulse">
-                    ⏱️ {timerSeconds}s
+                    вЏ±пёЏ {timerSeconds}s
                   </span>
                 )}
               </div>
@@ -305,7 +305,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                 {displayQ?.text}
               </h3>
               {/* The correct answer is revealed to the teacher only once
-                  grading begins — it stays hidden during BETTING (before
+                  grading begins вЂ” it stays hidden during BETTING (before
                   students bet) and ANSWERING (while students answer) so
                   the teacher cannot accidentally spoil it. */}
               {phase === 'GRADING' || phase === 'ROUND_RESULT' || phase === 'GAME_OVER' ? (
@@ -348,7 +348,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                       <h4 className="font-bold text-white text-base">
                         {team.name}
                       </h4>
-                      <span className="text-xs text-indigo-300 font-mono">
+                      <span className="text-xs text-indigo-300">
                         ({team.score} {t('lb_points')})
                       </span>
 
@@ -363,7 +363,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
 
                     <div className="mt-1 text-xs text-slate-300">
                       {t('tv_bet_placed')}{' '}
-                      <span className="font-mono font-bold text-amber-400">
+                      <span className=" font-bold text-amber-400">
                         {team.currentBet !== null ? `${team.currentBet} ${t('lb_points')}` : t('tv_not_inserted')}
                       </span>
                     </div>

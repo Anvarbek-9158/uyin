@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Channel } from 'pusher-js';
 import { GameSession } from './types';
@@ -221,7 +221,7 @@ export default function App() {
 
       {/* Modern Footer */}
       <footer className="bg-slate-950/80 border-t border-white/5 py-6 text-center text-xs text-slate-400 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="break-words">{t('footer_tag')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 uppercase tracking-widest text-xs">
             <span>Node.js</span>

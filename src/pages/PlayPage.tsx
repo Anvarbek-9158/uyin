@@ -5,10 +5,8 @@ import {StudentView} from '../components/StudentView';
 import {sounds} from '../utils/soundEffects';
 import {apiGet, getClientId} from '../utils/api';
 import {pusher} from '../utils/pusher';
-import {useLang} from '../i18n';
 
 export default function PlayPage() {
-  const {t} = useLang();
   const [clientId] = useState<string>(() => getClientId());
   const [channel, setChannel] = useState<Channel | null>(null);
   const [gameState, setGameState] = useState<GameSession | null>(null);
@@ -71,9 +69,7 @@ export default function PlayPage() {
   }, [clientId, gameState?.pin]);
 
   return (
-    <div
-      className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white"
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
         <StudentView
           clientId={clientId}
@@ -83,18 +79,6 @@ export default function PlayPage() {
           onGameStateChange={setGameState}
         />
       </main>
-
-      <footer className="bg-slate-950/80 border-t border-white/5 py-6 text-center text-xs text-slate-400 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
-          <p className="break-words">{t('footer_tag')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 uppercase tracking-widest text-xs">
-            <span>Node.js</span>
-            <span>Pusher Channels</span>
-            <span>Express</span>
-            <span>React</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

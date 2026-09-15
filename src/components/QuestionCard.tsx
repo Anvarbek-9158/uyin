@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Question } from '../types';
 import { Clock, HelpCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useLang, getQuestionInLanguage, translateCategory } from '../i18n';
@@ -40,7 +40,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)] border border-indigo-400/40">
             {q.category ? translateCategory(q.category, lang) : t('qc_category')}
           </span>
-          <span className="text-xs sm:text-sm font-mono uppercase font-extrabold text-indigo-300 tracking-wider">
+          <span className="text-xs sm:text-sm uppercase font-extrabold text-indigo-300 tracking-wider">
             {t('qc_order')} ({questionIndex + 1}/{totalQuestions})
           </span>
         </div>
@@ -54,7 +54,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }`}
         >
           <Clock className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-amber-400" />
-          <span className="font-mono font-black text-lg sm:text-xl md:text-2xl">
+          <span className=" font-black text-lg sm:text-xl md:text-2xl">
             {timerSeconds}s
           </span>
         </div>

@@ -26,9 +26,9 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route path="/game" element={withSuspense(<GameApp />)} />
-        <Route path="/play" element={withSuspense(<PlayPage />)} />
         <Route element={<Layout />}>
           <Route path="/" element={withSuspense(<HomePage />)} />
+          <Route path="/play" element={withSuspense(<PlayPage />)} />
           <Route path="/teacher" element={withSuspense(<TeacherPage />)} />
           <Route path="/teacher/auth" element={withSuspense(<TeacherAuthPage />)} />
           <Route path="/student" element={withSuspense(<StudentPage />)} />

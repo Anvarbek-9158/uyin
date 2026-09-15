@@ -1,5 +1,6 @@
-import React from 'react';
-import {AlertCircle, Loader2, Shield, User} from 'lucide-react';
+﻿import React from 'react';
+import {Link} from 'react-router-dom';
+import {AlertCircle, ArrowLeft, Loader2, Shield, User} from 'lucide-react';
 import {useLang} from '../i18n';
 
 interface StudentJoinFormProps {
@@ -28,12 +29,26 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
   const {t} = useLang();
 
   return (
-    <div className="min-h-[75vh] flex items-center justify-center p-4">
+    <div className="relative flex min-h-[75vh] items-center justify-center overflow-hidden p-4">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-indigo-300/40 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-violet-300/30 blur-3xl" />
+        <div className="absolute top-1/3 -right-12 h-60 w-60 rounded-full bg-emerald-300/25 blur-3xl" />
+        <div className="absolute top-24 -left-16 h-56 w-56 rounded-full bg-amber-300/20 blur-3xl" />
+      </div>
       <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 backdrop-blur-xl relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-48 h-48 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
 
         {/* Top Bar inside Card */}
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5 relative z-20">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-2.5 h-8 rounded-full bg-slate-800/80 text-slate-300 border border-white/5 text-xs font-bold uppercase tracking-wider inline-flex hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            {t('back')}
+          </Link>
+
           <div className="flex items-center gap-1.5 px-2.5 h-8 rounded-full bg-slate-800/80 text-slate-300 border border-white/5 text-xs font-bold uppercase tracking-wider inline-flex">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>{t('sv_student_system')}</span>
@@ -93,7 +108,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
               value={pinInput}
               onChange={(e) => { onPinChange(e.target.value.replace(/\D/g, '').slice(0, 6)); }}
               placeholder={t('sv_pin_placeholder')}
-              className="w-full text-center tracking-widest font-mono font-black text-2xl sm:text-3xl px-4 py-4 rounded-2xl bg-slate-950 border-2 border-indigo-500/50 text-indigo-400 focus:outline-none focus:border-indigo-400 shadow-inner"
+              className="w-full text-center tracking-widest font-black text-2xl sm:text-3xl px-4 py-4 rounded-2xl bg-slate-950 border-2 border-indigo-500/50 text-indigo-400 focus:outline-none focus:border-indigo-400 shadow-inner"
             />
           </div>
 
@@ -120,7 +135,7 @@ export const StudentJoinForm: React.FC<StudentJoinFormProps> = ({
             type="submit"
             data-testid="join-submit"
             disabled={loading || pinInput.trim().length !== 6 || !nameInput.trim()}
-            className="w-full py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm sm:text-base uppercase tracking-widest shadow-[0_0_25px_rgba(79,70,229,0.5)] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/30"
+            className="w-full py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white font-black text-sm sm:text-base uppercase tracking-widest shadow-[0_0_25px_rgba(79,70,229,0.5)] disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer border border-indigo-400/40"
           >
             {loading ? (
               <>

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Check, ChevronDown, Languages, LogIn, LogOut, Menu, Search, User} from 'lucide-react';
+import {Bell, Check, ChevronDown, Languages, LogIn, LogOut, Menu, Search} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import {Logo} from './Logo';
 import {useLang, type Language} from '../i18n';
@@ -182,8 +182,8 @@ export default function Header({onMenuClick}: HeaderProps) {
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-slate-900" />
           </button>
 
-          {/* Profile chip */}
-          {isAuthenticated && user ? (
+          {/* Profile chip — only shown when authenticated */}
+          {isAuthenticated && user && (
             <button
               type="button"
               aria-label={t('topbar_profile')}
@@ -198,22 +198,6 @@ export default function Header({onMenuClick}: HeaderProps) {
                 </span>
                 <span className="block max-w-40 truncate text-xs font-medium text-slate-400">
                   {user.email}
-                </span>
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              aria-label={t('topbar_profile')}
-              className="hidden items-center gap-2.5 rounded-xl border border-slate-700/60 bg-slate-800/60 py-1.5 pl-1.5 pr-3 text-left transition-colors hover:bg-slate-700 sm:inline-flex"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-glow-indigo">
-                <User className="h-4 w-4" />
-              </span>
-              <span className="leading-tight">
-                <span className="block text-xs font-bold text-white">EduPlayer</span>
-                <span className="block text-xs font-medium text-slate-400">
-                  {t('nav_teacher_console')}
                 </span>
               </span>
             </button>
@@ -254,6 +238,27 @@ export default function Header({onMenuClick}: HeaderProps) {
 
           {/* Mobile controls */}
           <div className="flex items-center gap-1.5 md:hidden">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={logout}
+                data-testid="header-logout-mobile"
+                aria-label={t('auth_logout')}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-800/60 text-slate-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            ) : (
+              <Link
+                to="/teacher/auth"
+                aria-label={t('auth_login_signup')}
+                title={t('auth_login_signup')}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 text-xs font-semibold text-white shadow-glow-indigo transition-all hover:from-indigo-500 hover:to-violet-500 sm:px-3"
+              >
+                <LogIn className="h-4 w-4 shrink-0" />
+                <span className="hidden [@media(min-width:480px)]:inline">{t('auth_login_signup')}</span>
+              </Link>
+            )}
             <ThemeToggle />
             <LangDropdown
               open={langOpenMobile}

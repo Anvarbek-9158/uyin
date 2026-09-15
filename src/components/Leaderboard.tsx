@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Team, Student } from '../types';
 import { Trophy, Crown, CheckCircle2, Skull } from 'lucide-react';
 import { useLang } from '../i18n';
@@ -26,13 +26,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             {t('lb_title')}
           </h3>
         </div>
-        <span className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+        <span className="text-xs sm:text-sm font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
           {teamList.length} {t('lb_teams')}
         </span>
       </div>
 
       {teamList.length === 0 ? (
-        <div className="text-center py-10 text-slate-400 text-sm sm:text-base font-mono uppercase tracking-widest font-bold">
+        <div className="text-center py-10 text-slate-400 text-sm sm:text-base uppercase tracking-widest font-bold">
           {t('lb_empty')}
         </div>
       ) : (
@@ -65,7 +65,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <span
-                        className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl font-black font-mono text-sm flex items-center justify-center shrink-0 border ${
+                        className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl font-black text-sm flex items-center justify-center shrink-0 border ${
                           index === 0
                             ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.6)]'
                             : index === 1
@@ -101,7 +101,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                       <div className="text-xs uppercase font-black text-slate-400 tracking-widest">
                         {t('lb_points')}
                       </div>
-                      <div className="font-mono font-black text-indigo-400 text-xl sm:text-2xl leading-none text-center">
+                      <div className=" font-black text-indigo-400 text-xl sm:text-2xl leading-none text-center">
                         {team.score}
                       </div>
                     </div>
@@ -115,14 +115,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         <span className="truncate">{t('lb_leader')}{leader.name}</span>
                       </span>
                     )}
-                    <span className="text-xs font-mono font-bold text-slate-400 uppercase whitespace-nowrap">
+                    <span className="text-xs font-bold text-slate-400 uppercase whitespace-nowrap">
                       {team.memberIds.length} {t('lb_member')}
                     </span>
 
                     {team.currentBet !== null && (
                       <span className="inline-flex items-center gap-1.5 text-xs font-black text-amber-400 uppercase tracking-wider whitespace-nowrap">
                         <span>{t('lb_bet')}</span>
-                        <span className="font-mono text-sm">🔥 {team.currentBet}</span>
+                        <span className=" text-sm">рџ”Ґ {team.currentBet}</span>
                       </span>
                     )}
 
@@ -151,7 +151,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                         {team.lastResult.isCorrect ? t('lb_correct') : t('lb_wrong')} (
                         {team.lastResult.answer})
                       </span>
-                      <span className="font-mono font-extrabold whitespace-nowrap shrink-0">
+                      <span className=" font-extrabold whitespace-nowrap shrink-0">
                         {team.lastResult.isCorrect ? '+' : ''}
                         {team.lastResult.pointsDelta} {t('lb_points')}
                       </span>

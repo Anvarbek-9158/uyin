@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowLeft, Check, Link2, MessageSquare, RefreshCw } from 'lucide-react';
 import { useLang } from '../i18n';
 
@@ -38,26 +38,26 @@ export const TeacherPinBanner: React.FC<TeacherPinBannerProps> = ({
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
             {t('tv_pin_title')}
           </h1>
-          <p className="text-slate-300 text-xs sm:text-sm font-mono font-medium tracking-wide">
+          <p className="text-slate-300 text-xs sm:text-sm font-medium tracking-wide">
             {t('tv_pin_sub')}
           </p>
         </div>
 
         {/* PIN BOX & CUSTOM EDIT BUTTONS */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-4 sm:px-7 sm:py-4 rounded-3xl border-2 border-indigo-500/60 shadow-[0_0_30px_rgba(79,70,229,0.3)] w-full max-w-full sm:w-auto">
+        <div className="flex flex-col items-center gap-4 bg-slate-950 p-4 sm:px-7 sm:py-4 rounded-3xl border-2 border-indigo-500/60 shadow-[0_0_30px_rgba(79,70,229,0.3)] w-full max-w-full lg:w-auto lg:flex-row lg:items-center">
           <div className="text-center sm:text-left min-w-0">
             <div className="text-xs uppercase font-extrabold text-slate-400 tracking-widest">
               {t('tv_pin_label')}
             </div>
             <div
               data-testid="pin-value"
-              className="font-mono font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1"
+              className=" font-black text-3xl sm:text-4xl md:text-5xl text-indigo-400 tracking-wider sm:tracking-widest leading-none mt-1"
             >
               {pin}
             </div>
           </div>
 
-          <div className="h-10 w-0.5 bg-white/15 hidden sm:block" />
+          <div className="h-10 w-0.5 bg-white/15 hidden lg:block" />
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             {/* STUDENTS JOIN LINK */}
