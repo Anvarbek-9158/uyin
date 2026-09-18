@@ -577,6 +577,17 @@ const en: Strings = {
   chat_group_empty_text: "You can write a message to your friends in the group",
   chat_private_empty_text: "You can ask the teacher a question or write a message. This message is visible only to you and the teacher.",
   chat_teacher_placeholder_name: "Write to {name}...",
+
+  nav_aria: "Sidebar navigation",
+  chat_close_aria: "Close chat",
+  chat_send_aria: "Send message",
+  tv_ta_unit: "students",
+  tv_penalize_title: "Penalize team",
+  tv_delete_team_title: "Delete team",
+  tv_to_waiting_title: "Move back to the waiting room",
+  tv_kick_title: "Remove from the game entirely",
+  tv_delete_all_title_attr: "Delete all questions from the database",
+  tv_delete_question_title: "Delete this question",
 };
 
 export const STRINGS: Record<Language, Strings> = {
@@ -1043,6 +1054,17 @@ export const STRINGS: Record<Language, Strings> = {
     chat_group_empty_text: "Guruhdagi do'stlaringizga xabar yozishingiz mumkin",
     chat_private_empty_text: "O'qituvchingizga savol yoki murojaat yozishingiz mumkin. Bu xabar faqat ikkingizga ko'rinadi.",
     chat_teacher_placeholder_name: "{name}ga xabar yozing...",
+
+    nav_aria: "Yon navigatsiya",
+    chat_close_aria: "Chatni yopish",
+    chat_send_aria: "Xabar yuborish",
+    tv_ta_unit: "ta",
+    tv_penalize_title: "Shovqin qilgani uchun 5 ball ayirish",
+    tv_delete_team_title: "Guruhni o'chirish",
+    tv_to_waiting_title: "Guruhdan chiqarib, kutish zaliga qaytarish",
+    tv_kick_title: "Tizimdan/o'yindan butunlay o'chirish",
+    tv_delete_all_title_attr: "Barcha savollarni bazadan o'chirish",
+    tv_delete_question_title: "Ushbu savolni o'chirish",
   },
   ru: {
     // Russian translations
@@ -1508,6 +1530,17 @@ export const STRINGS: Record<Language, Strings> = {
     chat_group_empty_text: "Вы можете написать сообщение друзьям в группе",
     chat_private_empty_text: "Вы можете задать учителю вопрос или обращение. Это сообщение видно только вам двоим.",
     chat_teacher_placeholder_name: "Напишите {name}...",
+
+    nav_aria: "Боковая навигация",
+    chat_close_aria: "Закрыть чат",
+    chat_send_aria: "Отправить сообщение",
+    tv_ta_unit: "чел.",
+    tv_penalize_title: "Снять 5 баллов за шум",
+    tv_delete_team_title: "Удалить команду",
+    tv_to_waiting_title: "Вернуть в зал ожидания",
+    tv_kick_title: "Удалить из системы/игры",
+    tv_delete_all_title_attr: "Удалить все вопросы из базы",
+    tv_delete_question_title: "Удалить этот вопрос",
   },
   en,
 };
@@ -1555,3 +1588,32 @@ export const useLang = (): LangContextValue => {
   if (!ctx) throw new Error('useLang must be used within LanguageProvider');
   return ctx;
 };
+
+// Server responses are authored in Uzbek (the platform's source language).
+// When the UI is running in another language, translate the known server
+// messages client-side and pass everything else through untouched.
+const SERVER_MESSAGE_LANG: Record<string, { ru: string; en: string }> = {
+  "Avtorizatsiya tokeni noto'g'ri yoki muddati tugagan!": {
+    ru: 'Срок действия токена авторизации истёк или он недействителен!',
+    en: 'Your session has expired. Please sign in again!',
+  },
+  "Ushbu foydalanuvchi ro'yxatdan o'tmagan!": {
+    ru: 'Этот пользователь не зарегистрирован!',
+    en: 'This user is not registered!',
+  },
+  'clientId topilmadi!': {
+    ru: 'Идентификатор клиента не найден!',
+    en: 'Client ID not found!',
+  },
+  "Avtorizatsiya tokeni noto'g'ri formatda!": {
+    ru: 'Неверный формат токена авторизации!',
+    en: 'Invalid authorization token format!',
+  },
+};
+
+export function translateServerError(lang: Language, message?: string | null): string | null {
+  if (!message || lang === 'uz') return message || null;
+  const entry = SERVER_MESSAGE_LANG[message];
+  if (!entry) return message;
+  return entry[lang as 'ru' | 'en'] ?? message;
+}

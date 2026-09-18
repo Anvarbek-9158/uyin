@@ -1,7 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Bell, Check, ChevronDown, Languages, LogIn, LogOut, Menu, Search} from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
+import {Check, ChevronDown, Languages, LogIn, LogOut, Menu} from 'lucide-react';
 import {Logo} from './Logo';
 import {useLang, type Language} from '../i18n';
 import {useAuth} from '../context/AuthContext';
@@ -155,33 +154,7 @@ export default function Header({onMenuClick}: HeaderProps) {
           </span>
         </Link>
 
-        {/* Global search */}
-        <div className="ml-2 hidden max-w-md flex-1 md:block lg:ml-6">
-          <label className="sr-only" htmlFor="topbar-search">
-            {t('topbar_search')}
-          </label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <input
-              id="topbar-search"
-              type="search"
-              placeholder={t('topbar_search')}
-              className="h-10 w-full rounded-xl border border-slate-700/60 bg-slate-900 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-        </div>
-
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          {/* Notifications */}
-          <button
-            type="button"
-            aria-label={t('topbar_notifications')}
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-800/60 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-slate-900" />
-          </button>
-
           {/* Profile chip — only shown when authenticated */}
           {isAuthenticated && user && (
             <button
@@ -205,8 +178,6 @@ export default function Header({onMenuClick}: HeaderProps) {
 
           {/* Desktop controls */}
           <div className="hidden md:flex md:items-center md:gap-2">
-            <ThemeToggle />
-
             <LangDropdown
               open={langOpen}
               onToggle={() => setLangOpen((v) => !v)}
@@ -259,7 +230,6 @@ export default function Header({onMenuClick}: HeaderProps) {
                 <span className="hidden [@media(min-width:480px)]:inline">{t('auth_login_signup')}</span>
               </Link>
             )}
-            <ThemeToggle />
             <LangDropdown
               open={langOpenMobile}
               onToggle={() => setLangOpenMobile((v) => !v)}

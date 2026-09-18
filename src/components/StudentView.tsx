@@ -21,7 +21,7 @@ import {
   ArrowLeft,
   Trophy,
 } from 'lucide-react';
-import { useLang, getQuestionInLanguage } from '../i18n';
+import { useLang, getQuestionInLanguage, translateServerError } from '../i18n';
 
 interface StudentViewProps {
   clientId: string;
@@ -102,14 +102,14 @@ export const StudentView: React.FC<StudentViewProps> = ({
     if (!channel) return;
 
     const onError = (msg: string) => {
-      setErrorMsg(msg);
+      setErrorMsg(translateServerError(lang, msg));
       setLoading(false);
     };
 
     const onKicked = (reason: string) => {
       setJoined(false);
       setStudentId(null);
-      setErrorMsg(reason || t('sv_wrong_pin'));
+      setErrorMsg(translateServerError(lang, reason) || t('sv_wrong_pin'));
       setLoading(false);
     };
 
@@ -204,7 +204,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
       setStudentId(res.studentId);
       onGameStateChange(res.game);
     } else {
-      setErrorMsg(res.message || t('sv_join_error'));
+      setErrorMsg(translateServerError(lang, res.message) || t('sv_join_error'));
     }
   };
 
@@ -234,7 +234,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     if (res.success) {
       setBetSubmitted(true);
     } else {
-      setErrorMsg(res.message || t('sv_bet_error'));
+      setErrorMsg(translateServerError(lang, res.message) || t('sv_bet_error'));
     }
   };
 
@@ -251,7 +251,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     if (res.success) {
       setAnswerSubmitted(true);
     } else {
-      setErrorMsg(res.message || t('sv_answer_error'));
+      setErrorMsg(translateServerError(lang, res.message) || t('sv_answer_error'));
     }
   };
 
@@ -439,10 +439,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 {(gameState.winners ?? [])
                   .map((id) => gameState.teams?.[id]?.name)
                   .filter(Boolean)
-                  .join('  рџЏ†  ')}
+                  .join('  🏆  ')}
               </p>
               <p className="mt-2 text-xs text-slate-300">
-                {t('sv_winners_sub')} рџЋ‰
+                {t('sv_winners_sub')} 🎉
               </p>
             </div>
           )}
@@ -504,7 +504,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          рџ”ґ {t('sv_rate_bad')}
+                          🔴 {t('sv_rate_bad')}
                         </button>
 
                         <button
@@ -516,7 +516,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          рџџЎ {t('sv_rate_good')}
+                          🟡 {t('sv_rate_good')}
                         </button>
 
                         <button
@@ -528,7 +528,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
                           }`}
                         >
-                          рџџў {t('sv_rate_excellent')}
+                          🟢 {t('sv_rate_excellent')}
                         </button>
                       </div>
                     </div>
@@ -679,7 +679,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={handlePlaceBet}
                           className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all"
                         >
-                          рџ”Ґ {betAmount} {t('sv_confirm_bet')}
+                          🔥 {betAmount} {t('sv_confirm_bet')}
                         </button>
                       </div>
                     )
@@ -789,8 +789,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     >
                       <span>
                         {myTeam.lastResult.isCorrect
-                          ? `рџЋ‰ ${t('sv_congrats')}`
-                          : `вќЊ ${t('sv_wrong_answer')}`}
+                          ? `🎉 ${t('sv_congrats')}`
+                          : `❌ ${t('sv_wrong_answer')}`}
                       </span>
                       <span className=" text-sm">
                         {myTeam.lastResult.isCorrect ? '+' : ''}

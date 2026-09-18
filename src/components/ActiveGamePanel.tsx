@@ -17,6 +17,7 @@ import {
 import { GamePhase, Question, Student, Team } from '../types';
 import { Leaderboard } from './Leaderboard';
 import { useLang, translateCategory } from '../i18n';
+import { ACCENT_COLORS } from '../utils/teamColors';
 
 interface ActiveGamePanelProps {
   phase: GamePhase;
@@ -66,7 +67,6 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
   onGradeAnswer,
 }) => {
   const { lang, t } = useLang();
-  const accentColors = ['#06b6d4', '#f59e0b', '#f43f5e', '#6366f1', '#10b981'];
 
   const activeTeams = teamList.filter((t) => !t.isEliminated);
   const teamsWithBets = activeTeams.filter((t) => t.currentBet !== null);
@@ -216,7 +216,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    вЏ±пёЏ {t('tv_timer_running')}
+                    ⏱️ {t('tv_timer_running')}
                   </div>
                   <div className="text-3xl font-black tracking-tight flex items-baseline gap-2">
                     <span>{timerSeconds}</span>
@@ -231,7 +231,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                     ? 'bg-rose-500/30 text-rose-200 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.4)]' 
                     : 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/50 shadow-[0_0_12px_rgba(79,70,229,0.3)]'
                 }`}>
-                  {timerSeconds <= 5 ? `вљ пёЏ ${t('tv_hurry')}` : `вЏі ${t('tv_answer_time')}`}
+{timerSeconds <= 5 ? `⚠️ ${t('tv_hurry')}` : `⏳ ${t('tv_answer_time')}`}
                 </span>
               </div>
             </div>
@@ -273,7 +273,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
                       {names.length > 1 ? t('tv_winners') : t('tv_winner_singular')}
                     </span>
                     <span className=" font-black text-white text-base">
-                      {names.join(', ') || 'вЂ”'}
+                      {names.join(', ') || '—'}
                     </span>
                   </div>
                 );
@@ -294,18 +294,18 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
           {displayQ && (
             <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2 relative overflow-hidden">
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-indigo-400">
-                <span>{translateCategory(displayQ?.category, lang)} вЂў {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
+                <span>{translateCategory(displayQ?.category, lang)} • {t('tv_answer_time')}: {displayQ?.timeLimit}s</span>
                 {phase === 'ANSWERING' && (
                   <span className="text-amber-400 font-black animate-pulse">
-                    вЏ±пёЏ {timerSeconds}s
+                    ⏱️ {timerSeconds}s
                   </span>
                 )}
               </div>
-              <h3 className="text-xl font-serif text-white">
+              <h3 className="text-xl font-extrabold text-white">
                 {displayQ?.text}
               </h3>
               {/* The correct answer is revealed to the teacher only once
-                  grading begins вЂ” it stays hidden during BETTING (before
+                  grading begins — it stays hidden during BETTING (before
                   students bet) and ANSWERING (while students answer) so
                   the teacher cannot accidentally spoil it. */}
               {phase === 'GRADING' || phase === 'ROUND_RESULT' || phase === 'GAME_OVER' ? (
@@ -331,7 +331,7 @@ export const ActiveGamePanel: React.FC<ActiveGamePanelProps> = ({
           <div className="space-y-3">
             {teamList.map((team, idx) => {
               if (team.isEliminated) return null;
-              const teamAccent = team.color || accentColors[idx % accentColors.length];
+              const teamAccent = team.color || ACCENT_COLORS[idx % ACCENT_COLORS.length];
 
               return (
                 <div

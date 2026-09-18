@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { Button } from './Button';
+import { useLang } from '../../i18n';
 
 // Confirm/alert dialog replacing window.confirm() and window.alert(). Renders a
 // controlled overlay with a danger/success variant, an icon, message, cancel and
@@ -21,11 +22,12 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   message,
   confirmLabel,
-  cancelLabel = 'Bekor qilish',
+  cancelLabel,
   variant = 'danger',
   onConfirm,
   onCancel,
 }) => {
+  const { t } = useLang();
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -66,7 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
           <button
             onClick={onCancel}
-            aria-label="Yopish"
+            aria-label={t('close')}
             className="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -80,7 +82,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="px-5 pb-5 flex flex-col-reverse sm:flex-row justify-end gap-2">
           {cancelLabel && (
             <Button variant="outline" size="sm" onClick={onCancel}>
-              {cancelLabel}
+              {cancelLabel || t('cancel')}
             </Button>
           )}
           <Button variant={variant === 'danger' ? 'danger' : 'success'} size="sm" onClick={onConfirm}>

@@ -49,7 +49,7 @@ export default function Sidebar({open, onClose}: SidebarProps) {
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-800 bg-slate-900/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        aria-label="Yon navigatsiya"
+        aria-label={t('nav_aria')}
       >
         {/* Brand */}
         <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-800 px-5">
@@ -116,7 +116,7 @@ export default function Sidebar({open, onClose}: SidebarProps) {
                     {user.email}
                   </span>
                   <span
-                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
                       user.plan === 'pro'
                         ? 'bg-amber-500/15 text-amber-400'
                         : 'bg-slate-700/60 text-slate-400'
@@ -157,7 +157,7 @@ export default function Sidebar({open, onClose}: SidebarProps) {
 function LinkBrand() {
   return (
     <span className="text-lg font-bold tracking-tight text-white">
-      Edu<span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Play</span>
+      Edu<span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Play</span>
     </span>
   );
 }

@@ -2,6 +2,7 @@
 import { Team, Student } from '../types';
 import { Trophy, Crown, CheckCircle2, Skull } from 'lucide-react';
 import { useLang } from '../i18n';
+import { ACCENT_COLORS } from '../utils/teamColors';
 
 interface LeaderboardProps {
   teams: Record<string, Team>;
@@ -40,8 +41,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           {teamList.map((team, index) => {
             const leader = team.leaderClientId ? students[team.leaderClientId] : null;
             const isEliminated = team.isEliminated || team.score <= 0;
-            const accentColors = ['#06b6d4', '#f59e0b', '#f43f5e', '#6366f1', '#10b981', '#a855f7'];
-            const teamAccent = team.color || accentColors[index % accentColors.length];
+            const teamAccent = team.color || ACCENT_COLORS[index % ACCENT_COLORS.length];
 
             return (
               <div
@@ -122,7 +122,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                     {team.currentBet !== null && (
                       <span className="inline-flex items-center gap-1.5 text-xs font-black text-amber-400 uppercase tracking-wider whitespace-nowrap">
                         <span>{t('lb_bet')}</span>
-                        <span className=" text-sm">рџ”Ґ {team.currentBet}</span>
+                        <span className=" text-sm">🔥 {team.currentBet}</span>
                       </span>
                     )}
 

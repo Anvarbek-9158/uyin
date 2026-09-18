@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { StudentFeedback } from '../types';
 import { MessageSquare, X } from 'lucide-react';
 import { useLang } from '../i18n';
@@ -17,6 +17,15 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
   const { t } = useLang();
   const [filterRating, setFilterRating] = useState<'Barchasi' | 'Yaxshi' | 'Yomon' | "A'lo">('Barchasi');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const filteredFeedbacks = feedbacks.filter((f) => {
@@ -32,8 +41,14 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
     r === "A'lo" ? t('sv_rate_excellent') : r === 'Yaxshi' ? t('sv_rate_good') : t('sv_rate_bad');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border border-white/10 rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-white/10 rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[85vh]"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
@@ -51,8 +66,9 @@ export const FeedbackListModal: React.FC<FeedbackListModalProps> = ({
           </div>
 
           <button
-onClick={onClose}
-          className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+            onClick={onClose}
+            aria-label={t('close')}
+            className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,7 +97,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            рџџў {t('sv_rate_excellent')} ({aloCount})
+            🟢 {t('sv_rate_excellent')} ({aloCount})
           </button>
 
           <button
@@ -93,7 +109,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            рџџЎ {t('sv_rate_good')} ({yaxshiCount})
+            🟡 {t('sv_rate_good')} ({yaxshiCount})
           </button>
 
           <button
@@ -105,7 +121,7 @@ onClick={onClose}
                 : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
             }`}
           >
-            рџ”ґ {t('sv_rate_bad')} ({yomonCount})
+            🔴 {t('sv_rate_bad')} ({yomonCount})
           </button>
         </div>
 
@@ -141,9 +157,9 @@ onClick={onClose}
 
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${ratingBadge}`}>
-                        {fb.rating === "A'lo" && `рџџў ${t('sv_rate_excellent')}`}
-                        {fb.rating === 'Yaxshi' && `рџџЎ ${t('sv_rate_good')}`}
-                        {fb.rating === 'Yomon' && `рџ”ґ ${t('sv_rate_bad')}`}
+                        {fb.rating === "A'lo" && `🟢 ${t('sv_rate_excellent')}`}
+                        {fb.rating === 'Yaxshi' && `🟡 ${t('sv_rate_good')}`}
+                        {fb.rating === 'Yomon' && `🔴 ${t('sv_rate_bad')}`}
                       </span>
                       <span className="text-xs text-slate-500">
                         {new Date(fb.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

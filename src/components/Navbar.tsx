@@ -16,7 +16,7 @@ interface NavbarProps {
 
 const LANG_OPTIONS: { value: Language; label: string }[] = [
   { value: 'uz', label: 'O\'zbek' },
-  { value: 'ru', label: 'Р СѓСЃСЃРєРёР№' },
+{ value: 'ru', label: 'Русский' },
   { value: 'en', label: 'English' },
 ];
 

@@ -10,7 +10,7 @@ import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from './ui/Modal';
-import { useLang, getQuestionInLanguage, translateDiplicity, Language } from '../i18n';
+import { useLang, getQuestionInLanguage, translateDiplicity, translateServerError, Language } from '../i18n';
 import {
   Shield,
   Plus,
@@ -97,7 +97,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           onClick={onCreateGame}
           className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
         >
-          рџЋ® {t('tv_create_game')}
+          🎮 {t('tv_create_game')}
         </button>
       </div>
     );
@@ -153,7 +153,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (res?.success && res.game) {
       onPinUpdated(res.game);
     } else {
-      setConfirmState({ kind: 'alert', message: res?.message || t('tv_pin_error') });
+      setConfirmState({ kind: 'alert', message: translateServerError(lang, res?.message) || t('tv_pin_error') });
     }
   };
 
@@ -415,7 +415,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <button
                 onClick={() => setConfirmState({ kind: 'delete-all' })}
                 className="flex h-10 items-center justify-center gap-1.5 px-3.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold uppercase tracking-wider transition-all"
-                title="Barcha savollarni bazadan o'chirish"
+                title={t('tv_delete_all_title_attr')}
               >
                 <Trash2 className="w-4 h-4 text-rose-400" />
                 {t('tv_delete_all')}
@@ -548,7 +548,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  рџџў {translateDiplicity('Oson', lang)}
+                  🟢 {translateDiplicity('Oson', lang)}
                 </button>
                 <button
                   type="button"
@@ -559,7 +559,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  рџџЎ {translateDiplicity("O'rta", lang)}
+                  🟡 {translateDiplicity("O'rta", lang)}
                 </button>
                 <button
                   type="button"
@@ -570,7 +570,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-slate-900 border-white/10 text-slate-400'
                   }`}
                 >
-                  рџ”ґ {translateDiplicity('Qiyin', lang)}
+                  🔴 {translateDiplicity('Qiyin', lang)}
                 </button>
               </div>
             </div>
@@ -616,7 +616,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              рџџў {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
+              🟢 {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab("O'rta")}
@@ -626,7 +626,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              рџџЎ {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
+              🟡 {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
             </button>
             <button
               onClick={() => setActiveDbDifficultyTab('Qiyin')}
@@ -636,7 +636,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
-              рџ”ґ {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
+              🔴 {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
             </button>
           </div>
         )}
@@ -682,9 +682,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                       <div className="flex items-center gap-1.5">
                         <span className={`text-xs px-2 py-0.5 rounded border font-bold uppercase ${diffBadge}`}>
-                          {diff === 'Oson' && `рџџў ${translateDiplicity('Oson', lang)}`}
-                          {diff === "O'rta" && `рџџЎ ${translateDiplicity("O'rta", lang)}`}
-                          {diff === 'Qiyin' && `рџ”ґ ${translateDiplicity('Qiyin', lang)}`}
+                          {diff === 'Oson' && `🟢 ${translateDiplicity('Oson', lang)}`}
+                          {diff === "O'rta" && `🟡 ${translateDiplicity("O'rta", lang)}`}
+                          {diff === 'Qiyin' && `🔴 ${translateDiplicity('Qiyin', lang)}`}
                         </span>
 
                         {isNoOpt ? (
@@ -729,7 +729,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               setConfirmDeleteIndex(idx);
                             }}
                             className="h-10 w-10 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors flex items-center justify-center"
-                            title="Ushbu savolni o'chirish"
+                            title={t('tv_delete_question_title')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

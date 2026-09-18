@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLang } from '../i18n';
+import { useLang, translateServerError } from '../i18n';
 import type { Channel } from 'pusher-js';
 import { ChatMessage, Student, Team } from '../types';
 import { apiPost, apiGet } from '../utils/api';
@@ -107,7 +107,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
   groupId = null,
   onClose,
 }) => {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -249,7 +249,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             return { ...prev, [room.roomKey]: merged };
           });
         } else {
-          setErrorMsg((res as { message?: string }).message || t('chat_error_load'));
+          setErrorMsg(translateServerError(lang, (res as { message?: string }).message) || t('chat_error_load'));
         }
       } finally {
         setLoadingHistory(false);
@@ -356,7 +356,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       });
       setInputText('');
     } else {
-      setErrorMsg((res as { message?: string }).message || t('chat_error_send'));
+      setErrorMsg(translateServerError(lang, (res as { message?: string }).message) || t('chat_error_send'));
       const retryAfterMs = (res as { retryAfterMs?: number }).retryAfterMs;
       if (retryAfterMs) startCooldown(retryAfterMs);
     }
@@ -385,7 +385,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           onClick={handleSend}
           disabled={!inputText.trim() || sending || cooldown > 0}
           className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all cursor-pointer shrink-0"
-          aria-label="Xabar yuborish"
+          aria-label={t('chat_send_aria')}
         >
           {sending ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -472,7 +472,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             <button
               onClick={onClose}
               className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors shrink-0 cursor-pointer"
-              aria-label="Chatni yopish"
+              aria-label={t('chat_close_aria')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -491,7 +491,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              O'qituvchi
+              {t('chat_teacher_tab')}
               {privateUnread > 0 && (
                 <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-xs font-black flex items-center justify-center">
                   {privateUnread > 99 ? '99+' : privateUnread}
@@ -586,7 +586,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           <button
             onClick={onClose}
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors shrink-0 cursor-pointer"
-            aria-label="Chatni yopish"
+            aria-label={t('chat_close_aria')}
           >
             <X className="w-4 h-4" />
           </button>

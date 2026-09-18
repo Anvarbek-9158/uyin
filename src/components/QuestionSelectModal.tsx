@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Play, X, HelpCircle, Clock, Tag } from 'lucide-react';
 import { Question } from '../types';
 import { useLang, getQuestionInLanguage, translateDiplicity, translateCategory } from '../i18n';
@@ -21,6 +21,15 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
   const { lang, t } = useLang();
   const [selectedDifficulty, setSelectedDifficulty] = useState<'Barchasi' | 'Oson' | "O'rta" | 'Qiyin'>('Barchasi');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const osonCount = questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length;
@@ -34,8 +43,14 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border border-white/10 rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-white/10 rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
@@ -54,6 +69,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
           <button
             onClick={onClose}
+            aria-label={t('close')}
             className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -83,7 +99,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            рџџў {translateDiplicity('Oson', lang)} ({osonCount})
+            🟢 {translateDiplicity('Oson', lang)} ({osonCount})
           </button>
 
           <button
@@ -95,7 +111,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            рџџЎ {translateDiplicity("O'rta", lang)} ({ortaCount})
+            🟡 {translateDiplicity("O'rta", lang)} ({ortaCount})
           </button>
 
           <button
@@ -107,7 +123,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                 : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
             }`}
           >
-            рџ”ґ {translateDiplicity('Qiyin', lang)} ({qiyinCount})
+            🔴 {translateDiplicity('Qiyin', lang)} ({qiyinCount})
           </button>
         </div>
 
@@ -193,7 +209,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
                       {used ? (
                         <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-wider shrink-0 text-center">
-                          вњ“ {t('qsm_used')}
+                          ✅ {t('qsm_used')}
                         </span>
                       ) : (
                         <button

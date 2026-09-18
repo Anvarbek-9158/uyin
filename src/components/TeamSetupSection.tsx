@@ -2,6 +2,7 @@
 import { Crown, LogOut, Play, Plus, RefreshCw, Trash2, UserX, Users, VolumeX } from 'lucide-react';
 import { Student, Team } from '../types';
 import { useLang } from '../i18n';
+import { ACCENT_COLORS } from '../utils/teamColors';
 
 interface TeamSetupSectionProps {
   teamList: Team[];
@@ -45,7 +46,6 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
   onDeleteTeam,
 }) => {
   const { t } = useLang();
-  const accentColors = ['#06b6d4', '#f59e0b', '#f43f5e', '#6366f1', '#10b981'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -59,7 +59,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
             </h3>
           </div>
           <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
-            {unassignedStudents.length} TA
+            {unassignedStudents.length} {t('tv_ta_unit')}
           </span>
         </div>
 
@@ -223,7 +223,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
           {/* Teams Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {teamList.map((team, idx) => {
-              const teamAccent = team.color || accentColors[idx % accentColors.length];
+              const teamAccent = team.color || ACCENT_COLORS[idx % ACCENT_COLORS.length];
 
               return (
                 <div
@@ -250,7 +250,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                       <button
                         onClick={() => onPenalizeTeam(team.id)}
                         className="flex items-center gap-1 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all h-10"
-                        title="Shovqin qilgani uchun 5 ball ayirish"
+                        title={t('tv_penalize_title')}
                       >
                         <VolumeX className="w-3.5 h-3.5 text-rose-400" />
                         {t('tv_penalize_noise')}
@@ -259,7 +259,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                       <button
 onClick={() => onDeleteTeam(team.id)}
           className="inline-flex items-center justify-center h-10 w-10 text-slate-500 hover:text-rose-400 rounded-xl hover:bg-slate-800 transition-colors"
-          title="Guruhni o'chirish"
+          title={t('tv_delete_team_title')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -311,7 +311,7 @@ onClick={() => onDeleteTeam(team.id)}
                                 <button
                                   onClick={() => onAssignStudent(st.id, null)}
                                   className="px-2.5 h-9 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
-                                  title="Guruhdan chiqarib, kutish zaliga qaytarish"
+                                  title={t('tv_to_waiting_title')}
                                 >
                                   <LogOut className="w-3 h-3 text-amber-400" />
                                   <span>{t('tv_to_waiting')}</span>
@@ -319,7 +319,7 @@ onClick={() => onDeleteTeam(team.id)}
                                 <button
                                   onClick={() => onKickStudent(st.id)}
                                   className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
-                                  title="Tizimdan/o'yindan butunlay o'chirish"
+                                  title={t('tv_kick_title')}
                                 >
                                   <UserX className="w-3.5 h-3.5" />
                                 </button>
