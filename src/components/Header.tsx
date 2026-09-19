@@ -112,9 +112,19 @@ export default function Header({onMenuClick}: HeaderProps) {
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      const outsideDesktop = langRef.current && !langRef.current.contains(e.target as Node);
-      const outsideMobile = langRefMobile.current && !langRefMobile.current.contains(e.target as Node);
-      if (outsideDesktop || outsideMobile) {
+      const target = e.target as Node;
+      // BUG (fixed): the desktop and mobile dropdowns are two separate DOM
+      // trees, and only one is ever visible at a time (the other is hidden
+      // by a `md:hidden` / `hidden md:flex` CSS class, but still mounted).
+      // Checking "outside desktop OR outside mobile" is true for a click
+      // INSIDE EITHER one (it's always outside the other), so choosing an
+      // option closed both dropdowns on `mousedown` — before the `click`
+      // that fires onSelect ever reached the option, silently swallowing
+      // every language selection. The fix: only close when the click is
+      // outside BOTH containers.
+      const insideDesktop = Boolean(langRef.current?.contains(target));
+      const insideMobile = Boolean(langRefMobile.current?.contains(target));
+      if (!insideDesktop && !insideMobile) {
         setLangOpen(false);
         setLangOpenMobile(false);
       }
@@ -146,8 +156,13 @@ export default function Header({onMenuClick}: HeaderProps) {
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-white">
+        {/* Brand — desktop only. BUG (fixed): this used to render unconditionally,
+            so on large screens it appeared right next to the Sidebar's own
+            permanent "EduPlay" logo, showing the brand twice on every page.
+            The Sidebar is a slide-in drawer on mobile (hidden by default), so
+            the header still needs its own brand there — but on desktop
+            (lg:) the Sidebar is always visible and already owns the brand. */}
+        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-white lg:hidden">
           <Logo className="h-9 w-9" />
           <span className="hidden sm:inline">
             Edu<span className="text-indigo-400">Play</span>

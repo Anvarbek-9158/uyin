@@ -29,6 +29,16 @@ export default function Sidebar({open, onClose}: SidebarProps) {
   const {pathname} = useLocation();
   const {user, isAuthenticated, logout} = useAuth();
 
+  // BUG (fixed): this used to be a hardcoded "Bosh sahifa / Teacher" string,
+  // so it showed the same breadcrumb on every single page (Home, Student,
+  // Narxlar...) no matter where you actually were. It is now derived from
+  // the current route, matching the highlighted nav item below.
+  const activeItem =
+    [...NAV_ITEMS].reverse().find((item) => (item.end ? pathname === item.to : pathname.startsWith(item.to))) ??
+    NAV_ITEMS[0];
+  const breadcrumb =
+    activeItem.to === '/' ? t('nav_home') : `${t('nav_home')} / ${t(activeItem.label)}`;
+
   // Any navigation closes the mobile drawer.
   useEffect(() => {
     onClose();
@@ -68,7 +78,7 @@ export default function Sidebar({open, onClose}: SidebarProps) {
         {/* Nav */}
         <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-5">
           <span className="px-3 pb-2 text-xs font-bold uppercase tracking-widest text-slate-500">
-            {t('nav_home')} / {t('nav_teacher')}
+            {breadcrumb}
           </span>
           {NAV_ITEMS.map((item) => (
             <NavLink

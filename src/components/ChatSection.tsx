@@ -558,6 +558,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
   }
 
   // ---------------- TEACHER CHAT UI ----------------
+  // `selectedRoom` is null until the teacher opens a room; every lookup below
+  // falls back to '' so an object index is never `undefined` (TS2538) and no
+  // room's message list is accidentally read before one is selected.
+  const selectedRoomKey = selectedRoom?.roomKey ?? '';
   const currentStudent = selectedRoom?.roomType === 'private' ? students[selectedRoom.studentId] : null;
   const currentTeam = currentStudent?.teamId ? teams[currentStudent.teamId] : null;
   const selectedTeam = selectedRoom?.roomType === 'group' ? teams[selectedRoom.teamId] : null;
@@ -753,7 +757,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
 
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {(messages[selectedRoom?.roomKey] || []).length === 0 && (
+                  {(messages[selectedRoomKey] || []).length === 0 && (
                     <div className="text-center py-10 space-y-1">
                       <Users className="w-8 h-8 text-emerald-400/60 mx-auto" />
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -765,7 +769,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     </div>
                   )}
 
-                  {(messages[selectedRoom?.roomKey] || []).map((msg) => {
+                  {(messages[selectedRoomKey] || []).map((msg) => {
                     const mine = msg.senderId === clientId;
                     return (
                       <MessageBubble key={msg.id} msg={msg} mine={mine} showSender={!mine} />
@@ -806,7 +810,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
 
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {(messages[selectedRoom?.roomKey] || []).length === 0 && (
+                  {(messages[selectedRoomKey] || []).length === 0 && (
                     <div className="text-center py-10 space-y-1">
                       <CheckCircle2 className="w-8 h-8 text-emerald-400/60 mx-auto" />
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -818,7 +822,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     </div>
                   )}
 
-                  {(messages[selectedRoom?.roomKey] || []).map((msg) => {
+                  {(messages[selectedRoomKey] || []).map((msg) => {
                     const mine = msg.senderId === clientId;
                     // In a private chat only show the teacher's label.
                     return (

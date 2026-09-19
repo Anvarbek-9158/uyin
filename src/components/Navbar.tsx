@@ -115,12 +115,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               {onLogoutTeacher && (
                 <button
                   onClick={onLogoutTeacher}
-                  aria-label={t('login')}
+                  aria-label={t('auth_logout')}
                   className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer"
-                  title={t('login')}
+                  title={t('auth_logout')}
                 >
                   <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
-                  <span className="hidden md:inline">{t('login')}</span>
+                  <span className="hidden md:inline">{t('auth_logout')}</span>
                 </button>
               )}
             </>
