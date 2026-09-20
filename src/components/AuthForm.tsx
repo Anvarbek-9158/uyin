@@ -60,7 +60,8 @@ export default function AuthForm({role, accent}: AuthFormProps) {
     setBusy(false);
 
     if (!result.ok) {
-      setError(authErrorMessage(t, result.code, result.message));
+      const base = authErrorMessage(t, result.code, result.message);
+      setError(result.debug ? `${base}\n\n[debug] ${result.debug}` : base);
       return;
     }
 
@@ -150,7 +151,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
             </div>
 
             {error && (
-              <div role="alert" className="mb-4 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400">
+              <div role="alert" className="mb-4 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400 whitespace-pre-wrap break-words">
                 {error}
               </div>
             )}

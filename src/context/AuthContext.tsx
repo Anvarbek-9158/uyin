@@ -34,6 +34,10 @@ export interface AuthResult {
   ok: boolean;
   code?: string;
   message?: string;
+  /** TEMPORARY diagnostic: raw server/client error, shown in the UI only
+   * while we track down the production OAuth/500 issue. Safe to remove
+   * once resolved. */
+  debug?: string;
 }
 
 interface AuthContextValue {
@@ -95,19 +99,32 @@ async function authCall(path: string, body: Record<string, unknown>): Promise<Au
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = (await res.json()) as {
+    let data: {
       success: boolean;
       code?: string;
       message?: string;
+      debug?: string;
       user?: User;
       token?: string;
     };
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      // The response wasn't JSON at all (e.g. a platform error page) —
+      // this is itself diagnostic, so surface it instead of pretending
+      // the server said nothing.
+      return {
+        ok: false,
+        debug: `HTTP ${res.status} ${res.statusText}; body was not JSON (${parseErr instanceof Error ? parseErr.message : String(parseErr)})`,
+      };
+    }
     if (!res.ok || !data.success) {
-      return { ok: false, code: data.code, message: data.message };
+      return { ok: false, code: data.code, message: data.message, debug: data.debug };
     }
     return { ok: true, user: data.user, token: data.token };
-  } catch {
-    return { ok: false, code: undefined, message: undefined };
+  } catch (err) {
+    // The fetch itself never completed (network error, blocked request, ...).
+    return { ok: false, code: undefined, message: undefined, debug: err instanceof Error ? `fetch failed: ${err.message}` : String(err) };
   }
 }
 
@@ -186,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Plan comes from the server (the account may be 'pro').
       persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
     }
-    return { ok: res.ok, code: res.code, message: res.message };
+    return { ok: res.ok, code: res.code, message: res.message, debug: res.debug };
   };
 
   const signup = async (input: AuthInput): Promise<AuthResult> => {
@@ -199,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (res.ok && res.user && res.token) {
       persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
     }
-    return { ok: res.ok, code: res.code, message: res.message };
+    return { ok: res.ok, code: res.code, message: res.message, debug: res.debug };
   };
 
   const oauthLogin = async (input: OAuthInput): Promise<AuthResult> => {
@@ -212,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (res.ok && res.user && res.token) {
       persist({ ...res.user, plan: res.user.plan ?? 'free' }, res.token);
     }
-    return { ok: res.ok, code: res.code, message: res.message };
+    return { ok: res.ok, code: res.code, message: res.message, debug: res.debug };
   };
 
   const logout = () => {

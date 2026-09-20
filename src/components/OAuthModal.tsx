@@ -79,7 +79,11 @@ export default function OAuthModal({provider, role, accent, onClose, onSuccess}:
     const result = await oauthLogin({provider, name: name.trim(), email: email.trim(), role});
     if (!result.ok) {
       setBusy(false);
-      setError(result.message || t('auth_err_generic'));
+      // TEMPORARY: append the raw diagnostic (see AuthResult.debug) so the
+      // real cause is visible directly in the error box, no DevTools
+      // needed. Remove once the production OAuth issue is confirmed fixed.
+      const base = result.message || t('auth_err_generic');
+      setError(result.debug ? `${base}\n\n[debug] ${result.debug}` : base);
       return;
     }
     onSuccess();
@@ -116,7 +120,7 @@ export default function OAuthModal({provider, role, accent, onClose, onSuccess}:
           </div>
 
           {error && (
-            <div role="alert" className="mt-5 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400">
+            <div role="alert" className="mt-5 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400 whitespace-pre-wrap break-words">
               {error}
             </div>
           )}
