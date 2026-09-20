@@ -189,12 +189,23 @@ const TEAM_COLORS = [
 
 // Async route wrapper: catches errors from async handlers and answers JSON
 // instead of letting the promise reject silently.
+//
+// TEMPORARY DIAGNOSTIC: includes a `debug` field with the raw error message
+// (never the stack, never request data) so a real production failure can be
+// read straight from the browser's Network tab response body, without
+// needing paid Vercel Observability access. The frontend ignores this field
+// entirely (it only reads `message`), so end users never see it. Remove
+// once the persistent-storage/OAuth issues are confirmed fixed.
 function ah(fn: (req: Request, res: Response) => Promise<void>) {
   return (req: Request, res: Response) => {
     fn(req, res).catch((err) => {
       console.error('API xatosi:', err);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, message: 'Serverda kutilmagan xatolik yuz berdi' });
+        res.status(500).json({
+          success: false,
+          message: 'Serverda kutilmagan xatolik yuz berdi',
+          debug: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+        });
       }
     });
   };
