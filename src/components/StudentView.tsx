@@ -282,31 +282,31 @@ export const StudentView: React.FC<StudentViewProps> = ({
     return (
       <>
         <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-          <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl space-y-6 backdrop-blur-md">
-          <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto animate-pulse">
+          <div className="bg-surface/95 border border-line rounded-3xl p-8 sm:p-12 shadow-2xl space-y-6 backdrop-blur-md">
+          <div className="w-20 h-20 rounded-3xl bg-brand-500/10 border border-brand-300 text-brand-400 flex items-center justify-center mx-auto animate-pulse">
             <Users className="w-10 h-10" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-300 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-300">
               {t('sv_waiting_room')}
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold text-ink">
               {t('sv_hello')}{myStudent.name}!
             </h2>
-            <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto">
+            <p className="text-ink-soft text-xs sm:text-sm max-w-md mx-auto">
               {t('sv_waiting_sub')}
             </p>
           </div>
 
           {/* Alert if joined mid-game */}
           {gameState && gameState.phase !== 'LOBBY' && gameState.phase !== 'TEAMS_SETUP' && !myTeam && (
-            <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs text-center space-y-1 animate-pulse">
-              <div className="font-bold uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <div className="p-4 rounded-2xl bg-warn-500/15 border border-warn-500/30 text-warn-400/30 text-xs text-center space-y-1 animate-pulse">
+              <div className="font-bold uppercase tracking-wider text-warn-400 flex items-center justify-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-warn-400" />
                 {t('sv_game_started')}
               </div>
-              <p className="text-xs text-amber-200/90">
+              <p className="text-xs text-warn-400/30/90">
                 {t('sv_game_started_sub')}
               </p>
             </div>
@@ -314,19 +314,19 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
           {/* Current team assignment status */}
           {myTeam ? (
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-center gap-3">
+            <div className="p-4 rounded-2xl bg-surface-sunken border border-line flex items-center justify-center gap-3">
               <span className="w-4 h-4 rounded-full" style={{ backgroundColor: myTeam.color }} />
-              <span className="font-bold text-white text-base">
+              <span className="font-bold text-ink text-base">
                 {t('sv_joined_team')}{myTeam.name}{t('sv_joined_team_suffix')}
               </span>
               {isLeader && (
-                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/20">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-warn-400 px-2.5 py-1 rounded bg-warn-500/10 border border-warn-500/20">
                   <Crown className="w-3.5 h-3.5" /> {t('sv_team_leader')}
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-xs text-slate-500 italic">
+            <div className="text-xs text-ink-faint italic">
               {t('sv_pending_assign')}
             </div>
           )}
@@ -353,7 +353,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
     <>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Team Header Banner */}
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4 backdrop-blur-md">
+      <div className="bg-surface/95 border border-line rounded-2xl p-4 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <span
             className="w-5 h-5 rounded-full shrink-0 shadow-lg"
@@ -361,33 +361,33 @@ export const StudentView: React.FC<StudentViewProps> = ({
           />
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-ink uppercase tracking-tight">
                 {myTeam.name}
               </h2>
               {isLeader ? (
-                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-warn-400 px-2.5 py-1 rounded-full bg-warn-500/10 border border-warn-500/20">
                   <Crown className="w-3.5 h-3.5" /> {t('sv_leader_badge')}
                 </span>
               ) : (
-                <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                <span className="text-xs text-ink-faint font-bold uppercase tracking-widest">
                   {t('sv_member_label')}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {t('sv_student_label')} <span className="text-white font-semibold">{myStudent.name}</span>
+            <p className="text-xs text-ink-faint mt-0.5">
+              {t('sv_student_label')} <span className="text-ink font-semibold">{myStudent.name}</span>
             </p>
           </div>
         </div>
 
         {/* Team Score */}
-        <div className="flex items-center gap-3 bg-slate-950 px-5 py-2.5 rounded-2xl border border-white/10">
-          <Award className="w-6 h-6 text-indigo-400" />
+        <div className="flex items-center gap-3 bg-surface-sunken px-5 py-2.5 rounded-2xl border border-line">
+          <Award className="w-6 h-6 text-brand-400" />
           <div>
-            <div className="text-xs uppercase font-bold text-slate-500 tracking-widest">
+            <div className="text-xs uppercase font-bold text-ink-faint tracking-widest">
               {t('sv_team_score')}
             </div>
-            <div className=" font-black text-2xl text-indigo-300 leading-none mt-0.5">
+            <div className=" font-black text-2xl text-brand-300 leading-none mt-0.5">
               {myTeam.score}
             </div>
           </div>
@@ -398,28 +398,28 @@ export const StudentView: React.FC<StudentViewProps> = ({
       {isGameOver || isEliminated ? (
         <div className="space-y-6">
           {/* Top Banner */}
-          <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl backdrop-blur-md relative overflow-hidden">
+          <div className="bg-surface/95 border border-line rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl backdrop-blur-md relative overflow-hidden">
             {isGameOver ? (
               <>
-                <div className="w-16 h-16 rounded-3xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(245,158,11,0.4)] animate-bounce">
+                <div className="w-16 h-16 rounded-3xl bg-warn-500/20 border border-warn-500/40 text-warn-400 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(245,158,11,0.4)] animate-bounce">
                   <Trophy className="w-8 h-8" />
                 </div>
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black text-ink uppercase tracking-tight">
                     {t('sv_game_over')}
                   </h2>
-                  <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto mt-1">
+                  <p className="text-ink-soft text-xs sm:text-sm max-w-md mx-auto mt-1">
                     {t('sv_game_over_sub')}
                   </p>
                 </div>
               </>
             ) : (
               <>
-                <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto animate-bounce" />
-                <h2 className="text-2xl font-bold text-white uppercase tracking-wider">
+                <ShieldAlert className="w-12 h-12 text-danger-400 mx-auto animate-bounce" />
+                <h2 className="text-2xl font-bold text-ink uppercase tracking-wider">
                   {t('sv_team_zero')}
                 </h2>
-                <p className="text-rose-200 text-xs sm:text-sm max-w-md mx-auto">
+                <p className="text-danger-400/30 text-xs sm:text-sm max-w-md mx-auto">
                   {t('sv_team_zero_sub')}{myTeam.name}{t('sv_team_zero_sub2')}
                 </p>
               </>
@@ -428,20 +428,20 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
           {/* Winners callout (QISM J) */}
           {isGameOver && (gameState?.winners?.length ?? 0) > 0 && (
-            <div className="p-5 rounded-3xl bg-amber-500/15 border-2 border-amber-500/50 text-center shadow-[0_0_30px_rgba(245,158,11,0.25)]">
-              <div className="inline-flex w-14 h-14 rounded-2xl bg-amber-500 text-slate-950 items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+            <div className="p-5 rounded-3xl bg-warn-500/15 border-2 border-warn-500/50 text-center shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+              <div className="inline-flex w-14 h-14 rounded-2xl bg-warn-500 text-surface-sunken items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.5)]">
                 <Crown className="w-7 h-7" />
               </div>
-              <h3 className="mt-3 text-lg sm:text-xl font-black uppercase tracking-tight text-amber-200">
+              <h3 className="mt-3 text-lg sm:text-xl font-black uppercase tracking-tight text-warn-400/30">
                 {(gameState.winners ?? []).length > 1 ? t('sv_winners') : t('sv_winner')}
               </h3>
-              <p className="mt-1 font-black text-white text-base sm:text-lg">
+              <p className="mt-1 font-black text-ink text-base sm:text-lg">
                 {(gameState.winners ?? [])
                   .map((id) => gameState.teams?.[id]?.name)
                   .filter(Boolean)
                   .join('  🏆  ')}
               </p>
-              <p className="mt-2 text-xs text-slate-300">
+              <p className="mt-2 text-xs text-ink-soft">
                 {t('sv_winners_sub')} 🎉
               </p>
             </div>
@@ -450,17 +450,17 @@ export const StudentView: React.FC<StudentViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Feedback Form */}
             <div className="lg:col-span-2">
-              <div className="bg-slate-900/80 border border-indigo-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 backdrop-blur-xl relative">
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div className="bg-surface/95 border border-brand-300 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 backdrop-blur-xl relative">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-line">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+                    <div className="p-2.5 rounded-2xl bg-brand-600 text-ink shadow-[var(--shadow-pop-brand)]">
                       <MessageSquare className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-white uppercase tracking-tight">
+                      <h3 className="text-lg font-bold text-ink uppercase tracking-tight">
                         {t('sv_feedback_title')}
                       </h3>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-ink-faint">
                         {t('sv_feedback_sub')}
                       </p>
                     </div>
@@ -468,22 +468,22 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
                   <button
                     onClick={handleExitGame}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer hover:border-indigo-500/50"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-surface-raised hover:bg-surface-raised text-ink border border-line font-bold text-xs uppercase tracking-wider transition-all cursor-pointer hover:border-brand-300"
                   >
-                    <ArrowLeft className="w-4 h-4 text-indigo-400" />
+                    <ArrowLeft className="w-4 h-4 text-brand-400" />
                     {t('sv_back_home')}
                   </button>
                 </div>
 
                 {feedbackSubmitted ? (
-                  <div className="p-5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="p-5 rounded-2xl bg-play-500/15 border border-play-500/30 text-play-400 font-bold text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-6 h-6 text-play-400 shrink-0" />
                       <span>{t('sv_feedback_sent')}</span>
                     </div>
                     <button
                       onClick={() => setFeedbackSubmitted(false)}
-                      className="text-xs text-emerald-400 underline hover:text-emerald-200 cursor-pointer"
+                      className="text-xs text-play-400 underline hover:text-play-400/30 cursor-pointer"
                     >
                       {t('sv_re_edit')}
                     </button>
@@ -491,7 +491,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 ) : (
                   <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-2">
                         {t('sv_rate_label')}
                       </label>
                       <div className="grid grid-cols-3 gap-3">
@@ -500,8 +500,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={() => setFeedbackRating('Yomon')}
                           className={`py-3 px-3 sm:px-4 rounded-2xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                             feedbackRating === 'Yomon'
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                              : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
+                              ? 'bg-danger-500/20 text-danger-400 border-danger-500 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                              : 'bg-surface-sunken border-line text-ink-faint hover:text-ink'
                           }`}
                         >
                           🔴 {t('sv_rate_bad')}
@@ -512,8 +512,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={() => setFeedbackRating('Yaxshi')}
                           className={`py-3 px-3 sm:px-4 rounded-2xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                             feedbackRating === 'Yaxshi'
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                              : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
+                              ? 'bg-warn-500/20 text-warn-400 border-warn-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                              : 'bg-surface-sunken border-line text-ink-faint hover:text-ink'
                           }`}
                         >
                           🟡 {t('sv_rate_good')}
@@ -524,8 +524,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
                           onClick={() => setFeedbackRating("A'lo")}
                           className={`py-3 px-3 sm:px-4 rounded-2xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                             feedbackRating === "A'lo"
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                              : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
+                              ? 'bg-play-500/20 text-play-400 border-play-500 shadow-[var(--shadow-pop-play)]'
+                              : 'bg-surface-sunken border-line text-ink-faint hover:text-ink'
                           }`}
                         >
                           🟢 {t('sv_rate_excellent')}
@@ -534,7 +534,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-1">
                         {t('sv_comment_label')}
                       </label>
                       <textarea
@@ -542,13 +542,13 @@ export const StudentView: React.FC<StudentViewProps> = ({
                         value={feedbackComment}
                         onChange={(e) => setFeedbackComment(e.target.value)}
                         placeholder={t('sv_comment_placeholder')}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-white/10 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 resize-none"
+                        className="w-full px-4 py-3 rounded-2xl bg-surface-sunken border border-line text-ink text-xs sm:text-sm focus:outline-none focus:border-brand-500 resize-none"
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-ink font-bold text-xs uppercase tracking-widest shadow-[var(--shadow-pop-brand)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Send className="w-4 h-4" /> {t('sv_submit_feedback')}
                     </button>
@@ -574,19 +574,19 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 hidden (the server strips text/options from student state), so
                 show a waiting placeholder instead of the card. */}
             {gameState.phase === 'BETTING' ? (
-              <div className="bg-slate-900/60 border border-indigo-500/30 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden text-center backdrop-blur-xl">
-                <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
+              <div className="bg-surface/95 border border-brand-300 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden text-center backdrop-blur-xl">
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/10 blur-3xl rounded-full pointer-events-none" />
                 <div className="relative z-10 space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-widest text-indigo-300 pb-3 border-b border-white/10 mx-auto max-w-md">
+                  <div className="text-xs font-bold uppercase tracking-widest text-brand-300 pb-3 border-b border-line mx-auto max-w-md">
                     {t('sv_question')}{gameState.currentQuestionIndex + 1} / {gameState.questions.length}
                   </div>
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center animate-pulse">
-                    <Clock className="w-8 h-8 text-indigo-400" />
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-brand-500/15 border border-brand-300 flex items-center justify-center animate-pulse">
+                    <Clock className="w-8 h-8 text-brand-400" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white">
+                  <h3 className="text-xl sm:text-2xl font-bold text-ink">
                     {t('sv_question_waiting')}
                   </h3>
-                  <p className="text-sm text-slate-400 max-w-md mx-auto">
+                  <p className="text-sm text-ink-faint max-w-md mx-auto">
                     {t('sv_question_waiting_sub')}
                   </p>
                 </div>
@@ -613,36 +613,36 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
             {/* ERROR NOTIFICATION */}
             {errorMsg && (
-              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-4 rounded-2xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {/* ROLE CONTROLS / ACTION BOX */}
-            <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
+            <div className="bg-surface/95 border border-line rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
               {/* PHASE 1: BETTING PHASE */}
               {gameState.phase === 'BETTING' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <h3 className="font-bold text-white text-base uppercase tracking-wider flex items-center gap-2">
-                      <Flame className="w-5 h-5 text-indigo-400" />
+                  <div className="flex items-center justify-between pb-3 border-b border-line">
+                    <h3 className="font-bold text-ink text-base uppercase tracking-wider flex items-center gap-2">
+                      <Flame className="w-5 h-5 text-brand-400" />
                       {t('sv_phase1')}
                     </h3>
-                    <span className="text-xs font-bold text-indigo-300 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+                    <span className="text-xs font-bold text-brand-300 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-300">
                       {t('sv_available')}{myTeam.score} {t('sv_pts')}
                     </span>
                   </div>
 
                   {isLeader ? (
                     betSubmitted ? (
-                      <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <div className="p-4 rounded-xl bg-play-500/10 border border-play-500/30 text-play-400 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-play-400" />
                         {t('sv_bet_submitted')}{myTeam.currentBet}{t('sv_bet_submitted2')}
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <p className="text-xs text-slate-300">
+                        <p className="text-xs text-ink-soft">
                           {t('sv_bet_prompt')}{myTeam.score})
                         </p>
 
@@ -653,9 +653,9 @@ export const StudentView: React.FC<StudentViewProps> = ({
                             max={myTeam.score}
                             value={betAmount}
                             onChange={(e) => setBetAmount(Number(e.target.value))}
-                            className="flex-1 accent-indigo-500"
+                            className="flex-1 accent-brand-500"
                           />
-                          <span className=" font-black text-2xl text-indigo-400 w-16 text-right">
+                          <span className=" font-black text-2xl text-brand-400 w-16 text-right">
                             {betAmount}
                           </span>
                         </div>
@@ -667,7 +667,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               <button
                                 key={idx}
                                 onClick={() => setBetAmount(Math.min(myTeam.score, preset))}
-                                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 hover:bg-slate-800 text-xs font-bold text-slate-300 uppercase tracking-wider"
+                                className="px-3 py-1.5 rounded-lg bg-surface-sunken border border-line hover:bg-surface-raised text-xs font-bold text-ink-soft uppercase tracking-wider"
                               >
                                 {preset === myTeam.score ? t('sv_all_in') : `${preset} ${t('sv_pts')}`}
                               </button>
@@ -677,20 +677,20 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
                         <button
                           onClick={handlePlaceBet}
-                          className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all"
+                          className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-ink font-bold text-xs uppercase tracking-widest shadow-[var(--shadow-pop-brand)] transition-all"
                         >
                           🔥 {betAmount} {t('sv_confirm_bet')}
                         </button>
                       </div>
                     )
                   ) : (
-                    <div className="p-4 rounded-xl bg-slate-950/80 border border-white/5 text-xs text-slate-300 space-y-1">
-                      <div className="font-bold text-indigo-400 uppercase tracking-wider">
+                    <div className="p-4 rounded-xl bg-surface-sunken border border-line text-xs text-ink-soft space-y-1">
+                      <div className="font-bold text-brand-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
                       <p className=" text-xs">
                         {t('sv_leader_betting')}
-                        <span className="font-bold text-white">
+                        <span className="font-bold text-ink">
                           {myTeam.currentBet !== null ? `${myTeam.currentBet} ${t('sv_pts')}` : t('sv_waiting_bet')}
                         </span>
                       </p>
@@ -702,24 +702,24 @@ export const StudentView: React.FC<StudentViewProps> = ({
               {/* PHASE 2: ANSWERING PHASE */}
               {gameState.phase === 'ANSWERING' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <h3 className="font-bold text-white text-base uppercase tracking-wider flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-indigo-400" />
+                  <div className="flex items-center justify-between pb-3 border-b border-line">
+                    <h3 className="font-bold text-ink text-base uppercase tracking-wider flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-brand-400" />
                       {t('sv_phase2')}
                     </h3>
                   </div>
 
                   {isLeader ? (
                     answerSubmitted ? (
-                      <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="p-4 rounded-xl bg-play-500/10 border border-play-500/30 text-play-400 font-bold text-xs uppercase tracking-wider flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-play-400 shrink-0 mt-0.5" />
                         <span className="break-words leading-snug">
                           {t('sv_answer_submitted')}{myTeam.currentAnswer}{t('sv_answer_submitted2')}
                         </span>
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <p className="text-xs text-slate-300">
+                        <p className="text-xs text-ink-soft">
                           {t('sv_answer_go')}
                         </p>
 
@@ -730,31 +730,31 @@ export const StudentView: React.FC<StudentViewProps> = ({
                               value={answerInput}
                               onChange={(e) => setAnswerInput(e.target.value)}
                               placeholder={t('sv_answer_placeholder')}
-                              className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-white/10 text-white font-semibold text-sm focus:outline-none focus:border-indigo-500 w-full"
+                              className="flex-1 px-4 py-3 rounded-xl bg-surface-sunken border border-line text-ink font-semibold text-sm focus:outline-none focus:border-brand-500 w-full"
                             />
                             <button
                               onClick={() => handleAnswerSubmit()}
                               disabled={!answerInput.trim()}
-                              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(79,70,229,0.4)] disabled:opacity-50 shrink-0"
+                              className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-ink font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[var(--shadow-pop-brand)] disabled:opacity-50 shrink-0"
                             >
                               <Send className="w-4 h-4" /> {t('sv_submit')}
                             </button>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 italic">
+                          <div className="text-xs text-ink-faint italic">
                             {t('sv_pick_option')}
                           </div>
                         )}
                       </div>
                     )
                   ) : (
-                    <div className="p-4 rounded-xl bg-slate-950/80 border border-white/5 text-xs text-slate-300 space-y-1">
-                      <div className="font-bold text-indigo-400 uppercase tracking-wider">
+                    <div className="p-4 rounded-xl bg-surface-sunken border border-line text-xs text-ink-soft space-y-1">
+                      <div className="font-bold text-brand-400 uppercase tracking-wider">
                         {t('sv_member_only')}
                       </div>
                       <p className=" text-xs">
                         {t('sv_leader_answering')}
-                        <span className="font-bold text-white">
+                        <span className="font-bold text-ink">
                           {myTeam.currentAnswer ? myTeam.currentAnswer : t('sv_thinking')}
                         </span>
                       </p>
@@ -765,17 +765,17 @@ export const StudentView: React.FC<StudentViewProps> = ({
 
               {/* PHASE 3 & 4: GRADING & ROUND RESULTS */}
               {(gameState.phase === 'GRADING' || gameState.phase === 'ROUND_RESULT') && (
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-white/10 space-y-2">
-                  <h4 className="font-bold text-indigo-400 text-xs uppercase tracking-wider">
+                <div className="p-4 rounded-xl bg-surface-sunken border border-line space-y-2">
+                  <h4 className="font-bold text-brand-400 text-xs uppercase tracking-wider">
                     {t('sv_round_grading')}
                   </h4>
                   {gameState.phase === 'ROUND_RESULT' && currentQ?.correctAnswer ? (
-                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-sm">
-                      <span className="text-emerald-300 font-bold uppercase text-xs tracking-wider">{t('sv_correct_answer')}</span>
-                      <span className=" font-black text-white">{getQuestionInLanguage(currentQ, lang).correctAnswer}</span>
+                    <div className="p-3 rounded-xl bg-play-500/10 border border-play-500/30 text-sm">
+                      <span className="text-play-400 font-bold uppercase text-xs tracking-wider">{t('sv_correct_answer')}</span>
+                      <span className=" font-black text-ink">{getQuestionInLanguage(currentQ, lang).correctAnswer}</span>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-300">
+                    <p className="text-xs text-ink-soft">
                       {t('sv_teacher_grading')}
                     </p>
                   )}
@@ -783,8 +783,8 @@ export const StudentView: React.FC<StudentViewProps> = ({
                     <div
                       className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between uppercase tracking-wider ${
                         myTeam.lastResult.isCorrect
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                          : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                          ? 'bg-play-500/10 border-play-500/30 text-play-400'
+                          : 'bg-danger-500/10 border-danger-500/30 text-danger-400'
                       }`}
                     >
                       <span>
@@ -806,7 +806,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <div className="flex justify-end pt-2">
               <button
                 onClick={handleExitGame}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-surface-raised text-ink-faint hover:text-ink border border-line text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> {t('sv_back_home_2')}
               </button>

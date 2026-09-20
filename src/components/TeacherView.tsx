@@ -9,7 +9,7 @@ import { FeedbackListModal } from './FeedbackListModal';
 import { TeacherChatLauncher } from './ChatSection';
 import { apiPost } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Modal } from './ui/Modal';
+import { Modal } from '../ui/Modal';
 import { useLang, getQuestionInLanguage, translateDiplicity, translateServerError, Language } from '../i18n';
 import {
   Shield,
@@ -79,23 +79,23 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   if (!gameState) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4 animate-bounce">
+        <div className="w-16 h-16 rounded-2xl bg-warn-500/10 border border-warn-500/20 text-warn-400 flex items-center justify-center mb-4 animate-bounce">
           <Shield className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-black text-white mb-2">
+        <h2 className="text-2xl font-black text-ink mb-2">
           {t('nav_teacher_console')}
         </h2>
         {isPro && (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-xs font-black tracking-widest text-slate-950 shadow-lg shadow-amber-500/30 mb-4">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-warn-500 to-orange-500 px-2.5 py-1 text-xs font-black tracking-widest text-surface-sunken shadow-lg shadow-warn-500/30 mb-4">
             {t('tv_pro_badge')}
           </span>
         )}
-        <p className="text-slate-400 text-sm max-w-md mb-6">
+        <p className="text-ink-faint text-sm max-w-md mb-6">
           {t('tv_empty_create_sub')}
         </p>
         <button
           onClick={onCreateGame}
-          className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
+          className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-warn-500 via-orange-500 to-yellow-400 hover:from-warn-400 hover:to-yellow-300 text-surface-sunken font-black text-base shadow-xl shadow-orange-500/20 transition-all scale-105 hover:scale-110"
         >
           🎮 {t('tv_create_game')}
         </button>
@@ -392,20 +392,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       )}
 
       {/* 4. QUESTIONS MANAGER SECTION */}
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
+      <div className="bg-surface/95 border border-line rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-line">
           <div>
             <div className="flex items-center gap-2.5">
-              <h3 className="font-bold text-white text-lg uppercase tracking-tight">
+              <h3 className="font-bold text-ink text-lg uppercase tracking-tight">
                 {t('tv_questions_bank')}
               </h3>
               {isPro && (
-                <span className="rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-slate-950 shadow shadow-amber-500/30">
+                <span className="rounded-md bg-gradient-to-r from-warn-500 to-orange-500 px-2 py-0.5 text-[10px] font-black tracking-widest text-surface-sunken shadow shadow-warn-500/30">
                   {t('tv_pro_badge')}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-faint">
               {t('tv_total_questions_prefix')}{questions.length}{t('tv_total_questions_suffix')}
             </p>
           </div>
@@ -414,10 +414,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             {questions.length > 0 && (
               <button
                 onClick={() => setConfirmState({ kind: 'delete-all' })}
-                className="flex h-10 items-center justify-center gap-1.5 px-3.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold uppercase tracking-wider transition-all"
+                className="flex h-10 items-center justify-center gap-1.5 px-3.5 rounded-xl bg-danger-500/15 hover:bg-danger-500/30 text-danger-400 border border-danger-500/30 text-xs font-bold uppercase tracking-wider transition-all"
                 title={t('tv_delete_all_title_attr')}
               >
-                <Trash2 className="w-4 h-4 text-rose-400" />
+                <Trash2 className="w-4 h-4 text-danger-400" />
                 {t('tv_delete_all')}
               </button>
             )}
@@ -425,7 +425,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               data-testid="add-question-btn"
               onClick={() => setShowAddQuestion(!showAddQuestion)}
-              className="flex h-10 items-center justify-center gap-1.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
+              className="flex h-10 items-center justify-center gap-1.5 px-4 rounded-xl bg-surface-raised hover:bg-surface-raised text-ink text-xs font-bold uppercase tracking-wider border border-line transition-all"
             >
               <Plus className="w-4 h-4" /> {t('tv_add_question')}
             </button>
@@ -434,9 +434,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
         {/* Add Question Form */}
         {showAddQuestion && (
-          <form onSubmit={handleAddQuestion} className="p-5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-4">
+          <form onSubmit={handleAddQuestion} className="p-5 rounded-2xl bg-surface-sunken border border-line space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-1">
                 {t('tv_question_text')}
               </label>
               <input
@@ -446,20 +446,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 value={newQuestionText}
                 onChange={(e) => setNewQuestionText(e.target.value)}
                 placeholder={t('tv_question_placeholder')}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface border border-line text-ink text-sm focus:outline-none focus:border-brand-500"
               />
             </div>
 
             {/* Optionless Question Checkbox */}
-            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/90 border border-indigo-500/30">
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-surface/95 border border-brand-300">
               <input
                 type="checkbox"
                 id="isOptionless"
                 checked={isOptionless}
                 onChange={(e) => setIsOptionless(e.target.checked)}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-950 border-white/20 cursor-pointer"
+                className="w-4 h-4 rounded text-brand-400 focus:ring-brand-500 bg-surface-sunken border-line cursor-pointer"
               />
-              <label htmlFor="isOptionless" className="text-xs font-bold text-indigo-200 cursor-pointer select-none">
+              <label htmlFor="isOptionless" className="text-xs font-bold text-brand-300 cursor-pointer select-none">
                 {t('tv_optionless')}
               </label>
             </div>
@@ -473,7 +473,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   placeholder={t('tv_variant_a')}
                   value={newOptA}
                   onChange={(e) => setNewOptA(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500"
                 />
                 <input
                   type="text"
@@ -481,7 +481,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   placeholder={t('tv_variant_b')}
                   value={newOptB}
                   onChange={(e) => setNewOptB(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500"
                 />
                 <input
                   type="text"
@@ -489,7 +489,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   placeholder={t('tv_variant_c')}
                   value={newOptC}
                   onChange={(e) => setNewOptC(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500"
                 />
                 <input
                   type="text"
@@ -497,14 +497,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   placeholder={t('tv_variant_d')}
                   value={newOptD}
                   onChange={(e) => setNewOptD(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500"
                 />
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-1">
                   {t('tv_correct_answer_label')}
                 </label>
                 <input
@@ -514,12 +514,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   placeholder={t('tv_correct_placeholder')}
                   value={newCorrect}
                   onChange={(e) => setNewCorrect(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-1">
                   {t('tv_time_limit')}
                 </label>
                 <input
@@ -528,14 +528,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   max={120}
                   value={newTime}
                   onChange={(e) => setNewTime(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-xs focus:outline-none focus:border-indigo-500 font-bold text-indigo-300"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line text-ink text-xs focus:outline-none focus:border-brand-500 font-bold text-brand-300"
                 />
               </div>
             </div>
 
             {/* Difficulty Level Input */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-faint mb-1">
                 {t('tv_difficulty')}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -544,8 +544,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   onClick={() => setNewDifficulty('Oson')}
                   className={`py-1.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     newDifficulty === 'Oson'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60'
-                      : 'bg-slate-900 border-white/10 text-slate-400'
+                      ? 'bg-play-500/20 text-play-400 border-play-500/60'
+                      : 'bg-surface border-line text-ink-faint'
                   }`}
                 >
                   🟢 {translateDiplicity('Oson', lang)}
@@ -555,8 +555,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   onClick={() => setNewDifficulty("O'rta")}
                   className={`py-1.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     newDifficulty === "O'rta"
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60'
-                      : 'bg-slate-900 border-white/10 text-slate-400'
+                      ? 'bg-warn-500/20 text-warn-400 border-warn-500/60'
+                      : 'bg-surface border-line text-ink-faint'
                   }`}
                 >
                   🟡 {translateDiplicity("O'rta", lang)}
@@ -566,8 +566,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   onClick={() => setNewDifficulty('Qiyin')}
                   className={`py-1.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     newDifficulty === 'Qiyin'
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/60'
-                      : 'bg-slate-900 border-white/10 text-slate-400'
+                      ? 'bg-danger-500/20 text-danger-400 border-danger-500/60'
+                      : 'bg-surface border-line text-ink-faint'
                   }`}
                 >
                   🔴 {translateDiplicity('Qiyin', lang)}
@@ -579,14 +579,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddQuestion(false)}
-                className="h-10 px-4 rounded-xl text-slate-400 hover:text-white text-xs uppercase font-bold"
+                className="h-10 px-4 rounded-xl text-ink-faint hover:text-ink text-xs uppercase font-bold"
               >
                 {t('cancel')}
               </button>
               <button
                 type="submit"
                 data-testid="q-save"
-                className="h-10 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)]"
+                className="h-10 px-5 rounded-xl bg-brand-600 hover:bg-brand-500 text-ink font-bold text-xs uppercase tracking-wider shadow-[var(--shadow-pop-brand)]"
               >
                 {t('save')}
               </button>
@@ -597,13 +597,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {/* Database Difficulty Category Tabs */}
         {questions.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
-            <span className="text-xs font-bold text-slate-400 mr-1 uppercase tracking-wider">{t('tv_filter')}</span>
+            <span className="text-xs font-bold text-ink-faint mr-1 uppercase tracking-wider">{t('tv_filter')}</span>
             <button
               onClick={() => setActiveDbDifficultyTab('Barchasi')}
               className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Barchasi'
-                  ? 'bg-indigo-600 text-white shadow-[0_0_10px_rgba(79,70,229,0.4)]'
-                  : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
+                  ? 'bg-brand-600 text-ink shadow-[var(--shadow-pop-brand)]'
+                  : 'bg-surface-sunken text-ink-faint hover:text-ink border border-line'
               }`}
             >
               {t('qsm_all')} ({questions.length})
@@ -612,8 +612,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               onClick={() => setActiveDbDifficultyTab('Oson')}
               className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Oson'
-                  ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
-                  : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
+                  ? 'bg-play-500/30 text-play-400 border border-play-500/50'
+                  : 'bg-surface-sunken text-ink-faint hover:text-ink border border-line'
               }`}
             >
               🟢 {translateDiplicity('Oson', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Oson').length})
@@ -622,8 +622,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               onClick={() => setActiveDbDifficultyTab("O'rta")}
               className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === "O'rta"
-                  ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
-                  : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
+                  ? 'bg-warn-500/30 text-warn-400 border border-warn-500/50'
+                  : 'bg-surface-sunken text-ink-faint hover:text-ink border border-line'
               }`}
             >
               🟡 {translateDiplicity("O'rta", lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === "O'rta").length})
@@ -632,8 +632,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               onClick={() => setActiveDbDifficultyTab('Qiyin')}
               className={`h-10 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeDbDifficultyTab === 'Qiyin'
-                  ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50'
-                  : 'bg-slate-950/80 text-slate-400 hover:text-white border border-white/5'
+                  ? 'bg-danger-500/30 text-danger-400 border border-danger-500/50'
+                  : 'bg-surface-sunken text-ink-faint hover:text-ink border border-line'
               }`}
             >
               🔴 {translateDiplicity('Qiyin', lang)} ({questions.filter((q) => (q.difficulty || "O'rta") === 'Qiyin').length})
@@ -643,9 +643,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
         {/* Questions list preview */}
         {questions.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400 space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-300">{t('tv_bank_empty')}</p>
-            <p className="text-xs text-slate-500">{t('tv_bank_empty_sub')}</p>
+          <div className="p-8 text-center rounded-2xl bg-surface-sunken border border-dashed border-line text-ink-faint space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-soft">{t('tv_bank_empty')}</p>
+            <p className="text-xs text-ink-faint">{t('tv_bank_empty_sub')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
@@ -661,22 +661,22 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 const diff = q.difficulty || "O'rta";
                 const diffBadge =
                   diff === 'Oson'
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    ? 'bg-play-500/20 text-play-400 border-play-500/30'
                     : diff === 'Qiyin'
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                    ? 'bg-danger-500/20 text-danger-400 border-danger-500/30'
+                    : 'bg-warn-500/20 text-warn-400 border-warn-500/30';
 
                 return (
                   <div
                     key={q.id || idx}
                     className={`p-3 rounded-xl border text-xs space-y-1.5 transition-all ${
                       idx === currentQuestionIndex
-                        ? 'bg-indigo-500/20 border-indigo-500 text-white ring-1 ring-indigo-500/50'
-                        : 'bg-slate-950/60 border-white/5 text-slate-300'
+                        ? 'bg-brand-500/20 border-brand-500 text-ink ring-1 ring-brand-500/50'
+                        : 'bg-surface-sunken border-line text-ink-soft'
                     }`}
                   >
                     <div className="flex items-center justify-between font-bold gap-2">
-                      <span className="text-indigo-400">
+                      <span className="text-brand-400">
                         {idx < 9 ? `0${idx + 1}` : idx + 1}-{t('tv_question_num')} ({q.timeLimit}{t('tv_time_unit')})
                       </span>
 
@@ -688,25 +688,25 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         </span>
 
                         {isNoOpt ? (
-                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold uppercase">
+                          <span className="text-xs px-2 py-0.5 rounded bg-warn-500/20 text-warn-400 border border-warn-500/30 font-bold uppercase">
                             {t('tv_variantless')}
                           </span>
                         ) : (
-                          <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold uppercase">
+                          <span className="text-xs px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-300 font-bold uppercase">
                             {t('tv_test_label')} ({(q.options ?? []).length}{t('tv_variant_unit')})
                           </span>
                         )}
 
                         {/* Delete single question button */}
                         {confirmDeleteIndex === idx ? (
-<div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-1 rounded-lg">
-                            <span className="text-xs text-rose-300 font-bold uppercase">{t('tv_delete_confirm')}</span>
+<div className="flex items-center gap-1 bg-danger-500/20 border border-danger-500/40 px-2 py-1 rounded-lg">
+                            <span className="text-xs text-danger-400 font-bold uppercase">{t('tv_delete_confirm')}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteQuestion(idx);
                               }}
-                              className="h-10 w-10 rounded bg-rose-600 text-white hover:bg-rose-500 flex items-center justify-center"
+                              className="h-10 w-10 rounded bg-danger-600 text-ink hover:bg-danger-500 flex items-center justify-center"
                               title={t('tv_yes')}
                             >
                               <Check className="w-4 h-4" />
@@ -716,7 +716,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                 e.stopPropagation();
                                 setConfirmDeleteIndex(null);
                               }}
-                              className="h-10 w-10 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center"
+                              className="h-10 w-10 rounded bg-surface-raised text-ink-soft hover:bg-surface-raised flex items-center justify-center"
                               title={t('cancel')}
                             >
                               <XCircle className="w-4 h-4" />
@@ -728,7 +728,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               e.stopPropagation();
                               setConfirmDeleteIndex(idx);
                             }}
-                            className="h-10 w-10 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors flex items-center justify-center"
+                            className="h-10 w-10 rounded-lg text-ink-faint hover:text-danger-400 hover:bg-danger-500/20 transition-colors flex items-center justify-center"
                             title={t('tv_delete_question_title')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />

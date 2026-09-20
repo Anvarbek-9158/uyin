@@ -66,17 +66,17 @@ const MessageBubble: React.FC<{
     <div
       className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm break-words leading-snug shadow-lg ${
         mine
-          ? 'bg-indigo-600 text-white rounded-br-md border border-indigo-500/50'
-          : 'bg-slate-950 text-slate-100 rounded-bl-md border border-white/10'
+          ? 'bg-brand-600 text-ink rounded-br-md border border-brand-300'
+          : 'bg-surface-sunken text-surface-raised rounded-bl-md border border-line'
       }`}
     >
       {showSender &&
         (msg.role === 'teacher' ? (
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+            <span className="text-xs font-black uppercase tracking-wider text-warn-400">
               {t('chat_teacher_role')}
             </span>
-            <Crown className="w-3 h-3 text-amber-400" />
+            <Crown className="w-3 h-3 text-warn-400" />
           </div>
         ) : (
           <div className="flex items-center gap-1 mb-1">
@@ -88,7 +88,7 @@ const MessageBubble: React.FC<{
       <p className="text-[13px]">{msg.text}</p>
       <div
         className={`mt-1 text-xs ${
-          mine ? 'text-indigo-200' : 'text-slate-500'
+          mine ? 'text-brand-300' : 'text-ink-faint'
         }`}
       >
         {formatTime(msg.createdAt)}
@@ -363,7 +363,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
   };
 
   const renderInput = (placeholder: string) => (
-    <div className="p-4 border-t border-white/10 bg-slate-950/60">
+    <div className="p-4 border-t border-line bg-surface-sunken">
       <div className="flex items-center gap-2">
         <input
           data-testid="chat-input"
@@ -378,13 +378,13 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           }}
           placeholder={placeholder}
           maxLength={1000}
-          className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+          className="flex-1 px-4 py-3 rounded-xl bg-surface border border-line text-ink text-sm placeholder:text-ink-faint focus:outline-none focus:border-brand-500"
         />
         <button
           data-testid="chat-send"
           onClick={handleSend}
           disabled={!inputText.trim() || sending || cooldown > 0}
-          className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all cursor-pointer shrink-0"
+          className="p-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-ink disabled:opacity-40 transition-all cursor-pointer shrink-0"
           aria-label={t('chat_send_aria')}
         >
           {sending ? (
@@ -402,7 +402,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
   const renderError = () =>
     errorMsg && (
       <div className="px-4 pb-2">
-        <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+        <div className="p-2.5 rounded-xl bg-danger-500/15 border border-danger-500/30 text-danger-400 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -440,30 +440,30 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       : t('chat_private_empty_text');
 
     return (
-      <div className="flex flex-col h-full bg-slate-900/95 backdrop-blur-xl">
+      <div className="flex flex-col h-full bg-surface/95 backdrop-blur-xl">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-950/60">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line bg-surface-sunken">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.4)] shrink-0 ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-[var(--shadow-pop-brand)] shrink-0 ${
                 onGroupTab
-                  ? 'bg-emerald-600'
-                  : 'bg-indigo-600'
+                  ? 'bg-play-600'
+                  : 'bg-brand-600'
               }`}
             >
               {onGroupTab ? (
-                <Users className="w-5 h-5 text-white" />
+                <Users className="w-5 h-5 text-ink" />
               ) : (
-                <MessageSquare className="w-5 h-5 text-white" />
+                <MessageSquare className="w-5 h-5 text-ink" />
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
+              <h3 className="font-black text-ink text-sm uppercase tracking-wider truncate">
                 {title}
                 {onGroupTab && groupTeam ? ` — ${groupTeam.name}` : ''}
               </h3>
-              <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <p className="text-xs text-ink-faint flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-play-400 animate-pulse" />
                 {subtitle}
               </p>
             </div>
@@ -471,7 +471,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors shrink-0 cursor-pointer"
+              className="p-2 rounded-lg bg-surface-raised hover:bg-surface-raised text-ink-soft hover:text-ink transition-colors shrink-0 cursor-pointer"
               aria-label={t('chat_close_aria')}
             >
               <X className="w-4 h-4" />
@@ -481,19 +481,19 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
 
         {/* Room tabs: private chat vs own group chat */}
         {groupRoom && (
-          <div className="px-4 py-2 border-b border-white/10 bg-slate-950/40 flex gap-2">
+          <div className="px-4 py-2 border-b border-line bg-surface-sunken flex gap-2">
             <button
               onClick={() => openRoom(privateRoom.roomKey)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer ${
                 !onGroupTab
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-800/70 text-slate-400 hover:text-white'
+                  ? 'bg-brand-600 text-ink'
+                  : 'bg-surface-raised text-ink-faint hover:text-ink'
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
               {t('chat_teacher_tab')}
               {privateUnread > 0 && (
-                <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-xs font-black flex items-center justify-center">
+                <span className="min-w-4 h-4 px-1 rounded-full bg-danger-500 text-ink text-xs font-black flex items-center justify-center">
                   {privateUnread > 99 ? '99+' : privateUnread}
                 </span>
               )}
@@ -502,14 +502,14 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               onClick={() => openRoom(groupRoom.roomKey)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer ${
                 onGroupTab
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800/70 text-slate-400 hover:text-white'
+                  ? 'bg-play-600 text-ink'
+                  : 'bg-surface-raised text-ink-faint hover:text-ink'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
               {t('chat_group_subtitle')}{groupMemberCount > 0 ? ` (${groupMemberCount})` : ''}
               {groupUnread > 0 && (
-                <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-xs font-black flex items-center justify-center">
+                <span className="min-w-4 h-4 px-1 rounded-full bg-danger-500 text-ink text-xs font-black flex items-center justify-center">
                   {groupUnread > 99 ? '99+' : groupUnread}
                 </span>
               )}
@@ -520,20 +520,20 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
           {loadingHistory && ownMessages.length === 0 && (
-            <div className="flex items-center justify-center py-8 text-slate-500 text-xs">
+            <div className="flex items-center justify-center py-8 text-ink-faint text-xs">
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> {t('chat_loading')}
             </div>
           )}
 
           {ownMessages.length === 0 && !loadingHistory && (
             <div className="text-center py-10 space-y-2">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-300 text-brand-400 flex items-center justify-center mx-auto">
                 {onGroupTab ? <Users className="w-7 h-7" /> : <MessageSquare className="w-7 h-7" />}
               </div>
-              <p className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+              <p className="text-sm font-bold text-ink-soft uppercase tracking-wider">
                 {t('chat_no_messages')}
               </p>
-              <p className="text-xs text-slate-500 max-w-xs mx-auto">{emptyText}</p>
+              <p className="text-xs text-ink-faint max-w-xs mx-auto">{emptyText}</p>
             </div>
           )}
 
@@ -570,18 +570,18 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
     : 0;
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/95 backdrop-blur-xl">
+    <div className="flex flex-col h-full bg-surface/95 backdrop-blur-xl">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-950/60">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line bg-surface-sunken">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-5 h-5 text-amber-400" />
+          <div className="w-10 h-10 rounded-xl bg-warn-500/20 border border-warn-500/40 flex items-center justify-center shrink-0">
+            <MessageSquare className="w-5 h-5 text-warn-400" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-black text-white text-sm uppercase tracking-wider truncate">
+            <h3 className="font-black text-ink text-sm uppercase tracking-wider truncate">
               {t('chat_teacher_chats')}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-faint">
               {t('chat_teacher_sub')}
             </p>
           </div>
@@ -589,7 +589,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors shrink-0 cursor-pointer"
+            className="p-2 rounded-lg bg-surface-raised hover:bg-surface-raised text-ink-soft hover:text-ink transition-colors shrink-0 cursor-pointer"
             aria-label={t('chat_close_aria')}
           >
             <X className="w-4 h-4" />
@@ -600,11 +600,11 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       {studentList.length === 0 && groupRooms.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center space-y-2">
-            <Users className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+            <Users className="w-10 h-10 text-ink-soft mx-auto" />
+            <p className="text-sm font-bold text-ink-faint uppercase tracking-wider">
               {t('chat_no_students')}
             </p>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-ink-soft">
               {t('chat_no_students_sub')}
             </p>
           </div>
@@ -612,15 +612,15 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
       ) : (
         <div className="flex flex-1 min-h-0">
           {/* Room list */}
-          <div className="w-52 sm:w-64 border-r border-white/10 overflow-y-auto bg-slate-950/40 flex-shrink-0">
+          <div className="w-52 sm:w-64 border-r border-line overflow-y-auto bg-surface-sunken flex-shrink-0">
             {/* Group rooms */}
             {groupRooms.length > 0 && (
-              <div className="py-2 border-b border-white/5">
+              <div className="py-2 border-b border-line">
                 <div className="px-4 py-1.5 flex items-center gap-2">
-                  <Users className="w-3 h-3 text-emerald-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-400/90 truncate">
+                  <Users className="w-3 h-3 text-play-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-play-400/90 truncate">
                     {t('chat_group_section')}
-                  </span>                  <span className="text-xs text-slate-600">
+                  </span>                  <span className="text-xs text-ink-soft">
                     ({groupRooms.length})
                   </span>
                 </div>
@@ -639,8 +639,8 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       onClick={() => openRoom(gr.roomKey)}
                       className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer border-l-2 ${
                         active
-                          ? 'bg-emerald-500/15 border-emerald-400 text-white'
-                          : 'border-transparent text-slate-300 hover:bg-slate-800/60'
+                          ? 'bg-play-500/15 border-play-400 text-ink'
+                          : 'border-transparent text-ink-soft hover:bg-surface-raised'
                       }`}
                     >
                       <span
@@ -652,16 +652,16 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-bold truncate">
                           {team.name}
-                          <span className="ml-1 text-xs text-slate-500">
+                          <span className="ml-1 text-xs text-ink-faint">
                             {memberCount} {t('chat_member')}
                           </span>
                         </span>
-                        <span className="block text-xs text-slate-500 truncate">
+                        <span className="block text-xs text-ink-faint truncate">
                           {preview || t('chat_group_preview')}
                         </span>
                       </span>
                       {unreadCount > 0 && (
-                        <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-xs font-black flex items-center justify-center shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-danger-500 text-ink text-xs font-black flex items-center justify-center shrink-0">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
@@ -679,10 +679,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: group.color }}
                   />
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-500 truncate">
+                  <span className="text-xs font-black uppercase tracking-widest text-ink-faint truncate">
                     {group.label}
                   </span>
-                  <span className="text-xs text-slate-600">
+                  <span className="text-xs text-ink-soft">
                     ({group.students.length})
                   </span>
                 </div>
@@ -698,28 +698,28 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                       onClick={() => openRoom(roomKey)}
                       className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer border-l-2 ${
                         active
-                          ? 'bg-indigo-500/15 border-indigo-400 text-white'
-                          : 'border-transparent text-slate-300 hover:bg-slate-800/60'
+                          ? 'bg-brand-500/15 border-brand-400 text-ink'
+                          : 'border-transparent text-ink-soft hover:bg-surface-raised'
                       }`}
                     >
                       <span
                         className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border ${
                           active
-                            ? 'bg-indigo-600 text-white border-indigo-400/60'
-                            : 'bg-slate-800 text-indigo-300 border-white/10'
+                            ? 'bg-brand-600 text-ink border-brand-400/60'
+                            : 'bg-surface-raised text-brand-300 border-line'
                         }`}
                       >
                         {st.name.charAt(0).toUpperCase()}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-bold truncate">{st.name}</span>
-                        <span className="flex items-center gap-1 text-xs text-slate-500 truncate">
-                          {st.isLeader && <Crown className="w-2.5 h-2.5 text-amber-400" />}
+                        <span className="flex items-center gap-1 text-xs text-ink-faint truncate">
+                          {st.isLeader && <Crown className="w-2.5 h-2.5 text-warn-400" />}
                           {preview || (st.isLeader ? t('chat_captain_role') : t('chat_student_role'))}
                         </span>
                       </span>
                       {unreadCount > 0 && (
-                        <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-xs font-black flex items-center justify-center shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-danger-500 text-ink text-xs font-black flex items-center justify-center shrink-0">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
@@ -735,7 +735,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             {selectedRoom?.roomType === 'group' && selectedTeam ? (
               <>
                 {/* Group chat header */}
-                <div className="px-4 py-3 border-b border-white/10 bg-slate-950/50 flex items-center gap-3">
+                <div className="px-4 py-3 border-b border-line bg-surface-sunken flex items-center gap-3">
                   <span
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
                     style={{
@@ -746,10 +746,10 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                     <Users className="w-5 h-5" style={{ color: selectedTeam.color || '#10b981' }} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="block font-bold text-white text-sm truncate">
+                    <span className="block font-bold text-ink text-sm truncate">
                       {selectedTeam.name}
                     </span>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="text-xs text-ink-faint truncate">
                       {selectedTeamMemberCount} {t('chat_member')} · {t('chat_student_group_sub')}
                     </p>
                   </div>
@@ -759,11 +759,11 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
                   {(messages[selectedRoomKey] || []).length === 0 && (
                     <div className="text-center py-10 space-y-1">
-                      <Users className="w-8 h-8 text-emerald-400/60 mx-auto" />
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <Users className="w-8 h-8 text-play-400/60 mx-auto" />
+                      <p className="text-xs font-bold text-ink-faint uppercase tracking-wider">
                         {t('chat_group_empty')}
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-ink-soft">
                         {t('chat_group_empty_sub')}
                       </p>
                     </div>
@@ -783,7 +783,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
             ) : currentStudent ? (
               <>
                 {/* Private chat header */}
-                <div className="px-4 py-3 border-b border-white/10 bg-slate-950/50 flex items-center gap-3">
+                <div className="px-4 py-3 border-b border-line bg-surface-sunken flex items-center gap-3">
                   <span
                     className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border"
                     style={{
@@ -795,14 +795,14 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-white text-sm truncate">
+                      <span className="font-bold text-ink text-sm truncate">
                         {currentStudent.name}
                       </span>
                       {currentStudent.isLeader && (
-                        <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <Crown className="w-3.5 h-3.5 text-warn-400 shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="text-xs text-ink-faint truncate">
                       {currentTeam ? currentTeam.name : t('chat_no_group')}
                     </p>
                   </div>
@@ -812,11 +812,11 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
                   {(messages[selectedRoomKey] || []).length === 0 && (
                     <div className="text-center py-10 space-y-1">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-400/60 mx-auto" />
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <CheckCircle2 className="w-8 h-8 text-play-400/60 mx-auto" />
+                      <p className="text-xs font-bold text-ink-faint uppercase tracking-wider">
                         {t('chat_start')}
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-ink-soft">
                         {t('chat_private_hint')}
                       </p>
                     </div>
@@ -841,7 +841,7 @@ export const ChatSection: React.FC<ChatSectionProps> = ({
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center p-8">
-                <p className="text-xs text-slate-500 text-center">
+                <p className="text-xs text-ink-faint text-center">
                   {t('chat_no_room')}
                 </p>
               </div>
@@ -877,17 +877,17 @@ export const StudentChatLauncher: React.FC<StudentChatLauncherProps> = ({
         <button
           data-testid="chat-launcher"
           onClick={() => setOpen(true)}
-          className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_25px_rgba(79,70,229,0.5)] flex items-center justify-center transition-all cursor-pointer border border-indigo-400/40 group"
+          className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-brand-600 hover:bg-brand-500 text-ink shadow-[var(--shadow-pop-brand)] flex items-center justify-center transition-all cursor-pointer border border-brand-400/40 group"
           title={t('chat_launcher_title')}
           aria-label={t('chat_launcher_open')}
         >
           <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
-          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950" />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-play-400 border-2 border-surface-sunken" />
         </button>
       )}
 
       {open && (
-        <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[400px] h-[min(560px,70vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
+        <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[400px] h-[min(560px,70vh)] flex flex-col overflow-hidden rounded-2xl border border-line shadow-2xl shadow-surface-sunken/60 animate-[var(--animate-fade-in)]">
           <ChatSection
             clientId={clientId}
             pin={pin}
@@ -925,18 +925,18 @@ export const TeacherChatLauncher: React.FC<TeacherChatLauncherProps> = ({
       <button
         data-testid="chat-launcher"
         onClick={() => setOpen(true)}
-        className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-600 text-white shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[0_0_35px_rgba(16,185,129,0.65)] hover:scale-105 active:scale-95 transition-all border border-white/20 flex items-center justify-center group cursor-pointer"
+        className="relative mt-6 mx-auto block lg:fixed lg:bottom-6 lg:right-6 lg:mx-0 lg:mt-0 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-play-600 text-ink shadow-[0_0_25px_rgba(99,102,241,0.55)] hover:shadow-[var(--shadow-pop-play)] hover:scale-105 active:scale-95 transition-all border border-line flex items-center justify-center group cursor-pointer"
         title={t('chat_launcher_students')}
         aria-label={t('chat_launcher_open')}
       >
         <MessagesSquare className="w-7 h-7 group-hover:scale-110 transition-transform" strokeWidth={2.2} />
-        <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-slate-950 text-xs font-black flex items-center justify-center border-2 border-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.6)]">
+        <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1.5 rounded-full bg-warn-400 text-surface-sunken text-xs font-black flex items-center justify-center border-2 border-surface-sunken shadow-[0_0_10px_rgba(251,191,36,0.6)]">
           {studentCount}
         </span>
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-3 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[720px] h-[min(600px,75vh)] flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60 animate-fade-in">
+        <div className="fixed bottom-24 right-3 sm:right-6 z-[60] w-[calc(100vw-1.5rem)] max-w-[720px] h-[min(600px,75vh)] flex flex-col overflow-hidden rounded-2xl border border-line shadow-2xl shadow-surface-sunken/60 animate-[var(--animate-fade-in)]">
           <ChatSection
             clientId={clientId}
             pin={pin}

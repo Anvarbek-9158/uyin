@@ -1,179 +1,112 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
+/* =============================================================================
+   EDUPLAY DESIGN SYSTEM v4 — deep cosmic navy/violet, glowing accents.
+   Single dark theme used everywhere: marketing pages, dashboard, and the
+   live game console share the same tokens so nothing reads as a second
+   product anymore.
+   ============================================================================= */
 @theme {
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "Manrope", system-ui, sans-serif;
 
-  /* Design tokens: minimum interactive height & font enforced across the UI */
   --tap-target: 40px;
-  --tap-target-lg: 44px;
-  --text-min: 12px;
+  --tap-target-lg: 48px;
 
-  /* =====================================================================
-     Corona Admin Dashboard — dark design system
-     ===================================================================== */
-  /* Surfaces (slate steps used as backgrounds/borders are re-mapped to the
-     dashboard dark ramp so the whole app renders near-black cards on a #0F1116
-     canvas; the lighter steps 200–600 are still used for TEXT and stay light). */
-  --color-slate-50: #0f1116;
-  --color-slate-100: #15171f;
-  --color-slate-700: #2e3440;
-  --color-slate-800: #1a1d24;
-  --color-slate-900: #15181f;
-  --color-slate-950: #0b0d12;
+  /* ---- Canvas & surfaces (deep navy → violet ramp) ---- */
+  --color-canvas: #0a0b1a;
+  --color-surface: #12142b;
+  --color-surface-raised: #1a1d3a;
+  --color-surface-sunken: #0d0e22;
+  --color-line: #262a4d;
+  --color-line-strong: #3a3f6b;
 
-  /* Accent: positive / negative / action */
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
+  /* ---- Text ---- */
+  --color-ink: #f3f4fb;
+  --color-ink-soft: #a6abd1;
+  --color-ink-faint: #6b709c;
 
-  --color-emerald-400: #4ade80;
-  --color-emerald-500: #22c55e;
-  --color-emerald-600: #16a34a;
-  --color-rose-500: #ef4444;
-  --color-rose-600: #dc2626;
+  /* ---- Brand: electric blue (primary) + violet (secondary/teacher) ---- */
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
 
-  /* Surfaces */
-  --color-surface-dark: #0f1116;
-  --color-surface-card: #1a1d24;
-  --color-surface-elevated: rgba(26, 29, 36, 0.85);
+  --color-violet-300: #d8b4fe;
+  --color-violet-400: #c084fc;
+  --color-violet-500: #a855f7;
+  --color-violet-600: #9333ea;
 
-  /* Shadows */
-  --shadow-card: 0 10px 28px -8px rgba(0, 0, 0, 0.55), 0 2px 10px -4px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 18px 40px -12px rgba(0, 0, 0, 0.65), 0 4px 14px -4px rgba(0, 0, 0, 0.4);
-  --shadow-glow-indigo: 0 0 24px rgba(99, 102, 241, 0.35);
-  --shadow-glow-emerald: 0 0 24px rgba(34, 197, 94, 0.3);
-  --shadow-glow-amber: 0 0 24px rgba(245, 158, 11, 0.35);
+  /* ---- Semantic accents ---- */
+  --color-play-400: #34d399;
+  --color-play-500: #10b981;
+  --color-play-600: #059669;
+  --color-warn-400: #fbbf24;
+  --color-warn-500: #f59e0b;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-600: #e11d48;
 
-  --animate-fade-in: fade-in 0.5s ease-out both;
-  --animate-fadeIn: fade-in 0.4s ease-out both;
-  --animate-fade-up: fade-up 0.6s ease-out both;
-  --animate-pop: pop 0.35s ease-out both;
+  /* ---- Elevation ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.5), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 16px 36px -10px rgba(0, 0, 0, 0.55), 0 4px 12px -2px rgba(0, 0, 0, 0.35);
+  --shadow-pop-brand: 0 0 0 1px rgba(59, 130, 246, 0.4), 0 8px 24px -6px rgba(59, 130, 246, 0.5);
+  --shadow-pop-violet: 0 0 0 1px rgba(168, 85, 247, 0.4), 0 8px 24px -6px rgba(168, 85, 247, 0.5);
+  --shadow-pop-play: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 8px 24px -6px rgba(16, 185, 129, 0.5);
+  --shadow-pop-outline: 0 1px 0 0 var(--color-line-strong);
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.875rem;
+
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-fade-up: fade-up 0.5s ease-out both;
+  --animate-pop: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-shake: shake 0.45s ease-in-out both;
+  --animate-bounce-in: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
-  @keyframes fade-in {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
+  @keyframes fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes fade-up { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes pop { 0% { opacity: 0; transform: scale(0.92); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes bounce-in {
+    0% { opacity: 0; transform: scale(0.7) translateY(10px); }
+    60% { opacity: 1; transform: scale(1.05) translateY(-4px); }
+    100% { transform: scale(1) translateY(0); }
   }
-
   @keyframes shake {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    20% {
-      transform: translateX(-8px);
-    }
-    40% {
-      transform: translateX(8px);
-    }
-    60% {
-      transform: translateX(-6px);
-    }
-    80% {
-      transform: translateX(6px);
-    }
-  }
-
-  @keyframes fade-up {
-    0% {
-      opacity: 0;
-      transform: translateY(14px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes pop {
-    0% {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
   }
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-  }
-
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    background-color: #0f1116;
-    color: #e5e7eb;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
   }
-
-  .dark body {
-    background-color: #0f1116;
-    color: #e5e7eb;
-  }
-
-  ::selection {
-    background-color: rgba(99, 102, 241, 0.85);
-    color: #ffffff;
-  }
-
-  input,
-  textarea,
-  select,
-  button {
-    font-family: inherit;
-  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  ::selection { background-color: var(--color-brand-600); color: #ffffff; }
+  input, textarea, select, button { font-family: inherit; }
 }
 
-#root {
-  max-width: 100%;
-  overflow-x: hidden;
-}
+#root { max-width: 100%; overflow-x: hidden; }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.35);
-  border-radius: 8px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(99, 102, 241, 0.6);
-}
+* { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background-color: var(--color-line-strong); border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background-color: var(--color-brand-500); }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

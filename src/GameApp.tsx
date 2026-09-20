@@ -4,6 +4,11 @@ import { Channel } from 'pusher-js';
 import { GameSession } from './types';
 import { Navbar } from './components/Navbar';
 import { TeacherView } from './components/TeacherView';
+import { TeacherSidebar, TeacherMobileTabs, type TeacherTab } from './components/TeacherSidebar';
+import { TeacherAccountPanel } from './components/TeacherAccountPanel';
+import { TeacherMyGamesPanel } from './components/TeacherMyGamesPanel';
+import { TeacherResultsPanel } from './components/TeacherResultsPanel';
+import { TeacherHelpPanel } from './components/TeacherHelpPanel';
 import { sounds } from './utils/soundEffects';
 import { apiPost, apiGet, getClientId, setSessionToken } from './utils/api';
 import { pusher, teacherGameChannelName } from './utils/pusher';
@@ -19,6 +24,7 @@ export default function App() {
   const [gameState, setGameState] = useState<GameSession | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notification, setNotification] = useState<{ type: string; text: string } | null>(null);
+  const [teacherTab, setTeacherTab] = useState<TeacherTab>('home');
 
   // Keep sound preference accessible inside Pusher event handlers without re-subscribing
   const soundEnabledRef = useRef(soundEnabled);
@@ -185,11 +191,11 @@ export default function App() {
   }, [clientId, isTeacherAuth, gameState?.pin]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
       {/* Toast Notification Banner */}
       {notification && (
-        <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-slate-950/90 border border-indigo-500/40 rounded-2xl p-4 shadow-card backdrop-blur-xl animate-fade-in flex items-center gap-3 max-w-[calc(100vw-2rem)]">
-          <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 shrink-0">
+        <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-surface border-2 border-brand-300 rounded-2xl p-4 shadow-[var(--shadow-card-hover)] backdrop-blur-xl animate-[var(--animate-fade-in)] flex items-center gap-3 max-w-[calc(100vw-2rem)]">
+          <div className="p-2 rounded-xl bg-brand-500/15 text-brand-400 shrink-0">
             <Sparkles className="w-5 h-5" />
           </div>
           <p className="text-xs font-semibold text-white break-words min-w-0">{notification.text}</p>
@@ -208,22 +214,64 @@ export default function App() {
         onLogoutTeacher={handleTeacherLogout}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-full overflow-x-hidden">
-        <TeacherView
-          clientId={clientId}
-          gameState={gameState}
-          onResetGame={handleResetGame}
-          onCreateGame={handleCreateGame}
-          onPinUpdated={(s) => setGameState(s)}
-        />
-      </main>
+      {/* Main Content Area — the sidebar gives the console the same
+          dashboard wayfinding as the rest of the site, instead of a single
+          bare page. TeacherView itself is untouched: it only mounts while
+          the "Bosh sahifa" tab is active, so none of its internal state or
+          logic changed. */}
+      <div className="flex flex-1 w-full max-w-full overflow-x-hidden">
+        <TeacherSidebar active={teacherTab} onSelect={setTeacherTab} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TeacherMobileTabs active={teacherTab} onSelect={setTeacherTab} />
+          <main className="flex-1 w-full max-w-full overflow-x-hidden">
+            {teacherTab === 'home' && (
+              <TeacherView
+                clientId={clientId}
+                gameState={gameState}
+                onResetGame={handleResetGame}
+                onCreateGame={handleCreateGame}
+                onPinUpdated={(s) => setGameState(s)}
+              />
+            )}
+            {teacherTab === 'games' && (
+              <TeacherMyGamesPanel
+                pin={gameState?.pin || null}
+                waitingCount={Object.keys(gameState?.students || {}).length}
+                onCreateGame={() => {
+                  setTeacherTab('home');
+                  handleCreateGame();
+                }}
+              />
+            )}
+            {teacherTab === 'results' && (
+              <TeacherResultsPanel
+                teams={gameState?.teams || {}}
+                students={gameState?.students || {}}
+                hasActiveGame={Boolean(gameState?.pin)}
+              />
+            )}
+            {teacherTab === 'questions' && (
+              <TeacherView
+                clientId={clientId}
+                gameState={gameState}
+                onResetGame={handleResetGame}
+                onCreateGame={handleCreateGame}
+                onPinUpdated={(s) => setGameState(s)}
+              />
+            )}
+            {teacherTab === 'account' && (
+              <TeacherAccountPanel soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} onLogout={handleTeacherLogout} />
+            )}
+            {teacherTab === 'help' && <TeacherHelpPanel />}
+          </main>
+        </div>
+      </div>
 
       {/* Modern Footer */}
-      <footer className="bg-slate-950/80 border-t border-white/5 py-6 text-center text-xs text-slate-400 backdrop-blur-xl">
+      <footer className="bg-surface border-t-2 border-line py-6 text-center text-xs text-ink-faint backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="break-words">{t('footer_tag')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 uppercase tracking-widest text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-ink-faint uppercase tracking-widest text-xs">
             <span>Node.js</span>
             <span>Pusher Channels</span>
             <span>Express</span>

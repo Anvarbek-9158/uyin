@@ -29,18 +29,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const percentLeft = Math.max(0, Math.min(100, (timerSeconds / q.timeLimit) * 100));
 
   return (
-    <div className="bg-slate-900/90 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-10 shadow-[0_0_40px_rgba(79,70,229,0.25)] relative overflow-hidden backdrop-blur-xl">
+    <div className="bg-surface/95 border-2 border-brand-300 rounded-3xl p-6 sm:p-10 shadow-[var(--shadow-pop-brand)] relative overflow-hidden backdrop-blur-xl">
       {/* Background ambient glows */}
-      <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/15 blur-3xl rounded-full pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/15 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-500/15 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-brand-500/15 blur-3xl rounded-full pointer-events-none" />
 
       {/* Top Banner & Category */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-5 border-b-2 border-white/10 relative z-10">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-5 border-b-2 border-line relative z-10">
         <div className="flex items-center gap-3">
-          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)] border border-indigo-400/40">
+          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider bg-brand-600 text-ink shadow-[0_0_15px_rgba(99,102,241,0.6)] border border-brand-400/40">
             {q.category ? translateCategory(q.category, lang) : t('qc_category')}
           </span>
-          <span className="text-xs sm:text-sm uppercase font-extrabold text-indigo-300 tracking-wider">
+          <span className="text-xs sm:text-sm uppercase font-extrabold text-brand-300 tracking-wider">
             {t('qc_order')} ({questionIndex + 1}/{totalQuestions})
           </span>
         </div>
@@ -49,11 +49,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <div
           className={`flex items-center gap-2.5 px-5 py-2 sm:py-2.5 rounded-2xl border-2 transition-all ${
             timerSeconds <= 5
-              ? 'bg-rose-500/25 border-rose-500 text-rose-300 animate-pulse shadow-[0_0_20px_rgba(244,63,94,0.5)]'
-              : 'bg-slate-950 border-indigo-500/60 text-indigo-300 shadow-[0_0_15px_rgba(79,70,229,0.3)]'
+              ? 'bg-danger-500/25 border-danger-500 text-danger-400 animate-pulse shadow-[0_0_20px_rgba(244,63,94,0.5)]'
+              : 'bg-surface-sunken border-brand-300 text-brand-300 shadow-[var(--shadow-pop-brand)]'
           }`}
         >
-          <Clock className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-amber-400" />
+          <Clock className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-warn-400" />
           <span className=" font-black text-lg sm:text-xl md:text-2xl">
             {timerSeconds}s
           </span>
@@ -61,12 +61,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-slate-950 h-3 rounded-full mb-8 overflow-hidden border border-white/10 relative z-10">
+      <div className="w-full bg-surface-sunken h-3 rounded-full mb-8 overflow-hidden border border-line relative z-10">
         <div
           className={`h-full transition-all duration-1000 ease-linear ${
             timerSeconds <= 5
-              ? 'bg-rose-500 shadow-[0_0_15px_#f43f5e]'
-              : 'bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_15px_rgba(99,102,241,0.8)]'
+              ? 'bg-danger-500 shadow-[0_0_15px_#f43f5e]'
+              : 'bg-gradient-to-r from-brand-500 to-violet-500 shadow-[0_0_15px_rgba(99,102,241,0.8)]'
           }`}
           style={{ width: `${percentLeft}%` }}
         />
@@ -75,10 +75,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Question Text */}
       <div className="mb-10 relative z-10">
         <div className="flex items-start gap-4 sm:gap-5">
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.6)] border border-indigo-400/50 shrink-0 mt-1">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-brand-600 text-ink shadow-[var(--shadow-pop-brand)] border border-brand-400/50 shrink-0 mt-1">
             <HelpCircle className="w-7 h-7 sm:w-9 sm:h-9" />
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold leading-snug tracking-tight text-white">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold leading-snug tracking-tight text-ink">
             {q.text}
           </h2>
         </div>
@@ -99,8 +99,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 onClick={() => onSelectOption && onSelectOption(opt)}
                 className={`flex items-center justify-between p-5 sm:p-6 rounded-2xl border-2 text-left transition-all ${
                   isSelected
-                    ? 'bg-indigo-600/30 border-indigo-400 text-white ring-2 ring-indigo-400/60 shadow-[0_0_25px_rgba(79,70,229,0.4)]'
-                    : 'bg-slate-950/80 border-white/15 text-slate-100 hover:bg-slate-900 hover:border-indigo-500/60'
+                    ? 'bg-brand-600/30 border-brand-400 text-ink ring-2 ring-brand-400/60 shadow-[var(--shadow-pop-brand)]'
+                    : 'bg-surface-sunken border-line text-surface-raised hover:bg-surface hover:border-brand-300'
                 } ${
                   !isAnsweringUnlocked || !isLeader
                     ? 'cursor-not-allowed opacity-90'
@@ -109,20 +109,20 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <span className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl font-black text-base sm:text-lg flex items-center justify-center shrink-0 border ${
-                    isSelected ? 'bg-indigo-600 text-white border-indigo-300 shadow-[0_0_12px_rgba(99,102,241,0.8)]' : 'bg-slate-800 text-slate-200 border-white/10'
+                    isSelected ? 'bg-brand-600 text-ink border-brand-300 shadow-[0_0_12px_rgba(99,102,241,0.8)]' : 'bg-surface-raised text-ink border-line'
                   }`}>
                     {letters[idx] || idx + 1}
                   </span>
                   <span className="font-bold text-base sm:text-xl md:text-2xl leading-snug break-words">{opt}</span>
                 </div>
-                {isSelected && <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-400 shrink-0 ml-2" />}
+                {isSelected && <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-brand-400 shrink-0 ml-2" />}
               </button>
             );
           })}
         </div>
       ) : (
-        <div className="p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-200 text-sm sm:text-base font-bold flex items-center gap-3 mb-2 relative z-10 shadow-lg">
-          <Sparkles className="w-6 h-6 text-amber-400 shrink-0" />
+        <div className="p-5 rounded-2xl bg-warn-500/15 border-2 border-warn-500/40 text-warn-400/30 text-sm sm:text-base font-bold flex items-center gap-3 mb-2 relative z-10 shadow-lg">
+          <Sparkles className="w-6 h-6 text-warn-400 shrink-0" />
           <span>{t('qc_open_answer')}</span>
         </div>
       )}

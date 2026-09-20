@@ -2,6 +2,8 @@ import {useEffect, useRef, useState, type FormEvent} from 'react';
 import {Loader2, Mail, User as UserIcon, X} from 'lucide-react';
 import {useAuth} from '../context/AuthContext';
 import {useLang} from '../i18n';
+import {Button} from '../ui/Button';
+import {Input} from '../ui/Input';
 import type {Role} from './AuthForm';
 
 export type OAuthProvider = 'google' | 'github' | 'apple';
@@ -56,27 +58,25 @@ export default function OAuthModal({provider, role, accent, onClose, onSuccess}:
   const [error, setError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
-  const accentRing =
-    accent === 'indigo' ? 'focus:ring-indigo-200 dark:focus:ring-indigo-500/20' : 'focus:ring-emerald-200 dark:focus:ring-emerald-500/20';
-  const accentBtn =
-    accent === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700';
+  const buttonVariant = accent === 'indigo' ? 'brand' : 'violet';
+  const barGradient = accent === 'indigo' ? 'from-brand-400 to-brand-600' : 'from-violet-400 to-violet-600';
 
   useEffect(() => {
     nameRef.current?.focus();
   }, []);
 
+  // NOTE: this demo flow trusts the name/email the person types in the form
+  // — there is no real round trip to Google/GitHub/Apple to verify identity
+  // (no id_token check server-side). Do not treat a successful call here as
+  // proof of who the person actually is; wire up a real OAuth exchange
+  // before relying on this for anything sensitive.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
     setError(null);
 
-    const result = await oauthLogin({
-      provider,
-      name: name.trim(),
-      email: email.trim(),
-      role,
-    });
+    const result = await oauthLogin({provider, name: name.trim(), email: email.trim(), role});
     if (!result.ok) {
       setBusy(false);
       setError(result.message || t('auth_err_generic'));
@@ -92,89 +92,80 @@ export default function OAuthModal({provider, role, accent, onClose, onSuccess}:
       aria-modal="true"
       aria-label={t('oauth_title').replace('{label}', OAUTH_LABELS[provider])}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900 shadow-card">
-        <div className={`h-1.5 w-full bg-gradient-to-r ${accent === 'indigo' ? 'from-indigo-500 to-blue-500' : 'from-emerald-500 to-teal-500'}`} />
+      <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[var(--radius-card)] border-2 border-line bg-surface shadow-[var(--shadow-card-hover)]">
+        <div className={`h-2 w-full bg-gradient-to-r ${barGradient}`} />
         <button
           type="button"
           onClick={onClose}
           aria-label={t('close')}
-          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          className="absolute right-3 top-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="p-6 sm:p-8">
           <div className="flex flex-col items-center text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-line bg-surface-raised">
               <OAuthIcon provider={provider} />
             </span>
-            <h3 className="mt-4 text-xl font-bold text-white">
+            <h3 className="mt-4 font-display text-xl font-bold text-ink">
               {t('oauth_title').replace('{label}', OAUTH_LABELS[provider])}
             </h3>
-            <p className="mt-1 text-sm text-slate-400">
-              {t(role === 'teacher' ? 'oauth_sub_teacher' : 'oauth_sub_student')}
-            </p>
+            <p className="mt-1 text-sm text-ink-soft">{t(role === 'teacher' ? 'oauth_sub_teacher' : 'oauth_sub_student')}</p>
           </div>
 
           {error && (
-            <div
-              role="alert"
-              className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-            >
+            <div role="alert" className="mt-5 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="mt-6 grid gap-4" noValidate>
             <label className="grid gap-1.5">
-              <span className="text-sm font-medium text-slate-300">{t('auth_name')}</span>
-              <div className="relative">
-                <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  ref={nameRef}
-                  value={name}
-                  data-testid="oauth-name"
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder={t('auth_name_placeholder')}
-                  autoComplete="name"
-                  className={`w-full rounded-xl border border-slate-700 bg-slate-800 pl-10 pr-4 py-2.5 text-white outline-none transition focus:ring-2 ${accentRing}`}
-                />
-              </div>
+              <span className="text-sm font-bold text-ink-soft">{t('auth_name')}</span>
+              <Input
+                ref={nameRef}
+                value={name}
+                data-testid="oauth-name"
+                icon={<UserIcon className="h-4 w-4" />}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
+                placeholder={t('auth_name_placeholder')}
+                autoComplete="name"
+              />
             </label>
 
             <label className="grid gap-1.5">
-              <span className="text-sm font-medium text-slate-300">{t('auth_email')}</span>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  data-testid="oauth-email"
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder={t('auth_email_placeholder')}
-                  autoComplete="email"
-                  className={`w-full rounded-xl border border-slate-700 bg-slate-800 pl-10 pr-4 py-2.5 text-white outline-none transition focus:ring-2 ${accentRing}`}
-                />
-              </div>
+              <span className="text-sm font-bold text-ink-soft">{t('auth_email')}</span>
+              <Input
+                type="email"
+                required
+                value={email}
+                data-testid="oauth-email"
+                icon={<Mail className="h-4 w-4" />}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                placeholder={t('auth_email_placeholder')}
+                autoComplete="email"
+              />
             </label>
 
-            <button
+            <Button
               type="submit"
               disabled={busy}
               data-testid="oauth-submit"
-              className={`mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${accentBtn}`}
+              variant={buttonVariant}
+              fullWidth
+              className="mt-1"
+              icon={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
             >
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               {t('oauth_continue')}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

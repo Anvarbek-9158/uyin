@@ -50,24 +50,24 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left: Unassigned Students in Waiting Room */}
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-xl space-y-4 backdrop-blur-md">
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+      <div className="bg-surface/95 border border-line rounded-2xl p-6 shadow-xl space-y-4 backdrop-blur-md">
+        <div className="flex items-center justify-between pb-3 border-b border-line">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-400" />
-            <h3 className="font-bold text-white text-base uppercase tracking-wider">
+            <Users className="w-5 h-5 text-brand-400" />
+            <h3 className="font-bold text-ink text-base uppercase tracking-wider">
               {t('tv_waiting_room')}
             </h3>
           </div>
-          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs border border-indigo-500/30">
+          <span className="px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 font-bold text-xs border border-brand-300">
             {unassignedStudents.length} {t('tv_ta_unit')}
           </span>
         </div>
 
         {/* Bulk Selection Bar */}
         {unassignedStudents.length > 0 && (
-          <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-slate-950/80 border border-white/10 text-xs">
+          <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-surface-sunken border border-line text-xs">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-slate-300 font-semibold cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-ink-soft font-semibold cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={
@@ -81,7 +81,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                       onSelectStudents([]);
                     }
                   }}
-                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-white/20 cursor-pointer"
+                  className="w-4 h-4 rounded text-brand-400 focus:ring-brand-500 bg-surface border-line cursor-pointer"
                 />
                 <span>{t('tv_select_all_teams')} ({selectedStudentIds.length})</span>
               </label>
@@ -89,7 +89,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               {selectedStudentIds.length > 0 && (
                 <button
                   onClick={() => onSelectStudents([])}
-                  className="text-xs text-slate-400 hover:text-white uppercase font-bold"
+                  className="text-xs text-ink-faint hover:text-ink uppercase font-bold"
                 >
                   {t('tv_clear')}
                 </button>
@@ -97,8 +97,8 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
             </div>
 
             {selectedStudentIds.length > 0 && teamList.length > 0 && (
-              <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                <span className="text-xs text-indigo-300 font-bold uppercase">{t('tv_assign_group')}</span>
+              <div className="pt-2 border-t border-line flex items-center gap-2">
+                <span className="text-xs text-brand-300 font-bold uppercase">{t('tv_assign_group')}</span>
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
@@ -106,7 +106,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                       e.target.value = '';
                     }
                   }}
-                  className="flex-1 px-2 py-1 rounded bg-indigo-600 text-white font-bold text-xs focus:outline-none cursor-pointer"
+                  className="flex-1 px-2 py-1 rounded bg-brand-600 text-ink font-bold text-xs focus:outline-none cursor-pointer"
                 >
                   <option value="">{t('tv_select_team')}</option>
                   {teamList.map((te) => (
@@ -121,7 +121,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
         )}
 
         {unassignedStudents.length === 0 ? (
-          <p className="text-xs text-slate-500 text-center py-6 uppercase tracking-widest">
+          <p className="text-xs text-ink-faint text-center py-6 uppercase tracking-widest">
             {t('tv_all_assigned')}
           </p>
         ) : (
@@ -133,8 +133,8 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                   key={st.id}
                   className={`flex items-center justify-between p-3 rounded-xl border transition-all text-xs ${
                     isChecked
-                      ? 'bg-indigo-500/20 border-indigo-500/50 text-white'
-                      : 'bg-slate-950/60 border-white/5 text-slate-200'
+                      ? 'bg-brand-500/20 border-brand-300 text-ink'
+                      : 'bg-surface-sunken border-line text-ink'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -148,7 +148,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                           onSelectStudents(selectedStudentIds.filter((id) => id !== st.id));
                         }
                       }}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-900 border-white/20 cursor-pointer"
+                      className="w-4 h-4 rounded text-brand-400 focus:ring-brand-500 bg-surface border-line cursor-pointer"
                     />
                     <span className="font-semibold text-sm">{st.name}</span>
                   </div>
@@ -163,7 +163,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                     </button>
                     <button
                       onClick={() => onKickStudent(st.id)}
-                      className="p-1 px-2.5 rounded bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all flex items-center gap-1 h-10"
+                      className="p-1 px-2.5 rounded bg-danger-500/10 hover:bg-danger-500/30 text-danger-400 border border-danger-500/20 text-xs font-bold uppercase transition-all flex items-center gap-1 h-10"
                     >
                       <UserX className="w-3 h-3" />
                       {t('tv_kick')}
@@ -178,13 +178,13 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
 
       {/* Center/Right: Team Creation & Assigning */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 shadow-xl space-y-6 backdrop-blur-md">
+        <div className="bg-surface/95 border border-line rounded-2xl p-6 shadow-xl space-y-6 backdrop-blur-md">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
-              <h3 className="font-bold text-white text-xl uppercase tracking-tight">
+              <h3 className="font-bold text-ink text-xl uppercase tracking-tight">
                 {t('tv_team_setup_title')}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-ink-faint mt-1">
                 {t('tv_team_setup_sub')}
               </p>
             </div>
@@ -193,9 +193,9 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               <button
                 onClick={onOpenQuestionSelect}
                 data-testid="start-quiz"
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all scale-105 cursor-pointer"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-play-500 hover:bg-play-400 text-surface-sunken font-black text-xs uppercase tracking-widest shadow-[var(--shadow-pop-play)] transition-all scale-105 cursor-pointer"
               >
-                <Play className="w-4 h-4 fill-slate-950" />
+                <Play className="w-4 h-4 fill-surface-sunken" />
                 {t('tv_start_quiz')}
               </button>
             )}
@@ -209,12 +209,12 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               value={newTeamName}
               onChange={(e) => onNewTeamNameChange(e.target.value)}
               placeholder={t('tv_new_team_placeholder')}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500 w-full"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-surface-sunken border border-line text-ink text-sm focus:outline-none focus:border-brand-500 w-full"
             />
             <button
               type="submit"
               data-testid="add-team"
-              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(79,70,229,0.4)] flex items-center justify-center gap-1.5 transition-all shrink-0"
+              className="h-10 px-6 rounded-xl bg-brand-600 hover:bg-brand-500 text-ink font-bold text-xs uppercase tracking-wider shadow-[var(--shadow-pop-brand)] flex items-center justify-center gap-1.5 transition-all shrink-0"
             >
               <Plus className="w-4 h-4" /> {t('tv_add_team')}
             </button>
@@ -228,7 +228,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
               return (
                 <div
                   key={team.id}
-                  className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 space-y-4 relative overflow-hidden group"
+                  className="p-5 rounded-2xl bg-surface/95 border border-line space-y-4 relative overflow-hidden group"
                 >
                   <div
                     className="absolute top-0 left-0 w-1.5 h-full"
@@ -241,7 +241,7 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                         className="w-3.5 h-3.5 rounded-full"
                         style={{ backgroundColor: teamAccent }}
                       />
-                      <h4 className="font-bold text-white text-base">
+                      <h4 className="font-bold text-ink text-base">
                         {team.name}
                       </h4>
                     </div>
@@ -249,16 +249,16 @@ export const TeamSetupSection: React.FC<TeamSetupSectionProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onPenalizeTeam(team.id)}
-                        className="flex items-center gap-1 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/30 text-rose-300 border border-rose-500/20 text-xs font-bold uppercase transition-all h-10"
+                        className="flex items-center gap-1 px-2.5 rounded-lg bg-danger-500/10 hover:bg-danger-500/30 text-danger-400 border border-danger-500/20 text-xs font-bold uppercase transition-all h-10"
                         title={t('tv_penalize_title')}
                       >
-                        <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                        <VolumeX className="w-3.5 h-3.5 text-danger-400" />
                         {t('tv_penalize_noise')}
                       </button>
 
                       <button
 onClick={() => onDeleteTeam(team.id)}
-          className="inline-flex items-center justify-center h-10 w-10 text-slate-500 hover:text-rose-400 rounded-xl hover:bg-slate-800 transition-colors"
+          className="inline-flex items-center justify-center h-10 w-10 text-ink-faint hover:text-danger-400 rounded-xl hover:bg-surface-raised transition-colors"
           title={t('tv_delete_team_title')}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -268,11 +268,11 @@ onClick={() => onDeleteTeam(team.id)}
 
                   {/* Members & Leader Selector */}
                   <div className="space-y-2 pl-2">
-                    <div className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                    <div className="text-xs font-bold uppercase tracking-widest text-ink-faint">
                       {t('tv_members_leader')}
                     </div>
                     {team.memberIds.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">
+                      <p className="text-xs text-ink-faint italic">
                         {t('tv_no_members')}
                       </p>
                     ) : (
@@ -287,13 +287,13 @@ onClick={() => onDeleteTeam(team.id)}
                               key={st.id}
                               className={`flex items-center justify-between p-2 rounded-lg text-xs border ${
                                 isLeader
-                                  ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-200'
-                                  : 'bg-slate-950/80 border-white/5 text-slate-200'
+                                  ? 'bg-brand-500/20 border-brand-300 text-brand-300'
+                                  : 'bg-surface-sunken border-line text-ink'
                               }`}
                             >
                               <div className="flex items-center gap-2 min-w-0">
                                 {isLeader && (
-                                  <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                  <Crown className="w-3.5 h-3.5 text-warn-400 shrink-0" />
                                 )}
                                 <span className="font-semibold truncate">{st.name}</span>
                               </div>
@@ -303,22 +303,22 @@ onClick={() => onDeleteTeam(team.id)}
                                   <button
                                     data-testid="make-leader"
                                     onClick={() => onMakeLeader(st.id, team.id)}
-                                    className="px-2.5 h-9 rounded bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 text-xs font-bold uppercase"
+                                    className="px-2.5 h-9 rounded bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 text-xs font-bold uppercase"
                                   >
                                     {t('tv_make_leader')}
                                   </button>
                                 )}
                                 <button
                                   onClick={() => onAssignStudent(st.id, null)}
-                                  className="px-2.5 h-9 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
+                                  className="px-2.5 h-9 rounded bg-warn-500/15 hover:bg-warn-500/30 text-warn-400 border border-warn-500/30 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer"
                                   title={t('tv_to_waiting_title')}
                                 >
-                                  <LogOut className="w-3 h-3 text-amber-400" />
+                                  <LogOut className="w-3 h-3 text-warn-400" />
                                   <span>{t('tv_to_waiting')}</span>
                                 </button>
                                 <button
                                   onClick={() => onKickStudent(st.id)}
-                                  className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors"
+                                  className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-danger-500/10 hover:bg-danger-500/25 text-danger-400 hover:text-danger-400 transition-colors"
                                   title={t('tv_kick_title')}
                                 >
                                   <UserX className="w-3.5 h-3.5" />
@@ -333,7 +333,7 @@ onClick={() => onDeleteTeam(team.id)}
 
                   {/* Quick Assign Dropdown */}
                   {unassignedStudents.length > 0 && (
-                    <div className="pt-2 border-t border-white/5 pl-2">
+                    <div className="pt-2 border-t border-line pl-2">
                       <select
                         data-testid="assign-select"
                         onChange={(e) => {
@@ -342,7 +342,7 @@ onClick={() => onDeleteTeam(team.id)}
                             e.target.value = '';
                           }
                         }}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-xs text-slate-300 focus:outline-none"
+                        className="w-full px-3 py-1.5 rounded-lg bg-surface-sunken border border-line text-xs text-ink-soft focus:outline-none"
                       >
                         <option value="">{t('tv_add_student_team')}</option>
                         {unassignedStudents.map((st) => (

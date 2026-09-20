@@ -1,7 +1,8 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
-import { Copy, Check, LogOut, Languages, ChevronDown } from 'lucide-react';
-import { useLang, Language } from '../i18n';
-import { Logo } from './Logo';
+import React, {useState} from 'react';
+import {Copy, Check, LogOut} from 'lucide-react';
+import {useLang} from '../i18n';
+import {Logo} from './Logo';
+import {LangSwitcher} from './LangSwitcher';
 
 interface NavbarProps {
   viewMode: 'LANDING' | 'TEACHER' | 'STUDENT';
@@ -14,35 +15,9 @@ interface NavbarProps {
   onLogoutTeacher?: () => void;
 }
 
-const LANG_OPTIONS: { value: Language; label: string }[] = [
-  { value: 'uz', label: 'O\'zbek' },
-{ value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-];
-
-export const Navbar: React.FC<NavbarProps> = ({
-  viewMode,
-  setViewMode,
-  pin,
-  isTeacherAuth,
-  onLogoutTeacher,
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({viewMode, setViewMode, pin, isTeacherAuth, onLogoutTeacher}) => {
   const [copied, setCopied] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const { lang, setLang, t } = useLang();
-  const langRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
-
-  const currentLang = LANG_OPTIONS.find((o) => o.value === lang) ?? LANG_OPTIONS[0];
+  const {t} = useLang();
 
   const handleCopyPin = () => {
     if (!pin) return;
@@ -51,116 +26,54 @@ export const Navbar: React.FC<NavbarProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSelectLang = (l: Language) => {
-    setLang(l);
-    setLangOpen(false);
-  };
-
   return (
-    <header className="bg-slate-900/95 border-b border-indigo-500/20 sticky top-0 z-50 text-white shadow-2xl backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
-        {/* Brand / Logo */}
-        <div
-          onClick={() => setViewMode('TEACHER')}
-          className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0 shrink"
-        >
-          <Logo className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-[0_0_12px_rgba(99,102,241,0.55)] group-hover:scale-105 transition-transform" />
+    <header className="sticky top-0 z-50 border-b-2 border-line bg-surface/95 text-ink shadow-sm backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
+        <div onClick={() => setViewMode('TEACHER')} className="group flex min-w-0 shrink cursor-pointer items-center gap-2 sm:gap-3">
+          <Logo className="h-9 w-9 transition-transform group-hover:scale-105 sm:h-11 sm:w-11" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-black text-base sm:text-xl md:text-2xl tracking-tight whitespace-nowrap">
-                <span className="text-white">Edu</span>
-                <span className="text-indigo-400">Play</span>
+              <span className="whitespace-nowrap font-display text-base font-extrabold tracking-tight sm:text-xl md:text-2xl">
+                Edu<span className="text-brand-500">Play</span>
               </span>
-              <span className="text-xs uppercase font-extrabold tracking-wider px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hidden lg:inline-block shrink-0">
+              <span className="hidden shrink-0 rounded-full border-2 border-violet-300 bg-violet-500/10 px-2 py-1 text-xs font-extrabold uppercase tracking-wider text-violet-400 lg:inline-block">
                 {viewMode === 'TEACHER' ? t('nav_teacher_console') : t('nav_student_system')}
               </span>
             </div>
-            <p className="text-xs text-slate-300 font-medium tracking-wide uppercase hidden md:block truncate">
-              {t('nav_subtitle')}
-            </p>
+            <p className="hidden truncate text-xs font-semibold uppercase tracking-wide text-ink-faint md:block">{t('nav_subtitle')}</p>
           </div>
         </div>
 
-        {/* Center: Interactive PIN Badge */}
         {pin && viewMode === 'TEACHER' && isTeacherAuth && (
           <button
             onClick={handleCopyPin}
-            className="flex items-center gap-2 px-3 sm:px-4 h-10 sm:h-11 rounded-xl bg-slate-950 hover:bg-slate-800 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.25)] transition-all cursor-pointer group shrink-0"
+            className="group flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-brand-300 bg-surface-sunken px-3 shadow-[var(--shadow-sm)] transition-all hover:border-brand-500 sm:h-11 sm:px-4"
             title={t('pin_code')}
           >
-            <span className="text-xs text-slate-300 uppercase font-extrabold tracking-wider hidden md:inline">
-              {t('pin_code')}
-            </span>
-            <span className=" font-black text-indigo-400 text-base sm:text-xl md:text-2xl tracking-widest">
-              {pin}
-            </span>
+            <span className="hidden text-xs font-extrabold uppercase tracking-wider text-ink-faint md:inline">{t('pin_code')}</span>
+            <span className="font-display text-base font-black tracking-widest text-brand-400 sm:text-xl md:text-2xl">{pin}</span>
             {copied ? (
-              <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+              <Check className="h-4 w-4 shrink-0 text-play-500 sm:h-5 sm:w-5" />
             ) : (
-              <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-indigo-300 transition-colors shrink-0" />
+              <Copy className="h-4 w-4 shrink-0 text-ink-faint transition-colors group-hover:text-brand-500 sm:h-5 sm:w-5" />
             )}
-            {copied && (
-              <span className="text-xs text-emerald-400 font-black uppercase tracking-wider hidden sm:inline">
-                {t('copied')}
-              </span>
-            )}
+            {copied && <span className="hidden text-xs font-black uppercase tracking-wider text-play-400 sm:inline">{t('copied')}</span>}
           </button>
         )}
 
-        {/* Right Controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Teacher Actions */}
-          {viewMode === 'TEACHER' && isTeacherAuth && (
-            <>
-              {onLogoutTeacher && (
-                <button
-                  onClick={onLogoutTeacher}
-                  aria-label={t('auth_logout')}
-                  className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border border-rose-500/40 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer"
-                  title={t('auth_logout')}
-                >
-                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
-                  <span className="hidden md:inline">{t('auth_logout')}</span>
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Language Selector (replaces sound button) */}
-          <div className="relative" ref={langRef}>
+        <div className="flex shrink-0 items-center gap-2">
+          {viewMode === 'TEACHER' && isTeacherAuth && onLogoutTeacher && (
             <button
-              onClick={() => setLangOpen((o) => !o)}
-              aria-label={t('lang_select')}
-              className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all border border-white/10 shrink-0 cursor-pointer"
-              title={t('lang_select')}
+              onClick={onLogoutTeacher}
+              aria-label={t('auth_logout')}
+              className="flex h-10 items-center gap-1.5 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-3 text-xs font-bold uppercase tracking-wider text-danger-400 transition-all hover:bg-danger-500/20 sm:text-sm"
+              title={t('auth_logout')}
             >
-              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 shrink-0" />
-              <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
-                {currentLang.value.toUpperCase()}
-              </span>
-              <span className="sm:hidden text-xs font-bold">{currentLang.value.toUpperCase()}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform shrink-0 ${langOpen ? 'rotate-180' : ''}`} />
+              <LogOut className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+              <span className="hidden md:inline">{t('auth_logout')}</span>
             </button>
-
-            {langOpen && (
-              <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl bg-slate-950/95 border border-white/10 shadow-2xl backdrop-blur-xl overflow-hidden z-[70] animate-fade-in">
-                {LANG_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleSelectLang(opt.value)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition-colors cursor-pointer ${
-                      lang === opt.value
-                        ? 'bg-indigo-600/30 text-white border-l-2 border-indigo-400'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <span className="uppercase tracking-wider">{opt.label}</span>
-                    {lang === opt.value && <Check className="w-4 h-4 ml-auto text-indigo-300" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
+          <LangSwitcher compact />
         </div>
       </div>
     </header>

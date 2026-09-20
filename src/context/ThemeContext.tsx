@@ -1,43 +1,20 @@
-import {createContext, useContext, useEffect, useState, type ReactNode} from 'react';
+import {createContext, useContext, type ReactNode} from 'react';
 
-type Theme = 'light' | 'dark';
-
+// The v2 design is a single, permanently-light theme (no dark mode toggle
+// anywhere in the product), so this provider is now a thin stub: it keeps
+// the existing `useTheme()` call sites working without every one of them
+// needing to be ripped out, but there is nothing to switch.
 interface ThemeContextValue {
-  theme: Theme;
+  theme: 'light';
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-
-function getInitialTheme(): Theme {
-  return 'dark';
-}
+const ThemeContext = createContext<ThemeContextValue>({theme: 'light', toggleTheme: () => {}});
 
 export function ThemeProvider({children}: {children: ReactNode}) {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    window.localStorage.setItem('edupal-theme', theme);
-    // Keep the browser chrome color in sync with the active theme.
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', '#0f1116');
-  }, [theme]);
-
-  const toggleTheme = () => setTheme('dark');
-
-  return (
-    <ThemeContext.Provider value={{theme, toggleTheme}}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{theme: 'light', toggleTheme: () => {}}}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
-  return ctx;
+  return useContext(ThemeContext);
 }

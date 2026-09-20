@@ -44,24 +44,24 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-surface-sunken backdrop-blur-md animate-[var(--animate-fade-in)]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-white/10 rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[90vh]"
+        className="bg-surface border border-line rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+            <div className="p-2.5 rounded-xl bg-play-500 text-surface-sunken shadow-[var(--shadow-pop-play)]">
               <Play className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
+              <h3 className="text-lg sm:text-xl font-bold text-ink uppercase tracking-tight">
                 {t('qsm_title')}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-faint">
                 {t('qsm_sub')}
               </p>
             </div>
@@ -70,7 +70,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
           <button
             onClick={onClose}
             aria-label={t('close')}
-            className="inline-flex items-center justify-center h-10 w-10 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center justify-center h-10 w-10 text-ink-faint hover:text-ink rounded-xl hover:bg-surface-raised transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -83,8 +83,8 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             onClick={() => setSelectedDifficulty('Barchasi')}
             className={`py-2.5 px-4 rounded-xl border text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               selectedDifficulty === 'Barchasi'
-                ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.5)]'
-                : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
+                ? 'bg-brand-600 text-ink border-brand-500 shadow-[var(--shadow-pop-brand)]'
+                : 'bg-surface-sunken border-line text-ink-soft hover:text-ink'
             }`}
           >
             {t('qsm_all')} ({questions.length})
@@ -95,8 +95,8 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             onClick={() => setSelectedDifficulty('Oson')}
             className={`py-2.5 px-4 rounded-xl border text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               selectedDifficulty === 'Oson'
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
+                ? 'bg-play-500/20 text-play-400 border-play-500/80 shadow-[var(--shadow-pop-play)]'
+                : 'bg-surface-sunken border-line text-ink-soft hover:text-ink'
             }`}
           >
             🟢 {translateDiplicity('Oson', lang)} ({osonCount})
@@ -107,8 +107,8 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             onClick={() => setSelectedDifficulty("O'rta")}
             className={`py-2.5 px-4 rounded-xl border text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               selectedDifficulty === "O'rta"
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
+                ? 'bg-warn-500/20 text-warn-400 border-warn-500/80 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                : 'bg-surface-sunken border-line text-ink-soft hover:text-ink'
             }`}
           >
             🟡 {translateDiplicity("O'rta", lang)} ({ortaCount})
@@ -119,8 +119,8 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             onClick={() => setSelectedDifficulty('Qiyin')}
             className={`py-2.5 px-4 rounded-xl border text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               selectedDifficulty === 'Qiyin'
-                ? 'bg-rose-500/20 text-rose-300 border-rose-500/80 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
+                ? 'bg-danger-500/20 text-danger-400 border-danger-500/80 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
+                : 'bg-surface-sunken border-line text-ink-soft hover:text-ink'
             }`}
           >
             🔴 {translateDiplicity('Qiyin', lang)} ({qiyinCount})
@@ -135,7 +135,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
             if (questions.length === 0) {
               return (
-                <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
+                <div className="p-8 text-center rounded-2xl bg-surface-sunken border border-dashed border-line text-ink-faint">
                   {t('qsm_empty_bank')}
                 </div>
               );
@@ -143,7 +143,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
 
             if (filteredQuestions.length === 0) {
               return (
-                <div className="p-8 text-center rounded-2xl bg-slate-950/60 border border-dashed border-white/10 text-slate-400">
+                <div className="p-8 text-center rounded-2xl bg-surface-sunken border border-dashed border-line text-ink-faint">
                   {t('qsm_empty_section')}
                 </div>
               );
@@ -152,7 +152,7 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
             return (
               <>
                 {remainingCount === 0 && (
-                  <div className="p-4 text-center rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm font-bold">
+                  <div className="p-4 text-center rounded-2xl bg-warn-500/10 border border-warn-500/40 text-warn-400 text-sm font-bold">
                     {t('qsm_all_used')}
                   </div>
                 )}
@@ -163,21 +163,21 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                   const qq = getQuestionInLanguage(q, lang);
                   const diffBadgeClass =
                     diff === 'Oson'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      ? 'bg-play-500/20 text-play-400 border-play-500/30'
                       : diff === 'Qiyin'
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                      : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                      ? 'bg-danger-500/20 text-danger-400 border-danger-500/30'
+                      : 'bg-warn-500/20 text-warn-400 border-warn-500/30';
 
                   return (
                     <div
                       key={q.id || originalIndex}
-                      className={`p-4 rounded-xl bg-slate-950 border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group ${
-                        used ? 'border-white/5 opacity-50' : 'border-white/10 hover:border-emerald-500/40'
+                      className={`p-4 rounded-xl bg-surface-sunken border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group ${
+                        used ? 'border-line opacity-50' : 'border-line hover:border-play-500/40'
                       }`}
                     >
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className=" text-xs font-bold text-indigo-400">
+                          <span className=" text-xs font-bold text-brand-400">
                             {t('qsm_question')}{originalIndex + 1}
                           </span>
 
@@ -186,29 +186,29 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                           </span>
 
                           {q.category && (
-                            <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1">
-                              <Tag className="w-3 h-3 text-slate-500" />
+                            <span className="text-xs px-2 py-1 rounded bg-surface border border-line text-ink-faint flex items-center gap-1">
+                              <Tag className="w-3 h-3 text-ink-faint" />
                               {translateCategory(q.category, lang)}
                             </span>
                           )}
 
-                          <span className="text-xs px-2 py-1 rounded bg-slate-900 border border-white/10 text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-500" />
+                          <span className="text-xs px-2 py-1 rounded bg-surface border border-line text-ink-faint flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-ink-faint" />
                             {q.timeLimit} {t('qsm_seconds')}
                           </span>
                         </div>
 
-                        <p className="text-sm font-semibold text-white leading-relaxed">
+                        <p className="text-sm font-semibold text-ink leading-relaxed">
                           {qq.text}
                         </p>
 
-                        <div className="text-xs text-slate-500 italic">
+                        <div className="text-xs text-ink-faint italic">
                           {t('qsm_hidden')}
                         </div>
                       </div>
 
                       {used ? (
-                        <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-wider shrink-0 text-center">
+                        <span className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-surface-raised text-ink-faint font-black text-xs uppercase tracking-wider shrink-0 text-center">
                           ✅ {t('qsm_used')}
                         </span>
                       ) : (
@@ -218,9 +218,9 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
                             onSelectQuestion(originalIndex);
                             onClose();
                           }}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 group-hover:scale-105"
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-play-500 hover:bg-play-400 text-surface-sunken font-black text-xs uppercase tracking-wider shadow-[var(--shadow-pop-play)] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 group-hover:scale-105"
                         >
-                          <Play className="w-4 h-4 fill-slate-950" />
+                          <Play className="w-4 h-4 fill-surface-sunken" />
                           {t('qsm_select_start')}
                         </button>
                       )}
@@ -233,10 +233,10 @@ export const QuestionSelectModal: React.FC<QuestionSelectModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="pt-4 border-t border-white/10 flex justify-end shrink-0">
+        <div className="pt-4 border-t border-line flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider"
+            className="px-4 py-2 rounded-xl text-ink-faint hover:text-ink text-xs font-bold uppercase tracking-wider"
           >
             {t('close')}
           </button>

@@ -4,14 +4,16 @@ import {CheckCircle2, Mail, Loader2, Lock, User as UserIcon} from 'lucide-react'
 import {useAuth, authErrorMessage} from '../context/AuthContext';
 import {useLang} from '../i18n';
 import {PASSWORD_MIN_LENGTH} from '../types';
-import OAuthModal, {
-  OAuthIcon,
-  type OAuthProvider,
-} from './OAuthModal';
+import {Button} from '../ui/Button';
+import {Input} from '../ui/Input';
+import OAuthModal, {OAuthIcon, type OAuthProvider} from './OAuthModal';
 
 export type Role = 'teacher' | 'student';
 type Mode = 'login' | 'signup';
 
+// `accent` names the role, not a literal color — 'indigo' means "teacher"
+// and 'emerald' means "student" for historical reasons. It now maps to the
+// brand/violet tokens below rather than to actual indigo/emerald colors.
 export interface AuthFormProps {
   role: Role;
   accent: 'indigo' | 'emerald';
@@ -37,19 +39,8 @@ export default function AuthForm({role, accent}: AuthFormProps) {
   const [activeProvider, setActiveProvider] = useState<OAuthProvider | null>(null);
 
   const resolvedRole = role === 'teacher' ? t('auth_role_teacher') : t('auth_role_student');
-
-  const primary =
-    accent === 'indigo'
-      ? {
-          bg: 'bg-indigo-600 hover:bg-indigo-700',
-          ring: 'focus:ring-indigo-200 dark:focus:ring-indigo-500/20',
-          soft: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
-        }
-      : {
-          bg: 'bg-emerald-600 hover:bg-emerald-700',
-          ring: 'focus:ring-emerald-200 dark:focus:ring-emerald-500/20',
-          soft: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
-        };
+  const buttonVariant = accent === 'indigo' ? 'brand' : 'violet';
+  const barGradient = accent === 'indigo' ? 'from-brand-400 to-brand-600' : 'from-violet-400 to-violet-600';
 
   const resolveDestination = () => (role === 'teacher' ? '/game' : '/play');
 
@@ -65,8 +56,7 @@ export default function AuthForm({role, accent}: AuthFormProps) {
     setError(null);
 
     const input = {email: email.trim(), password, role};
-    const result =
-      mode === 'signup' ? await signup({...input, name: name.trim()}) : await login(input);
+    const result = mode === 'signup' ? await signup({...input, name: name.trim()}) : await login(input);
     setBusy(false);
 
     if (!result.ok) {
@@ -74,63 +64,49 @@ export default function AuthForm({role, accent}: AuthFormProps) {
       return;
     }
 
-    if (role === 'teacher') {
-      sessionStorage.setItem('teacher_auth', 'true');
-    }
+    if (role === 'teacher') sessionStorage.setItem('teacher_auth', 'true');
     setSuccess(true);
     setTimeout(() => navigate(resolveDestination()), 1200);
   };
 
   const handleOAuthSuccess = () => {
     setActiveProvider(null);
-    if (role === 'teacher') {
-      sessionStorage.setItem('teacher_auth', 'true');
-    }
+    if (role === 'teacher') sessionStorage.setItem('teacher_auth', 'true');
     setSuccess(true);
     setTimeout(() => navigate(resolveDestination()), 1200);
   };
 
-  const inputClass = `w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:ring-2 ${primary.ring} dark:border-slate-700 dark:bg-slate-900 dark:text-white`;
-
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-      <div className={`h-1.5 w-full bg-gradient-to-r ${accent === 'indigo' ? 'from-indigo-500 to-blue-500' : 'from-emerald-500 to-teal-500'}`} />
+    <div className="overflow-hidden rounded-[var(--radius-card)] border-2 border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className={`h-2 w-full bg-gradient-to-r ${barGradient}`} />
 
       <div className="p-6 sm:p-8">
         {success ? (
           <div className="flex flex-col items-center py-10 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-              <CheckCircle2 className="h-9 w-9 animate-pop" />
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-play-500/15 text-play-400">
+              <CheckCircle2 className="h-9 w-9 animate-[var(--animate-pop)]" />
             </span>
-            <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-              {t('auth_success_title')}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {t('auth_success_sub').replace('{role}', resolvedRole)}
-            </p>
+            <h2 className="mt-4 font-display text-xl font-bold text-ink">{t('auth_success_title')}</h2>
+            <p className="mt-1 text-sm text-ink-soft">{t('auth_success_sub').replace('{role}', resolvedRole)}</p>
           </div>
         ) : (
           <>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="font-display text-2xl font-bold text-ink">
                 {resolvedRole} {t('auth_login')}
               </h2>
-              <p className="mt-1 text-slate-500 dark:text-slate-400">
-                {mode === 'signup' ? t('auth_create_account') : t('auth_login_to_account')}
-              </p>
+              <p className="mt-1 text-ink-soft">{mode === 'signup' ? t('auth_create_account') : t('auth_login_to_account')}</p>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-surface-raised p-1">
               <button
                 type="button"
                 onClick={() => {
                   setMode('signup');
                   clearErrors();
                 }}
-                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                  mode === 'signup'
-                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-                    : 'text-slate-500 dark:text-slate-400'
+                className={`flex h-10 items-center justify-center rounded-xl text-sm font-bold transition-colors ${
+                  mode === 'signup' ? 'bg-surface text-ink shadow-sm' : 'text-ink-faint'
                 }`}
               >
                 {t('auth_signup')}
@@ -141,10 +117,8 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                   setMode('login');
                   clearErrors();
                 }}
-                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                  mode === 'login'
-                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
-                    : 'text-slate-500 dark:text-slate-400'
+                className={`flex h-10 items-center justify-center rounded-xl text-sm font-bold transition-colors ${
+                  mode === 'login' ? 'bg-surface text-ink shadow-sm' : 'text-ink-faint'
                 }`}
               >
                 {t('auth_login')}
@@ -161,30 +135,22 @@ export default function AuthForm({role, accent}: AuthFormProps) {
                     clearErrors();
                     setActiveProvider(s.id);
                   }}
-                  className="inline-flex h-10 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700"
+                  className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-xl border-2 border-line bg-surface px-4 text-sm font-bold text-ink transition-colors hover:bg-surface-raised"
                 >
                   <OAuthIcon provider={s.id} />
-                  {(mode === 'signup' ? t('auth_via_signup') : t('auth_via_login')).replace(
-                    '{label}',
-                    s.label
-                  )}
+                  {(mode === 'signup' ? t('auth_via_signup') : t('auth_via_login')).replace('{label}', s.label)}
                 </button>
               ))}
             </div>
 
             <div className="my-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                {t('auth_or_email')}
-              </span>
-              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-xs font-bold uppercase tracking-wide text-ink-faint">{t('auth_or_email')}</span>
+              <span className="h-px flex-1 bg-line" />
             </div>
 
             {error && (
-              <div
-                role="alert"
-                className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
-              >
+              <div role="alert" className="mb-4 rounded-xl border-2 border-danger-500/30 bg-danger-500/10 px-4 py-3 text-sm font-semibold text-danger-400">
                 {error}
               </div>
             )}
@@ -192,90 +158,71 @@ export default function AuthForm({role, accent}: AuthFormProps) {
             <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
               {mode === 'signup' && (
                 <label className="grid gap-1.5">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {t('auth_name')}
-                  </span>
-                  <div className="relative">
-                    <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        clearErrors();
-                      }}
-                      placeholder={t('auth_name_placeholder')}
-                      autoComplete="name"
-                      className={`${inputClass} pl-10`}
-                    />
-                  </div>
+                  <span className="text-sm font-bold text-ink-soft">{t('auth_name')}</span>
+                  <Input
+                    icon={<UserIcon className="h-4 w-4" />}
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearErrors();
+                    }}
+                    placeholder={t('auth_name_placeholder')}
+                    autoComplete="name"
+                  />
                 </label>
               )}
 
               <label className="grid gap-1.5">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('auth_email')}
-                </span>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      clearErrors();
-                    }}
-                    placeholder={t('auth_email_placeholder')}
-                    autoComplete="email"
-                    className={`${inputClass} pl-10`}
-                  />
-                </div>
+                <span className="text-sm font-bold text-ink-soft">{t('auth_email')}</span>
+                <Input
+                  type="email"
+                  required
+                  icon={<Mail className="h-4 w-4" />}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearErrors();
+                  }}
+                  placeholder={t('auth_email_placeholder')}
+                  autoComplete="email"
+                />
               </label>
 
               <label className="grid gap-1.5">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('auth_password')}
-                </span>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    minLength={PASSWORD_MIN_LENGTH}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      clearErrors();
-                    }}
-                    placeholder={t('auth_password_placeholder')}
-                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                    className={`${inputClass} pl-10`}
-                  />
-                </div>
+                <span className="text-sm font-bold text-ink-soft">{t('auth_password')}</span>
+                <Input
+                  type="password"
+                  required
+                  minLength={PASSWORD_MIN_LENGTH}
+                  icon={<Lock className="h-4 w-4" />}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearErrors();
+                  }}
+                  placeholder={t('auth_password_placeholder')}
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                />
               </label>
 
-              <button
+              <Button
                 type="submit"
                 data-testid="auth-submit"
                 disabled={busy}
-                className={`mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-60 ${primary.bg}`}
+                variant={buttonVariant}
+                fullWidth
+                className="mt-1"
+                icon={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {mode === 'signup' ? t('auth_submit_signup') : t('auth_submit_login')}
-              </button>
+              </Button>
             </form>
           </>
         )}
       </div>
 
       {activeProvider && !success && (
-        <OAuthModal
-          provider={activeProvider}
-          role={role}
-          accent={accent}
-          onClose={() => setActiveProvider(null)}
-          onSuccess={handleOAuthSuccess}
-        />
+        <OAuthModal provider={activeProvider} role={role} accent={accent} onClose={() => setActiveProvider(null)} onSuccess={handleOAuthSuccess} />
       )}
     </div>
   );

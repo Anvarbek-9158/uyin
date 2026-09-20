@@ -69,7 +69,7 @@ export default function PlayPage() {
   }, [clientId, gameState?.pin]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-surface text-surface-raised flex flex-col font-sans max-w-full overflow-x-hidden selection:bg-brand-500 selection:text-white">
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
         <StudentView
           clientId={clientId}
